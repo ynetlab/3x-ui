@@ -109,7 +109,7 @@ func TestEffectiveFlow_NonFlowInboundSyncedLastDoesNotHideVision(t *testing.T) {
 	const uid = "ce8d33df-3a64-4f10-8f9b-91c3a8e0c099"
 	const vision = "xtls-rprx-vision"
 
-	source := model.Client{Email: email, ID: uid, Auth: uid, Enable: true, Flow: vision}
+	source := model.Client{Email: email, ID: uid, Enable: true, Flow: vision}
 	// Reproduce #4792 ordering: the flow-capable inbound (Reality) syncs first,
 	// the non-flow inbound (Hysteria) syncs last and wipes clients.Flow to "".
 	for _, ib := range []*model.Inbound{reality, hysteria} {
@@ -158,7 +158,7 @@ func TestEffectiveFlow_ClearedFlowStaysCleared(t *testing.T) {
 	// User chose no flow: every inbound carries "". A non-empty guard in
 	// SyncInbound would make this impossible to express; EffectiveFlow must
 	// still report "".
-	source := model.Client{Email: email, ID: uid, Auth: uid, Enable: true, Flow: ""}
+	source := model.Client{Email: email, ID: uid, Enable: true, Flow: ""}
 	for _, ib := range []*model.Inbound{reality, hysteria} {
 		gated := clientWithInboundFlow(source, ib)
 		if err := svc.SyncInbound(nil, ib.Id, []model.Client{gated}); err != nil {

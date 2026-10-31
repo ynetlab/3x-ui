@@ -1379,7 +1379,7 @@ func TestGenHysteriaLinkOmitsFinalMaskQueryParam(t *testing.T) {
 		Port:           443,
 		Protocol:       model.Hysteria,
 		Remark:         "hy2",
-		Settings:       `{"version":2,"clients":[{"auth":"hyauth","email":"user"}]}`,
+		Settings:       `{"version":2,"clients":[{"id":"hyauth","email":"user"}]}`,
 		StreamSettings: stream,
 	}
 	got := (&SubService{}).genHysteriaLink(in, "user")
@@ -1412,7 +1412,7 @@ func TestGenHysteriaLinkKeepsHopPortsWithExternalProxy(t *testing.T) {
 		Port:           443,
 		Protocol:       model.Hysteria,
 		Remark:         "hy2",
-		Settings:       `{"version":2,"clients":[{"auth":"hyauth","email":"user"}]}`,
+		Settings:       `{"version":2,"clients":[{"id":"hyauth","email":"user"}]}`,
 		StreamSettings: stream,
 	}
 	got := (&SubService{}).genHysteriaLink(in, "user")

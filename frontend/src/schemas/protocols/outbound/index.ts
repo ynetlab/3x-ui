@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { AnyTLSOutboundSettingsSchema } from './anytls';
+
 import { BlackholeOutboundSettingsSchema } from './blackhole';
 import { AmneziaWGOutboundSettingsSchema } from './amneziawg';
 import { DNSOutboundSettingsSchema } from './dns';
@@ -26,6 +28,7 @@ export * from './loopback';
 export * from './shadowsocks';
 export * from './socks';
 export * from './trojan';
+export * from './anytls';
 export * from './vless';
 export * from './vmess';
 export * from './wireguard';
@@ -34,6 +37,7 @@ export const OutboundSettingsSchema = z.discriminatedUnion('protocol', [
   z.object({ protocol: z.literal('vmess'), settings: VmessOutboundSettingsSchema }),
   z.object({ protocol: z.literal('vless'), settings: VlessOutboundSettingsSchema }),
   z.object({ protocol: z.literal('trojan'), settings: TrojanOutboundSettingsSchema }),
+  z.object({ protocol: z.literal('anytls'), settings: AnyTLSOutboundSettingsSchema }),
   z.object({ protocol: z.literal('shadowsocks'), settings: ShadowsocksOutboundSettingsSchema }),
   z.object({ protocol: z.literal('wireguard'), settings: WireguardOutboundSettingsSchema }),
   z.object({ protocol: z.literal('amneziawg'), settings: AmneziaWGOutboundSettingsSchema }),

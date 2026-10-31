@@ -728,10 +728,20 @@ func (s *SubJsonService) getConfig(subReq *SubService, inbound *model.Inbound, c
 				vc.Flow = ""
 			}
 			newOutbounds = append(newOutbounds, s.genVless(subReq, inbound, streamSettings, vc, jsonMux(mux, hostMux)))
-		case "trojan", "shadowsocks":
+		case "trojan":
+			vc := client
+			vc.ID = applyVlessRoute(client.ID, hostVlessRoute(extPrxy))
+			newOutbounds = append(newOutbounds, s.genServer(subReq, inbound, streamSettings, vc, jsonMux(mux, hostMux)))
+		case "anytls":
+			vc := client
+			vc.ID = applyVlessRoute(client.ID, hostVlessRoute(extPrxy))
+			newOutbounds = append(newOutbounds, s.genAnyTLS(inbound, streamSettings, vc))
+		case "shadowsocks":
 			newOutbounds = append(newOutbounds, s.genServer(subReq, inbound, streamSettings, client, jsonMux(mux, hostMux)))
 		case "hysteria":
-			newOutbounds = append(newOutbounds, s.genHy(inbound, newStream, client, jsonMux(mux, hostMux)))
+			vc := client
+			vc.ID = applyVlessRoute(client.ID, hostVlessRoute(extPrxy))
+			newOutbounds = append(newOutbounds, s.genHy(inbound, newStream, vc, jsonMux(mux, hostMux)))
 		case "masque":
 			newOutbounds = append(newOutbounds, s.genMasque(inbound, newStream, client))
 		case "wireguard":
@@ -995,6 +1005,9 @@ func (s *SubJsonService) genServer(subReq *SubService, inbound *model.Inbound, s
 		Level:    8,
 		Password: client.Password,
 	}
+	if inbound.Protocol == model.Trojan {
+		serverData[0].Password = client.ID
+	}
 
 	if inbound.Protocol == model.Shadowsocks {
 		inboundSettings := subReq.linkSettings(inbound)
@@ -1060,7 +1073,7 @@ func (s *SubJsonService) genHy(inbound *model.Inbound, newStream map[string]any,
 	hyStream, _ := stream["hysteriaSettings"].(map[string]any)
 	outHyStream := map[string]any{
 		"version": int(version),
-		"auth":    client.Auth,
+		"auth":    client.ID,
 	}
 	if udpIdleTimeout, ok := hyStream["udpIdleTimeout"].(float64); ok {
 		outHyStream["udpIdleTimeout"] = int(udpIdleTimeout)

@@ -313,7 +313,7 @@ func TestSubJsonServiceVmessFlattened(t *testing.T) {
 // works on very recent xray-core.
 func TestSubJsonServiceServerUsesServersArray(t *testing.T) {
 	trojan := &model.Inbound{Listen: "1.2.3.4", Port: 443, Protocol: model.Trojan, Settings: `{}`}
-	client := model.Client{Password: "p4ss"}
+	client := model.Client{ID: "p4ss", Password: "p4ss"}
 
 	settings := outboundSettings(t, NewSubJsonService("", "", "", "", nil).genServer(&SubService{}, trojan, nil, client, ""))
 	server := firstServer(settings)

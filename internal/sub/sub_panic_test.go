@@ -54,7 +54,7 @@ func TestGetJsonToleratesHysteriaWithoutHysteriaSettings(t *testing.T) {
 		UserId: 1, Tag: "hy", Enable: true, Listen: "203.0.113.5", Port: 46200,
 		Protocol:       model.Hysteria,
 		Remark:         "hy",
-		Settings:       fmt.Sprintf(`{"version":2,"clients":[{"auth":"hyauth","email":%q,"subId":%q,"enable":true}]}`, email, subId),
+		Settings:       fmt.Sprintf(`{"version":2,"clients":[{"id":"hyauth","email":%q,"subId":%q,"enable":true}]}`, email, subId),
 		StreamSettings: `{"security":"tls","tlsSettings":{"serverName":"hy.sni"}}`,
 	}
 	if err := db.Create(ib).Error; err != nil {

@@ -120,6 +120,6 @@ require (
 	lukechampine.com/blake3 v1.4.1 // indirect
 )
 
-replace github.com/xtls/xray-core => github.com/ynetlab/Xray-core v0.0.0-20261031062300-16ad18c43b03
+replace github.com/xtls/xray-core => github.com/ynetlab/Xray-core v0.0.0-20261031104240-4af4330d438f
 
 replace github.com/xtls/reality => github.com/ynetlab/REALITY v0.0.0-20261031030901-0a425ae54855

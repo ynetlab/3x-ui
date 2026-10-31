@@ -351,7 +351,7 @@ describe('genTrojanLink', () => {
   for (const [name, raw] of fixtures) {
     it(`${name}: byte-stable`, () => {
       const typed = InboundSchema.parse(raw);
-      const settings = (raw as { settings: { clients: Array<{ password: string }> } }).settings;
+      const settings = (raw as { settings: { clients: Array<{ id: string }> } }).settings;
       const client = settings.clients[0];
 
       const link = genTrojanLink({
@@ -360,7 +360,7 @@ describe('genTrojanLink', () => {
         port: typed.port,
         forceTls: 'same',
         remark: 'parity-test',
-        clientPassword: client.password,
+        clientPassword: client.id,
         externalProxy: null,
       });
       expect(link).toMatchSnapshot();
@@ -375,7 +375,7 @@ describe('genHysteriaLink', () => {
   for (const [name, raw] of fixtures) {
     it(`${name}: byte-stable`, () => {
       const typed = InboundSchema.parse(raw);
-      const settings = (raw as { settings: { clients: Array<{ auth: string }> } }).settings;
+      const settings = (raw as { settings: { clients: Array<{ id: string }> } }).settings;
       const client = settings.clients[0];
 
       const link = genHysteriaLink({
@@ -383,7 +383,7 @@ describe('genHysteriaLink', () => {
         address: 'example.test',
         port: typed.port,
         remark: 'parity-test',
-        clientAuth: client.auth,
+        clientAuth: client.id,
       });
       expect(link).toMatchSnapshot();
     });
@@ -400,14 +400,14 @@ describe('genHysteriaLink', () => {
       },
     };
     const typed = InboundSchema.parse(withHop);
-    const client = (raw.settings as { clients: Array<{ auth: string }> }).clients[0];
+    const client = (raw.settings as { clients: Array<{ id: string }> }).clients[0];
 
     const link = genHysteriaLink({
       inbound: typed,
       address: 'example.test',
       port: typed.port,
       remark: 'hop-test',
-      clientAuth: client.auth,
+      clientAuth: client.id,
     });
 
     expect(link.startsWith('hysteria2://')).toBe(true);
@@ -434,14 +434,14 @@ describe('genHysteriaLink', () => {
       },
     };
     const typed = InboundSchema.parse(withHop);
-    const client = (raw.settings as { clients: Array<{ auth: string }> }).clients[0];
+    const client = (raw.settings as { clients: Array<{ id: string }> }).clients[0];
 
     const link = genHysteriaLink({
       inbound: typed,
       address: 'example.test',
       port: typed.port,
       remark: 'hop-mask',
-      clientAuth: client.auth,
+      clientAuth: client.id,
     });
 
     expect(link).toContain('mport=30000-40000');
@@ -467,14 +467,14 @@ describe('genHysteriaLink', () => {
       },
     };
     const typed = InboundSchema.parse(withPins);
-    const client = (raw.settings as { clients: Array<{ auth: string }> }).clients[0];
+    const client = (raw.settings as { clients: Array<{ id: string }> }).clients[0];
 
     const link = genHysteriaLink({
       inbound: typed,
       address: 'example.test',
       port: typed.port,
       remark: 'pin-test',
-      clientAuth: client.auth,
+      clientAuth: client.id,
     });
 
     const pin = new URL(link).searchParams.get('pinSHA256');
@@ -488,14 +488,14 @@ describe('genHysteriaLink', () => {
   it('emits an external proxy pin as hex pinSHA256 (not pcs)', () => {
     const [, raw] = fixtures[0];
     const typed = InboundSchema.parse(raw);
-    const client = (raw.settings as { clients: Array<{ auth: string }> }).clients[0];
+    const client = (raw.settings as { clients: Array<{ id: string }> }).clients[0];
 
     const link = genHysteriaLink({
       inbound: typed,
       address: 'edge.example.com',
       port: 8443,
       remark: 'ep-pin',
-      clientAuth: client.auth,
+      clientAuth: client.id,
       externalProxy: {
         forceTls: 'tls',
         dest: 'edge.example.com',
@@ -989,8 +989,8 @@ describe('IPv6 bracket wrapping in share-link authority', () => {
   it('genTrojanLink brackets a bare IPv6 address', () => {
     const [, raw] = fixturesForProtocol('trojan')[0];
     const typed = InboundSchema.parse(raw);
-    const clientPassword = (raw as { settings: { clients: Array<{ password: string }> } }).settings
-      .clients[0].password;
+    const clientPassword = (raw as { settings: { clients: Array<{ id: string }> } }).settings
+      .clients[0].id;
 
     const link = genTrojanLink({
       inbound: typed,
@@ -1020,8 +1020,8 @@ describe('IPv6 bracket wrapping in share-link authority', () => {
   it('genHysteriaLink brackets a bare IPv6 address', () => {
     const [, raw] = fixturesForProtocol('hysteria')[0];
     const typed = InboundSchema.parse(raw);
-    const clientAuth = (raw as { settings: { clients: Array<{ auth: string }> } }).settings
-      .clients[0].auth;
+    const clientAuth = (raw as { settings: { clients: Array<{ id: string }> } }).settings.clients[0]
+      .id;
 
     const link = genHysteriaLink({
       inbound: typed,

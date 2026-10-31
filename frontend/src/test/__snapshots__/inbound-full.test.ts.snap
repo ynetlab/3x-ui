@@ -13,11 +13,11 @@ exports[`InboundSchema (full) fixtures > parses hysteria-tls byte-stably 1`] = `
   "settings": {
     "clients": [
       {
-        "auth": "hyst-v1-auth-XYZ",
         "comment": "",
         "email": "gina@example.test",
         "enable": true,
         "expiryTime": 0,
+        "id": "hyst-v1-auth-XYZ",
         "limitIp": 0,
         "reset": 0,
         "subId": "hy1-001",
@@ -252,8 +252,8 @@ exports[`InboundSchema (full) fixtures > parses trojan-ws-tls byte-stably 1`] = 
         "email": "eve@example.test",
         "enable": true,
         "expiryTime": 0,
+        "id": "trojan-test-pw-XYZ",
         "limitIp": 0,
-        "password": "trojan-test-pw-XYZ",
         "reset": 0,
         "subId": "trj-001",
         "tgId": 0,

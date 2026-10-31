@@ -21,7 +21,7 @@
   "settings": {
     "clients": [
       {
-        "password": "trojan-test-pw-XYZ",
+        "id": "trojan-test-pw-XYZ",
         "email": "eve@example.test",
         "limitIp": 0,
         "totalGB": 0,

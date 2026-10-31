@@ -86,6 +86,7 @@ export function isInboundMultiUser(record: { protocol: string }): boolean {
     case 'vmess':
     case 'vless':
     case 'trojan':
+    case 'anytls':
     case 'shadowsocks':
     case 'hysteria':
     case 'mtproto':

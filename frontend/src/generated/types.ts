@@ -418,7 +418,6 @@ export interface Client {
   adTag?: string;
   allowedIPs?: string[];
   allowedIPsByInbound?: Record<number, string[]>;
-  auth?: string;
   clientHostRuleIds?: number[];
   comment: string;
   created_at?: number;
@@ -470,7 +469,6 @@ export interface ClientPageResponse {
 export interface ClientRecord {
   adTag: string;
   allowedIPs: string;
-  auth: string;
   clientHostRuleIds?: number[];
   comment: string;
   createdAt: number;

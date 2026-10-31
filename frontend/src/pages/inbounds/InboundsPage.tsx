@@ -318,7 +318,6 @@ export default function InboundsPage() {
     const idx = clients.findIndex((c) => {
       if (!c) return false;
       switch (dbInbound.protocol) {
-        case 'trojan':
         case 'shadowsocks':
         case 'masque':
           return c.password === client.password && c.email === client.email;

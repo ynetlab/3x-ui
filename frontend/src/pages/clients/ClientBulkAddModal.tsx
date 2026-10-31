@@ -35,6 +35,7 @@ const MULTI_CLIENT_PROTOCOLS = new Set([
   'vless',
   'vmess',
   'trojan',
+  'anytls',
   'hysteria',
   'wireguard',
   'amneziawg',
@@ -200,7 +201,6 @@ export default function ClientBulkAddModal({
           password: ss2022Method
             ? RandomUtil.randomShadowsocksPassword(ss2022Method)
             : RandomUtil.randomLowerAndNum(16),
-          auth: RandomUtil.randomLowerAndNum(16),
           flow: showFlow ? current.flow || '' : '',
           totalGB: Math.round((current.totalGB || 0) * SizeFormatter.ONE_GB),
           expiryTime: current.expiryTime,

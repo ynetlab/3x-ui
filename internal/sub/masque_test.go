@@ -95,13 +95,13 @@ func TestGetInboundsBySubIdIncludesMasque(t *testing.T) {
 func TestSubJsonServiceTurnsInboundHopIntoClientUDPHopMask(t *testing.T) {
 	inbound := &model.Inbound{
 		Listen: "203.0.113.10", Port: 443, Protocol: model.Hysteria, Remark: "hy",
-		Settings: `{"version":2,"clients":[{"email":"ivy@example.test","auth":"a"}]}`,
+		Settings: `{"version":2,"clients":[{"email":"ivy@example.test","id":"a"}]}`,
 		StreamSettings: `{"network":"hysteria","security":"tls",
 			"hysteriaSettings":{"version":2},
 			"tlsSettings":{"serverName":"hy.example.test","alpn":["h3"]},
 			"finalmask":{"quicParams":{"udpHop":{"ports":"20000-30000","interval":"5-10"}}}}`,
 	}
-	client := model.Client{Email: "ivy@example.test", Auth: "a"}
+	client := model.Client{Email: "ivy@example.test", ID: "a"}
 
 	configs := NewSubJsonService("", "", "", "", nil).getConfig(&SubService{address: "sub.example.com"}, inbound, client, "sub.example.com")
 	if len(configs) != 1 {
@@ -179,13 +179,13 @@ func TestSubJsonServiceKeepsOneTrailingUDPHopMask(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			inbound := &model.Inbound{
 				Listen: "203.0.113.10", Port: 443, Protocol: model.Hysteria, Remark: "hy",
-				Settings: `{"version":2,"clients":[{"email":"ivy@example.test","auth":"a"}]}`,
+				Settings: `{"version":2,"clients":[{"email":"ivy@example.test","id":"a"}]}`,
 				StreamSettings: `{"network":"hysteria","security":"tls","hysteriaSettings":{"version":2},
 					"tlsSettings":{"serverName":"hy.example.test","alpn":["h3"]},` + tc.inboundMask + `
 					"externalProxy":[{"forceTls":"same","dest":"a.example.test","port":443,"remark":"a",
 						"finalMask":` + strconv.Quote(tc.hostMask) + `}]}`,
 			}
-			client := model.Client{Email: "ivy@example.test", Auth: "a"}
+			client := model.Client{Email: "ivy@example.test", ID: "a"}
 			global := `{"udp":[` + tc.global + `]}`
 
 			configs := NewSubJsonService("", "", global, "", nil).getConfig(&SubService{address: "sub.example.com"}, inbound, client, "sub.example.com")
@@ -226,7 +226,7 @@ func TestSubJsonServiceKeepsOneTrailingUDPHopMask(t *testing.T) {
 func TestSubJsonServiceKeepsUDPHopMaskOnEveryEndpoint(t *testing.T) {
 	inbound := &model.Inbound{
 		Listen: "203.0.113.10", Port: 443, Protocol: model.Hysteria, Remark: "hy",
-		Settings: `{"version":2,"clients":[{"email":"ivy@example.test","auth":"a"}]}`,
+		Settings: `{"version":2,"clients":[{"email":"ivy@example.test","id":"a"}]}`,
 		StreamSettings: `{"network":"hysteria","security":"tls",
 			"hysteriaSettings":{"version":2},
 			"tlsSettings":{"serverName":"hy.example.test","alpn":["h3"]},
@@ -236,7 +236,7 @@ func TestSubJsonServiceKeepsUDPHopMaskOnEveryEndpoint(t *testing.T) {
 					"finalMask":"{\"udp\":[{\"type\":\"salamander\",\"settings\":{\"password\":\"p\"}}]}"},
 				{"forceTls":"same","dest":"b.example.test","port":443,"remark":"b"}]}`,
 	}
-	client := model.Client{Email: "ivy@example.test", Auth: "a"}
+	client := model.Client{Email: "ivy@example.test", ID: "a"}
 
 	configs := NewSubJsonService("", "", "", "", nil).getConfig(&SubService{address: "sub.example.com"}, inbound, client, "sub.example.com")
 	if len(configs) != 2 {

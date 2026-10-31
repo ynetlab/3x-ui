@@ -5,14 +5,15 @@
 // called against a partial-row, a full form value, or a hand-built test
 // fixture without the caller projecting a whole object.
 
-const TLS_ELIGIBLE_PROTOCOLS = ['vmess', 'vless', 'trojan', 'shadowsocks'];
+const TLS_ELIGIBLE_PROTOCOLS = ['vmess', 'vless', 'trojan', 'anytls', 'shadowsocks'];
 const TLS_NETWORKS = ['tcp', 'ws', 'http', 'grpc', 'httpupgrade', 'xhttp'];
-const REALITY_ELIGIBLE_PROTOCOLS = ['vless', 'trojan'];
+const REALITY_ELIGIBLE_PROTOCOLS = ['vless', 'trojan', 'anytls'];
 const REALITY_NETWORKS = ['tcp', 'http', 'grpc', 'xhttp'];
 const STREAM_PROTOCOLS = [
   'vmess',
   'vless',
   'trojan',
+  'anytls',
   'shadowsocks',
   'hysteria',
   'wireguard',

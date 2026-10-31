@@ -1615,7 +1615,7 @@ func TestBuildHysteriaProxyIncludesCertificateFingerprint(t *testing.T) {
 			}
 		}`,
 	}
-	client := model.Client{Email: "client", Auth: "secret", Enable: true}
+	client := model.Client{Email: "client", ID: "secret", Enable: true}
 
 	proxy := svc.buildHysteriaProxy(subReq, inbound, client, nil)
 	if got := proxy["fingerprint"]; got != want {

@@ -45,6 +45,7 @@ import {
   ShadowsocksFields,
   SocksFields,
   TrojanFields,
+  AnyTLSFields,
   VlessFields,
   VmessFields,
   WireguardFields,
@@ -465,6 +466,7 @@ export default function OutboundFormModal({
                       {protocol === 'vmess' && <VmessFields />}
                       {protocol === 'vless' && <VlessFields />}
                       {protocol === 'trojan' && <TrojanFields />}
+                      {protocol === 'anytls' && <AnyTLSFields />}
                       {protocol === 'shadowsocks' && <ShadowsocksFields />}
                       {protocol === 'http' && <HttpFields />}
                       {protocol === 'socks' && <SocksFields />}

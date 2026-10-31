@@ -138,7 +138,7 @@ func TestChar_C3_TrojanExternalProxy(t *testing.T) {
 		Port:           443,
 		Protocol:       model.Trojan,
 		Remark:         "char",
-		Settings:       `{"clients":[{"password":"p@ss/w+rd=","email":"user"}]}`,
+		Settings:       `{"clients":[{"id":"p@ss/w+rd=","email":"user"}]}`,
 		StreamSettings: stream,
 	}
 	s := &SubService{}
@@ -218,7 +218,7 @@ func TestChar_C6_HysteriaExternalProxy(t *testing.T) {
 		Port:           443,
 		Protocol:       model.Hysteria,
 		Remark:         "char",
-		Settings:       `{"version":2,"clients":[{"auth":"hyauth","email":"user"}]}`,
+		Settings:       `{"version":2,"clients":[{"id":"hyauth","email":"user"}]}`,
 		StreamSettings: stream,
 	}
 	s := &SubService{}

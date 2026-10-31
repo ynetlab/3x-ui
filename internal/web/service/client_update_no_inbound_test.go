@@ -129,7 +129,6 @@ func TestUpdate_NoInbound_PreservesCredentialsWhenOmitted(t *testing.T) {
 		UUID:     "11111111-1111-1111-1111-111111111111",
 		SubID:    email,
 		Password: "seeded-pw",
-		Auth:     "seeded-auth",
 		Secret:   "seeded-secret",
 	}
 	if err := database.GetDB().Create(rec).Error; err != nil {
@@ -139,7 +138,6 @@ func TestUpdate_NoInbound_PreservesCredentialsWhenOmitted(t *testing.T) {
 	updated := rec.ToClient()
 	updated.ID = ""
 	updated.Password = ""
-	updated.Auth = ""
 	updated.Secret = ""
 	updated.Comment = "only comment changed"
 	if _, err := svc.Update(inboundSvc, rec.Id, *updated, rec.LimitHwid); err != nil {
@@ -155,9 +153,6 @@ func TestUpdate_NoInbound_PreservesCredentialsWhenOmitted(t *testing.T) {
 	}
 	if got.Password != "seeded-pw" {
 		t.Fatalf("password wiped on partial update, got %q", got.Password)
-	}
-	if got.Auth != "seeded-auth" {
-		t.Fatalf("auth wiped on partial update, got %q", got.Auth)
 	}
 	if got.Secret != "seeded-secret" {
 		t.Fatalf("secret wiped on partial update, got %q", got.Secret)

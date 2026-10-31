@@ -231,9 +231,6 @@ func (s *ClientService) Create(inboundSvc *InboundService, payload *ClientCreate
 		if client.Password == "" {
 			client.Password = existing.Password
 		}
-		if client.Auth == "" {
-			client.Auth = existing.Auth
-		}
 		if client.Secret == "" {
 			client.Secret = existing.Secret
 		}
@@ -452,11 +449,11 @@ func (s *ClientService) fillProtocolDefaultsAgainstExisting(c *model.Client, ib 
 		return err
 	}
 	switch ib.Protocol {
-	case model.VMESS, model.VLESS:
+	case model.VMESS, model.VLESS, model.Trojan, model.AnyTLS, model.Hysteria:
 		if c.ID == "" {
 			c.ID = uuid.NewString()
 		}
-	case model.Trojan, model.MASQUE:
+	case model.MASQUE:
 		if c.Password == "" {
 			c.Password = strings.ReplaceAll(uuid.NewString(), "-", "")
 		}
@@ -464,10 +461,6 @@ func (s *ClientService) fillProtocolDefaultsAgainstExisting(c *model.Client, ib 
 		method := shadowsocksMethodFromSettings(ib.Settings)
 		if c.Password == "" || !validShadowsocksClientKey(method, c.Password) {
 			c.Password = randomShadowsocksClientKey(method)
-		}
-	case model.Hysteria:
-		if c.Auth == "" {
-			c.Auth = strings.ReplaceAll(uuid.NewString(), "-", "")
 		}
 	case model.MTProto:
 		if c.Secret == "" {
@@ -739,16 +732,13 @@ func (s *ClientService) Update(inboundSvc *InboundService, id int, updated model
 
 	// Preserve existing credentials when the caller omits them, so a partial
 	// update (e.g. only changing traffic/expiry) doesn't silently rotate the
-	// client's UUID/password/auth via fillProtocolDefaults. Supplying a new
+	// client's UUID/password via fillProtocolDefaults. Supplying a new
 	// value still rotates it intentionally.
 	if updated.ID == "" {
 		updated.ID = existing.UUID
 	}
 	if updated.Password == "" {
 		updated.Password = existing.Password
-	}
-	if updated.Auth == "" {
-		updated.Auth = existing.Auth
 	}
 	if updated.Secret == "" {
 		updated.Secret = existing.Secret
@@ -872,7 +862,6 @@ func (s *ClientService) Update(inboundSvc *InboundService, id int, updated model
 				"sub_id":               merged.SubID,
 				"uuid":                 merged.UUID,
 				"password":             merged.Password,
-				"auth":                 merged.Auth,
 				"secret":               merged.Secret,
 				"flow":                 merged.Flow,
 				"security":             merged.Security,
@@ -985,7 +974,7 @@ func (s *ClientService) Delete(inboundSvc *InboundService, id int, keepTraffic b
 
 		// Always delete by email — the client's stable identity. This removes
 		// every matching entry from the inbound's settings even when the stored
-		// credential (UUID/password/auth) drifted from the inbound JSON, or a
+		// credential (UUID/password) drifted from the inbound JSON, or a
 		// duplicate entry with the same email exists.
 		if existing.Email == "" {
 			continue

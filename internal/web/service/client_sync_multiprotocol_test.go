@@ -28,7 +28,6 @@ func TestSyncInbound_PreservesCredentialsAcrossProtocols(t *testing.T) {
 	svc := ClientService{}
 	const sharedEmail = "shared@example.com"
 	const wantUUID = "ce8d33df-3a64-4f10-8f9b-91c3a8e0c001"
-	const wantAuth = "h2-auth-token"
 	const wantFlow = "xtls-rprx-vision"
 
 	vlessClient := model.Client{Email: sharedEmail, ID: wantUUID, Enable: true, Flow: wantFlow}
@@ -36,7 +35,7 @@ func TestSyncInbound_PreservesCredentialsAcrossProtocols(t *testing.T) {
 		t.Fatalf("vless SyncInbound: %v", err)
 	}
 
-	hysteriaClient := model.Client{Email: sharedEmail, Auth: wantAuth, Enable: true}
+	hysteriaClient := model.Client{Email: sharedEmail, ID: wantUUID, Enable: true}
 	if err := svc.SyncInbound(nil, hysteriaInbound.Id, []model.Client{hysteriaClient}); err != nil {
 		t.Fatalf("hysteria SyncInbound: %v", err)
 	}
@@ -47,9 +46,6 @@ func TestSyncInbound_PreservesCredentialsAcrossProtocols(t *testing.T) {
 	}
 	if row.UUID != wantUUID {
 		t.Errorf("UUID was clobbered by Hysteria sync: got %q, want %q", row.UUID, wantUUID)
-	}
-	if row.Auth != wantAuth {
-		t.Errorf("Auth not persisted: got %q, want %q", row.Auth, wantAuth)
 	}
 
 	vlessList, err := svc.ListForInbound(nil, vlessInbound.Id)

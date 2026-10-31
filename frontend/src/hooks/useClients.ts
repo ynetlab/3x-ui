@@ -712,7 +712,6 @@ export function useClients(options: UseClientsOptions = {}) {
         subId: base.subId,
         id: base.uuid,
         password: base.password,
-        auth: base.auth,
         flow: base.flow || '',
         security: base.security || 'auto',
         totalGB: base.totalGB || 0,

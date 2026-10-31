@@ -653,6 +653,7 @@ func (s *InboundService) normalizeStreamSettings(inbound *model.Inbound) {
 		model.VMESS:       true,
 		model.VLESS:       true,
 		model.Trojan:      true,
+		model.AnyTLS:      true,
 		model.Shadowsocks: true,
 		model.Hysteria:    true,
 		model.WireGuard:   true,
@@ -1400,7 +1401,7 @@ func (s *InboundService) AddInbound(inbound *model.Inbound) (*model.Inbound, boo
 	// Secure client ID
 	for _, client := range clients {
 		switch inbound.Protocol {
-		case "trojan", "masque":
+		case "masque":
 			if client.Password == "" {
 				return inbound, false, common.NewError("empty client ID")
 			}
@@ -1408,8 +1409,8 @@ func (s *InboundService) AddInbound(inbound *model.Inbound) (*model.Inbound, boo
 			if client.Email == "" {
 				return inbound, false, common.NewError("empty client ID")
 			}
-		case "hysteria":
-			if client.Auth == "" {
+		case "trojan", "anytls", "hysteria":
+			if client.ID == "" {
 				return inbound, false, common.NewError("empty client ID")
 			}
 		case "wireguard", "amneziawg":
@@ -1942,8 +1943,8 @@ func (s *InboundService) validateUpdatedInboundClients(inbound, existing *model.
 	}
 	for _, client := range clients {
 		switch inbound.Protocol {
-		case model.Hysteria:
-			if client.Auth == "" {
+		case model.Trojan, model.AnyTLS, model.Hysteria:
+			if client.ID == "" {
 				return common.NewError("empty client ID")
 			}
 		case model.MASQUE:

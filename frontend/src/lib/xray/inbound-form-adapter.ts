@@ -12,6 +12,7 @@ import {
   MtprotoClientSchema,
   ShadowsocksClientSchema,
   TrojanClientSchema,
+  AnyTLSClientSchema,
   TuicClientSchema,
   VlessClientSchema,
   VmessClientSchema,
@@ -268,8 +269,8 @@ export function pruneEmpty(value: unknown): unknown {
 // Per-protocol client field whitelist — the Zod schemas in
 // schemas/protocols/inbound/<proto>.ts define which keys a given
 // protocol's clients accept on the wire. When a global client is created
-// the panel may persist cross-protocol fields on the same row (`auth` for
-// hysteria, `password` for trojan, `security` for vmess, etc.); rendering
+// the panel may persist cross-protocol fields on the same row (`password` for
+// shadowsocks, `security` for vmess, etc.); rendering
 // those inside a vless inbound's settings.clients is confusing and rides
 // dead weight in the wire payload. Parsing through the protocol's schema
 // gives us the canonical projection.
@@ -279,6 +280,8 @@ function clientSchemaForProtocol(protocol: string): z.ZodType | null {
       return VlessClientSchema;
     case 'vmess':
       return VmessClientSchema;
+    case 'anytls':
+      return AnyTLSClientSchema;
     case 'trojan':
       return TrojanClientSchema;
     case 'shadowsocks':
@@ -340,7 +343,7 @@ export function dropLegacyOptionalEmpties(
   if (stream) {
     dropEmptyFinalMask(stream);
 
-    // Hysteria's per-client auth lives in settings.clients[*].auth; the
+    // Hysteria's per-client UUID is projected to auth by the backend; the
     // streamSettings.hysteriaSettings.auth slot is a holdover from older
     // hysteria builds and serves no purpose on the inbound side, so an
     // empty value shouldn't ride along in the JSON payload.

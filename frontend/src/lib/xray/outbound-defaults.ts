@@ -9,6 +9,7 @@ import type { MasqueOutboundSettings } from '@/schemas/protocols/outbound/masque
 import type { LoopbackOutboundSettings } from '@/schemas/protocols/outbound/loopback';
 import type { ShadowsocksOutboundSettings } from '@/schemas/protocols/outbound/shadowsocks';
 import type { SocksOutboundSettings } from '@/schemas/protocols/outbound/socks';
+import type { AnyTLSOutboundSettings } from '@/schemas/protocols/outbound/anytls';
 import type { TrojanOutboundSettings } from '@/schemas/protocols/outbound/trojan';
 import type { VlessOutboundSettings } from '@/schemas/protocols/outbound/vless';
 import type { VmessOutboundSettings } from '@/schemas/protocols/outbound/vmess';
@@ -146,6 +147,7 @@ export type AnyOutboundSettings =
   | ShadowsocksOutboundSettings
   | SocksOutboundSettings
   | TrojanOutboundSettings
+  | AnyTLSOutboundSettings
   | VlessOutboundSettings
   | VmessOutboundSettings
   | WireguardOutboundSettings;
@@ -171,6 +173,17 @@ export function createDefaultOutboundSettings(protocol: string): AnyOutboundSett
       return createDefaultVmessOutboundSettings();
     case 'vless':
       return createDefaultVlessOutboundSettings();
+    case 'anytls':
+      return {
+        address: '',
+        port: 443,
+        password: '',
+        email: '',
+        level: 0,
+        idleSessionCheckInterval: 30,
+        idleSessionTimeout: 60,
+        minIdleSession: 0,
+      };
     case 'trojan':
       return createDefaultTrojanOutboundSettings();
     case 'shadowsocks':

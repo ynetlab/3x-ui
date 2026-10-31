@@ -492,7 +492,16 @@ func (s *SubClashService) buildProxy(subReq *SubService, inbound *model.Inbound,
 		}
 	case model.Trojan:
 		proxy["type"] = "trojan"
-		proxy["password"] = client.Password
+		proxy["password"] = applyVlessRoute(client.ID, hostVlessRoute(ep))
+	case model.AnyTLS:
+		// Mihomo AnyTLS dials TLS directly; REALITY and Xray transports
+		// cannot be represented by this outbound.
+		security, _ := stream["security"].(string)
+		if (network != "tcp" && network != "") || security != "tls" {
+			return nil
+		}
+		proxy["type"] = "anytls"
+		proxy["password"] = applyVlessRoute(client.ID, hostVlessRoute(ep))
 	case model.Shadowsocks:
 		proxy["type"] = "ss"
 		proxy["password"] = client.Password
@@ -519,6 +528,11 @@ func (s *SubClashService) buildProxy(subReq *SubService, inbound *model.Inbound,
 	if !s.applySecurity(proxy, security, stream) {
 		return nil
 	}
+	if inbound.Protocol == model.AnyTLS {
+		delete(proxy, "tls")
+		delete(proxy, "network")
+		delete(proxy, "servername")
+	}
 
 	return proxy
 }
@@ -544,7 +558,7 @@ func (s *SubClashService) buildHysteriaProxy(subReq *SubService, inbound *model.
 		"server": inbound.Listen,
 		"port":   inbound.Port,
 		"udp":    true,
-		authKey:  client.Auth,
+		authKey:  applyVlessRoute(client.ID, hostVlessRoute(ep)),
 	}
 
 	var rawStream map[string]any
@@ -1254,7 +1268,7 @@ func (s *SubClashService) applySecurity(proxy map[string]any, security string, s
 			if serverName, ok := tlsSettings["serverName"].(string); ok && serverName != "" {
 				proxy["servername"] = serverName
 				switch proxy["type"] {
-				case "trojan":
+				case "trojan", "anytls":
 					proxy["sni"] = serverName
 				}
 			}

@@ -29,7 +29,6 @@ export const ClientRecordSchema = z
     subId: z.string().optional(),
     uuid: z.string().optional(),
     password: z.string().optional(),
-    auth: z.string().optional(),
     flow: z.string().optional(),
     security: z.string().optional(),
     // Host rules the client is bound to; null/omitted preserves, empty clears.
@@ -323,7 +322,6 @@ export const ClientFormSchema = z.object({
   subId: z.string().refine((v) => !hasForbiddenClientChars(v), 'pages.clients.subIdInvalidChars'),
   uuid: z.string(),
   password: z.string(),
-  auth: z.string(),
   flow: z.string(),
   security: z.string(),
   // Host rules the client is bound to; null/omitted preserves, empty clears.

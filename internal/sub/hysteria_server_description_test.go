@@ -35,7 +35,7 @@ func TestGenHysteriaLinkAppendsHostServerDescription(t *testing.T) {
 			// The inbound's own `version` picks the hysteria vs hysteria2 scheme.
 			rawSettings, err := json.Marshal(map[string]any{
 				"version": tc.version,
-				"clients": []any{map[string]any{"auth": "secret", "email": "user"}},
+				"clients": []any{map[string]any{"id": "secret", "email": "user"}},
 			})
 			if err != nil {
 				t.Fatalf("marshal inbound settings: %v", err)

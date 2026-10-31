@@ -22,7 +22,7 @@
     "version": 2,
     "clients": [
       {
-        "auth": "hyst-v1-auth-XYZ",
+        "id": "hyst-v1-auth-XYZ",
         "email": "gina@example.test",
         "limitIp": 0,
         "totalGB": 0,

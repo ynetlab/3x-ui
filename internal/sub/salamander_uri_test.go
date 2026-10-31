@@ -33,7 +33,7 @@ func TestGenHysteriaLinkWarnsOnceForUnsupportedSalamanderSettings(t *testing.T) 
 	makeInbound := func(id int, settings string) *model.Inbound {
 		return &model.Inbound{
 			Id: id, Listen: "203.0.113.1", Port: 443, Protocol: model.Hysteria,
-			Settings:       `{"version":2,"clients":[{"auth":"secret","email":"user"}]}`,
+			Settings:       `{"version":2,"clients":[{"id":"secret","email":"user"}]}`,
 			StreamSettings: `{"security":"tls","finalmask":{"udp":[{"type":"salamander","settings":` + settings + `}]}}`,
 		}
 	}
@@ -68,7 +68,7 @@ func TestGenHysteriaLinkWarnsOnceForUnsupportedSalamanderSettings(t *testing.T) 
 func TestGenHysteriaLinkGeckoStillWarnsOnExtraKeys(t *testing.T) {
 	in := &model.Inbound{
 		Id: 910003, Listen: "203.0.113.1", Port: 443, Protocol: model.Hysteria,
-		Settings:       `{"version":2,"clients":[{"auth":"secret","email":"user"}]}`,
+		Settings:       `{"version":2,"clients":[{"id":"secret","email":"user"}]}`,
 		StreamSettings: `{"security":"tls","finalmask":{"udp":[{"type":"salamander","settings":{"password":"pw","packetSize":"512-1200","headerType":"dns"}}]}}`,
 	}
 	got := (&SubService{}).genHysteriaLink(in, "user")

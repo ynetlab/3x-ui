@@ -1,6 +1,7 @@
 export { default as ServerTarget } from './server-target';
 export { default as VmessFields } from './vmess';
 export { default as VlessFields } from './vless';
+export { default as AnyTLSFields } from './anytls';
 export { default as TrojanFields } from './trojan';
 export { default as ShadowsocksFields } from './shadowsocks';
 export { default as HttpFields } from './http';

@@ -10,7 +10,7 @@ export const TrojanFallbackSchema = z.object({
 export type TrojanFallback = z.infer<typeof TrojanFallbackSchema>;
 
 export const TrojanClientSchema = z.object({
-  password: z.string().min(1),
+  id: z.string().min(1),
   email: z.string().min(1),
   limitIp: z.number().int().min(0).default(0),
   totalGB: z.number().int().min(0).default(0),

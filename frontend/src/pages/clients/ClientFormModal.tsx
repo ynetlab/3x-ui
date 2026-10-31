@@ -62,6 +62,7 @@ const FLOW_OPTIONS = Object.values(TLS_FLOW_CONTROL);
 const VMESS_SECURITY_OPTIONS = ['auto', 'aes-128-gcm', 'chacha20-poly1305'] as const;
 
 const MULTI_CLIENT_PROTOCOLS = new Set([
+  'anytls',
   'shadowsocks',
   'vless',
   'vmess',
@@ -154,7 +155,6 @@ const EMPTY: Values = {
   subId: '',
   uuid: '',
   password: '',
-  auth: '',
   flow: '',
   security: 'auto',
   clientHostRuleIds: [],
@@ -283,7 +283,6 @@ export default function ClientFormModal({
   const password = useWatch({ control: methods.control, name: 'password' });
   const subId = useWatch({ control: methods.control, name: 'subId' });
   const limitHwid = useWatch({ control: methods.control, name: 'limitHwid' });
-  const auth = useWatch({ control: methods.control, name: 'auth' });
   const wgPrivateKey = useWatch({ control: methods.control, name: 'wgPrivateKey' });
   const limitIp = useWatch({ control: methods.control, name: 'limitIp' });
   const {
@@ -369,7 +368,6 @@ export default function ClientFormModal({
         subId: client.subId || '',
         uuid: client.uuid || '',
         password: client.password || '',
-        auth: client.auth || '',
         flow: client.flow || '',
         security:
           !client.security || client.security === 'none' || client.security === 'zero'
@@ -426,7 +424,6 @@ export default function ClientFormModal({
         uuid: RandomUtil.randomUUID(),
         subId: RandomUtil.randomLowerAndNum(16),
         password: RandomUtil.randomLowerAndNum(16),
-        auth: RandomUtil.randomLowerAndNum(16),
         wgPrivateKey: wgKeypair.privateKey,
         wgPublicKey: wgKeypair.publicKey,
       });
@@ -739,7 +736,6 @@ export default function ClientFormModal({
       subId: values.subId,
       uuid: values.uuid,
       password: values.password,
-      auth: values.auth,
       flow: values.flow,
       security: values.security,
       clientHostRuleIds: values.clientHostRuleIds,
@@ -776,7 +772,6 @@ export default function ClientFormModal({
       id: values.uuid,
       uuid: values.uuid,
       password: values.password,
-      auth: values.auth,
       flow: showFlow ? values.flow || '' : '',
       security: showSecurity ? values.security || 'auto' : 'auto',
       // An empty list clears the override.
@@ -1258,7 +1253,11 @@ export default function ClientFormModal({
                   label: t('pages.clients.tabCredentials'),
                   children: (
                     <>
-                      <Form.Item label={t('pages.clients.uuid')} htmlFor={`${uid}-uuid`}>
+                      <Form.Item
+                        label={t('pages.clients.uuid')}
+                        htmlFor={`${uid}-uuid`}
+                        extra={t('uuidRoute.credentialHint')}
+                      >
                         <Space.Compact style={{ display: 'flex' }}>
                           <Input
                             id={`${uid}-uuid`}
@@ -1321,32 +1320,6 @@ export default function ClientFormModal({
                         </Space.Compact>
                         <span id={`${uid}-sub-id-hint`} hidden>
                           {t('pages.clients.subIdDesc')}
-                        </span>
-                      </Form.Item>
-
-                      <Form.Item
-                        htmlFor={`${uid}-auth`}
-                        label={t('pages.clients.hysteriaAuth')}
-                        tooltip={t('pages.clients.hysteriaAuthDesc')}
-                      >
-                        <Space.Compact style={{ display: 'flex' }}>
-                          <Input
-                            id={`${uid}-auth`}
-                            aria-describedby={`${uid}-auth-hint`}
-                            value={auth}
-                            style={{ flex: 1 }}
-                            onChange={(e) => methods.setValue('auth', e.target.value)}
-                          />
-                          <Button
-                            aria-label={t('regenerate')}
-                            icon={<ReloadOutlined aria-hidden />}
-                            onClick={() =>
-                              methods.setValue('auth', RandomUtil.randomLowerAndNum(16))
-                            }
-                          />
-                        </Space.Compact>
-                        <span id={`${uid}-auth-hint`} hidden>
-                          {t('pages.clients.hysteriaAuthDesc')}
                         </span>
                       </Form.Item>
 

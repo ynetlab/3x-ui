@@ -300,7 +300,7 @@ func extractOutboundEndpoints(ob map[string]any) []string {
 		if len(out) == 0 {
 			addServer(settings["address"], settings["port"])
 		}
-	case "hysteria", "masque":
+	case "hysteria", "masque", "anytls":
 		addServer(settings["address"], settings["port"])
 	case "trojan", "shadowsocks", "http", "socks":
 		if servers, ok := settings["servers"].([]any); ok {

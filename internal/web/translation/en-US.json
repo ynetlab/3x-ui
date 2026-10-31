@@ -1,4 +1,15 @@
 {
+  "uuidRoute": {
+    "credentialHint": "Used by VLESS, VMess, TUIC, Trojan, AnyTLS and Hysteria. Host routing replaces the third UUID group in subscriptions without changing the stored UUID."
+  },
+  "anytls": {
+    "paddingScheme": "Padding scheme",
+    "paddingSchemeHint": "One rule per line. Leave empty to use the core default.",
+    "level": "User level",
+    "idleSessionCheckInterval": "Idle session check interval (seconds)",
+    "idleSessionTimeout": "Idle session timeout (seconds)",
+    "minIdleSession": "Minimum idle sessions"
+  },
   "username": "Username",
   "password": "Password",
   "login": "Log In",
@@ -865,7 +876,7 @@
       "limitIpFail2banWindows": "Fail2ban is not available on Windows, so the IP limit cannot be enforced.",
       "limitIpDisabled": "The IP limit feature is disabled on this server.",
       "password": "Password",
-      "passwordDesc": "Used by Trojan, Shadowsocks, TUIC, and MASQUE clients; ignored for VLESS, VMess, Hysteria, and WireGuard.",
+      "passwordDesc": "Used by Shadowsocks, TUIC and MASQUE. Trojan, AnyTLS and Hysteria use the UUID field above.",
       "subId": "Subscription ID",
       "subIdDesc": "Also works as this client's Telegram bot invite code: whoever sends it to the bot is linked to this client. Keep it long and random — a short or guessable ID can be claimed by someone else.",
       "online": "Online",
@@ -971,8 +982,6 @@
       "delOrphansConfirmTitle": "Delete clients without an inbound?",
       "delOrphansConfirmContent": "Removes every client that is not attached to any inbound, along with its traffic record. This cannot be undone.",
       "auth": "Auth",
-      "hysteriaAuth": "Hysteria Auth",
-      "hysteriaAuthDesc": "Credential used only by Hysteria clients. Trojan and Shadowsocks use the Password field instead.",
       "uuid": "UUID",
       "flow": "Flow",
       "vmessSecurity": "VMess Security",

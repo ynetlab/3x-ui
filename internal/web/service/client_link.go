@@ -30,9 +30,6 @@ func applyClientRecordMerge(row *model.ClientRecord, incoming *model.ClientRecor
 	if incoming.Password != "" {
 		row.Password = incoming.Password
 	}
-	if incoming.Auth != "" {
-		row.Auth = incoming.Auth
-	}
 	if incoming.Secret != "" {
 		row.Secret = incoming.Secret
 	}

@@ -54,7 +54,7 @@ func TestUpdateInbound_PreservesHysteriaClientAuth(t *testing.T) {
 	const wantAuth = "hysteria-auth"
 	const password = "not-hysteria-auth"
 	update := existing
-	update.Settings = `{"clients":[{"email":"hysteria@x","enable":true,"password":"` + password + `","auth":"` + wantAuth + `"}]}`
+	update.Settings = `{"clients":[{"email":"hysteria@x","enable":true,"password":"` + password + `","id":"` + wantAuth + `"}]}`
 
 	// Only a master's push still carries clients through an inbound save.
 	svc := &InboundService{FromNodeSync: true}
@@ -73,8 +73,8 @@ func TestUpdateInbound_PreservesHysteriaClientAuth(t *testing.T) {
 	if len(clients) != 1 {
 		t.Fatalf("persisted clients = %d, want 1", len(clients))
 	}
-	if clients[0].Auth != wantAuth {
-		t.Fatalf("persisted auth = %q, want %q", clients[0].Auth, wantAuth)
+	if clients[0].ID != wantAuth {
+		t.Fatalf("persisted auth = %q, want %q", clients[0].ID, wantAuth)
 	}
 	if clients[0].Password != password {
 		t.Fatalf("persisted password = %q, want %q", clients[0].Password, password)

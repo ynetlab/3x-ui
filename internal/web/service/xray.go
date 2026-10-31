@@ -277,9 +277,9 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 				if c.Security != "" {
 					entry["security"] = c.Security
 				}
-			case model.Trojan:
-				if c.Password != "" {
-					entry["password"] = c.Password
+			case model.Trojan, model.AnyTLS:
+				if c.ID != "" {
+					entry["id"] = c.ID
 				}
 				if flow != "" {
 					entry["flow"] = flow
@@ -289,8 +289,8 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 					entry["password"] = c.Password
 				}
 			case model.Hysteria:
-				if c.Auth != "" {
-					entry["auth"] = c.Auth
+				if c.ID != "" {
+					entry["id"] = c.ID
 				}
 			case model.MASQUE:
 				if c.Password != "" {

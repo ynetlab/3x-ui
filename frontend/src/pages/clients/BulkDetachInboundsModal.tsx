@@ -11,6 +11,7 @@ const MULTI_USER_PROTOCOLS = new Set([
   'vmess',
   'vless',
   'trojan',
+  'anytls',
   'hysteria',
   'shadowsocks',
   'wireguard',

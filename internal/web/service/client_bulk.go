@@ -1424,9 +1424,6 @@ func (s *ClientService) bulkCreate(inboundSvc *InboundService, payloads []Client
 			if prep[idx].client.Password == "" {
 				prep[idx].client.Password = rec.Password
 			}
-			if prep[idx].client.Auth == "" {
-				prep[idx].client.Auth = rec.Auth
-			}
 			if prep[idx].client.Secret == "" {
 				prep[idx].client.Secret = rec.Secret
 			}
@@ -1811,7 +1808,6 @@ func (s *ClientService) bulkSetEnableInboundClients(inboundSvc *InboundService, 
 						"id":       ch.client.ID,
 						"security": ch.client.Security,
 						"flow":     ch.client.Flow,
-						"auth":     ch.client.Auth,
 						"password": ch.client.Password,
 						"cipher":   cipher,
 						"reverse":  ch.client.Reverse,

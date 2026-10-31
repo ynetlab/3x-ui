@@ -3333,7 +3333,10 @@ func InitDB(dbPath string) error {
 			return err
 		}
 	}
-	return runSeeders(isUsersEmpty)
+	if err := runSeeders(isUsersEmpty); err != nil {
+		return err
+	}
+	return migrateUUIDClientCredentials()
 }
 
 func normalizeApiTokenCreatedAtSeconds() error {

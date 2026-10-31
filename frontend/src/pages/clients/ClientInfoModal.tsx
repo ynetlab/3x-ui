@@ -387,21 +387,6 @@ export default function ClientInfoModal({
                     </td>
                   </tr>
                 )}
-                {client.auth && (
-                  <tr>
-                    <td>{t('pages.clients.auth')}</td>
-                    <td>
-                      <Tag className="info-large-tag">{client.auth}</Tag>
-                      <Button
-                        size="small"
-                        type="text"
-                        icon={<CopyOutlined aria-hidden />}
-                        aria-label={t('copy')}
-                        onClick={() => copyValue(client.auth!)}
-                      />
-                    </td>
-                  </tr>
-                )}
                 <tr>
                   <td>{t('pages.clients.flow')}</td>
                   <td>

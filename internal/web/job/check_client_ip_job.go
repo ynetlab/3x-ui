@@ -720,7 +720,7 @@ func (j *CheckClientIpJob) disconnectClientTemporarily(inbound *model.Inbound, c
 	// wireguard stays out: keepAlive marshals as a number, AddUser wants a string.
 	protocol := string(inbound.Protocol)
 	switch protocol {
-	case "vmess", "vless", "trojan", "shadowsocks", "hysteria", "masque":
+	case "vmess", "vless", "trojan", "shadowsocks", "hysteria", "masque", "anytls":
 		// supported protocols, continue
 	default:
 		logger.Warningf("[LIMIT_IP] Temporary disconnect is not supported for protocol %s on inbound %s", protocol, inbound.Tag)

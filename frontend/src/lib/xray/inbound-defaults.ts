@@ -1,4 +1,5 @@
 import { RandomUtil, Wireguard } from '@/utils';
+import type { AnyTLSInboundSettings } from '@/schemas/protocols/inbound/anytls';
 import { generateAwgObfuscation } from '@/lib/xray/amneziawg-obfuscation';
 
 import type { AmneziawgInboundSettings } from '@/schemas/protocols/inbound/amneziawg';
@@ -23,7 +24,7 @@ import type { VmessClient, VmessInboundSettings } from '@/schemas/protocols/inbo
 import type { WireguardInboundSettings } from '@/schemas/protocols/inbound/wireguard';
 
 // Plain-object factories for protocol clients. Each returns a Zod-parsable
-// object matching the wire shape. Random fields (id, password, auth,
+// object matching the wire shape. Random fields (id, password,
 // email, subId) call RandomUtil at invocation time — pass them in
 // `overrides` for deterministic tests or for forms that pre-seed values.
 //
@@ -97,12 +98,12 @@ export function createDefaultVmessClient(seed: VmessClientSeed = {}): VmessClien
 }
 
 export interface TrojanClientSeed extends ClientBaseSeed {
-  password?: string;
+  id?: string;
 }
 
 export function createDefaultTrojanClient(seed: TrojanClientSeed = {}): TrojanClient {
   return {
-    password: seed.password ?? RandomUtil.randomSeq(10),
+    id: seed.id ?? RandomUtil.randomUUID(),
     ...clientBase(seed),
   };
 }
@@ -132,12 +133,12 @@ export function createDefaultShadowsocksClient(
 }
 
 export interface HysteriaClientSeed extends ClientBaseSeed {
-  auth?: string;
+  id?: string;
 }
 
 export function createDefaultHysteriaClient(seed: HysteriaClientSeed = {}): HysteriaClient {
   return {
-    auth: seed.auth ?? RandomUtil.randomSeq(10),
+    id: seed.id ?? RandomUtil.randomUUID(),
     ...clientBase(seed),
   };
 }
@@ -375,6 +376,7 @@ export type AnyInboundSettings =
   | VlessInboundSettings
   | VmessInboundSettings
   | TrojanInboundSettings
+  | AnyTLSInboundSettings
   | ShadowsocksInboundSettings
   | HysteriaInboundSettings
   | HttpInboundSettings
@@ -393,6 +395,8 @@ export function createDefaultInboundSettings(protocol: string): AnyInboundSettin
       return createDefaultVlessInboundSettings();
     case 'vmess':
       return createDefaultVmessInboundSettings();
+    case 'anytls':
+      return { clients: [], paddingScheme: [] };
     case 'trojan':
       return createDefaultTrojanInboundSettings();
     case 'shadowsocks':

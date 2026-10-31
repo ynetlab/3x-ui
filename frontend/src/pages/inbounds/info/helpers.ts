@@ -10,6 +10,7 @@ const LINK_PROTOCOLS: ReadonlySet<string> = new Set([
   Protocols.VMESS,
   Protocols.VLESS,
   Protocols.TROJAN,
+  Protocols.ANYTLS,
   Protocols.SHADOWSOCKS,
   Protocols.HYSTERIA,
   Protocols.MTPROTO,

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { fireEvent, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import ClientFormModal from '@/pages/clients/ClientFormModal';
@@ -52,22 +52,17 @@ describe('ClientFormModal credential tooltips', () => {
 
     await waitFor(() => {
       expect(document.body.textContent).toContain(
-        'Used by Trojan, Shadowsocks, TUIC, and MASQUE clients; ignored for VLESS, VMess, Hysteria, and WireGuard.',
+        'Used by Shadowsocks, TUIC and MASQUE. Trojan, AnyTLS and Hysteria use the UUID field above.',
       );
     });
   });
 
-  it('explains that Hysteria Auth is the credential Hysteria actually uses', async () => {
+  it('uses the shared UUID and removes the independent Hysteria auth field', () => {
     renderModal();
     openCredentialsTab();
-
-    const tip = tooltipIconForLabel('Hysteria Auth');
-    fireEvent.mouseEnter(tip);
-
-    await waitFor(() => {
-      expect(document.body.textContent).toContain(
-        'Credential used only by Hysteria clients. Trojan and Shadowsocks use the Password field instead.',
-      );
-    });
+    expect(screen.queryByText('Hysteria Auth', { exact: true })).toBeNull();
+    expect(document.body.textContent).toContain(
+      'Used by VLESS, VMess, TUIC, Trojan, AnyTLS and Hysteria.',
+    );
   });
 });

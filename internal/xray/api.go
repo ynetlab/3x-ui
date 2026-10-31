@@ -30,6 +30,7 @@ import (
 	"github.com/xtls/xray-core/common/protocol"
 	"github.com/xtls/xray-core/common/serial"
 	"github.com/xtls/xray-core/infra/conf"
+	"github.com/xtls/xray-core/proxy/anytls"
 	hysteriaAccount "github.com/xtls/xray-core/proxy/hysteria/account"
 	"github.com/xtls/xray-core/proxy/masque"
 	"github.com/xtls/xray-core/proxy/shadowsocks"
@@ -697,8 +698,17 @@ func buildUserAccount(protocolName string, user map[string]any) (*serial.TypedMe
 			}
 		}
 		return serial.ToTypedMessage(vlessAccount), nil
+	case "anytls":
+		password, err := uuidUserCredential(user, "password")
+		if err != nil {
+			return nil, err
+		}
+		if password == "" {
+			return nil, common.NewError("anytls: password is required")
+		}
+		return serial.ToTypedMessage(&anytls.Account{Password: password}), nil
 	case "trojan":
-		password, err := getRequiredUserString(user, "password")
+		password, err := uuidUserCredential(user, "password")
 		if err != nil {
 			return nil, err
 		}
@@ -732,7 +742,7 @@ func buildUserAccount(protocolName string, user map[string]any) (*serial.TypedMe
 			CipherType: ssCipherType,
 		}), nil
 	case "hysteria":
-		auth, err := getRequiredUserString(user, "auth")
+		auth, err := uuidUserCredential(user, "auth")
 		if err != nil {
 			return nil, err
 		}
@@ -787,6 +797,15 @@ func buildUserAccount(protocolName string, user map[string]any) (*serial.TypedMe
 	default:
 		return nil, nil
 	}
+}
+
+// Panel API callers supply id; the hot diff supplies already projected core
+// users with password/auth. Prefer id even when the shared password is present.
+func uuidUserCredential(user map[string]any, coreField string) (string, error) {
+	if id, err := getOptionalUserString(user, "id"); err != nil || id != "" {
+		return id, err
+	}
+	return getRequiredUserString(user, coreField)
 }
 
 // masqueUserPassword reads a MASQUE user's password: panel callers send the client's

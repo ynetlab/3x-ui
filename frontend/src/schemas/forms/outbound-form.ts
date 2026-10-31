@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { AnyTLSOutboundSettingsSchema } from '@/schemas/protocols/outbound/anytls';
 
 import { PortSchema, SniffingSchema, type Sniffing } from '@/schemas/primitives';
 import { SSMethodSchema } from '@/schemas/protocols/shared/shadowsocks';
@@ -14,6 +15,12 @@ import {
   FreedomNoiseSchema,
   OutboundDomainStrategySchema,
 } from '@/schemas/protocols/outbound';
+
+export const AnyTLSOutboundFormSettingsSchema = AnyTLSOutboundSettingsSchema.extend({
+  address: z.string().default(''),
+  password: z.string().min(1).default(''),
+});
+export type AnyTLSOutboundFormSettings = z.infer<typeof AnyTLSOutboundFormSettingsSchema>;
 
 export const VmessOutboundFormSettingsSchema = z.object({
   address: z.string().default(''),
@@ -201,6 +208,7 @@ export const OutboundFormSettingsSchema = z.discriminatedUnion('protocol', [
   z.object({ protocol: z.literal('vmess'), settings: VmessOutboundFormSettingsSchema }),
   z.object({ protocol: z.literal('vless'), settings: VlessOutboundFormSettingsSchema }),
   z.object({ protocol: z.literal('trojan'), settings: TrojanOutboundFormSettingsSchema }),
+  z.object({ protocol: z.literal('anytls'), settings: AnyTLSOutboundFormSettingsSchema }),
   z.object({ protocol: z.literal('shadowsocks'), settings: ShadowsocksOutboundFormSettingsSchema }),
   z.object({ protocol: z.literal('socks'), settings: SocksOutboundFormSettingsSchema }),
   z.object({ protocol: z.literal('http'), settings: HttpOutboundFormSettingsSchema }),

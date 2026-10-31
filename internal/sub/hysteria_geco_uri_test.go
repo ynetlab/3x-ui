@@ -14,7 +14,7 @@ import (
 func TestGenHysteriaLinkEmitsGeckoParamsForPacketSize(t *testing.T) {
 	in := &model.Inbound{
 		Id: 920001, Listen: "203.0.113.1", Port: 443, Protocol: model.Hysteria,
-		Settings: `{"version":2,"clients":[{"auth":"secret","email":"user"}]}`,
+		Settings: `{"version":2,"clients":[{"id":"secret","email":"user"}]}`,
 		StreamSettings: `{"security":"tls","finalmask":{"udp":[{"type":"salamander","settings":` +
 			`{"password":"pw","packetSize":"512-1200"}}]}}`,
 	}
@@ -36,7 +36,7 @@ func TestGenHysteriaLinkEmitsGeckoParamsForPacketSize(t *testing.T) {
 func TestGenHysteriaLinkSalamanderWithoutPacketSizeUnchanged(t *testing.T) {
 	in := &model.Inbound{
 		Id: 920002, Listen: "203.0.113.1", Port: 443, Protocol: model.Hysteria,
-		Settings:       `{"version":2,"clients":[{"auth":"secret","email":"user"}]}`,
+		Settings:       `{"version":2,"clients":[{"id":"secret","email":"user"}]}`,
 		StreamSettings: `{"security":"tls","finalmask":{"udp":[{"type":"salamander","settings":{"password":"pw"}}]}}`,
 	}
 	got := (&SubService{}).genHysteriaLink(in, "user")
@@ -181,7 +181,7 @@ func TestBuildHysteriaProxyExportsGeckoObfs(t *testing.T) {
 				StreamSettings: `{"security":"tls","finalmask":{"udp":[{"type":"salamander","settings":` +
 					tc.settings + `}]}}`,
 			}
-			proxy := (&SubClashService{}).buildHysteriaProxy(&SubService{}, in, model.Client{Email: "user", Auth: "secret"}, nil)
+			proxy := (&SubClashService{}).buildHysteriaProxy(&SubService{}, in, model.Client{Email: "user", ID: "secret"}, nil)
 			for _, key := range []string{"obfs", "obfs-password", "obfs-min-packet-size", "obfs-max-packet-size"} {
 				if got, want := proxy[key], tc.want[key]; got != want {
 					t.Errorf("%s = %#v, want %#v", key, got, want)

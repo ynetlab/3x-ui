@@ -1743,10 +1743,6 @@
             "description": "AllowedIPsByInbound optionally overrides AllowedIPs on a per-inbound\nbasis, keyed by inbound id. Lets one identity attached to both\nWireGuard and AmneziaWG carry two genuinely different addresses in a\nsingle Create/Update call instead of the shared AllowedIPs field\nbeing broadcast to every attached tunnel inbound. Absent/unset for a\ngiven inbound id falls back to the shared AllowedIPs exactly as\nbefore -- fully backward compatible for callers that never set this.",
             "type": "object"
           },
-          "auth": {
-            "description": "Auth password (Hysteria)",
-            "type": "string"
-          },
           "clientHostRuleIds": {
             "description": "ClientHostRuleIds binds the client to these host rules, one link each; nil preserves, empty\nclears, and bindings with no usable host leave that inbound out of the subscription.",
             "example": [
@@ -1992,9 +1988,6 @@
           "allowedIPs": {
             "type": "string"
           },
-          "auth": {
-            "type": "string"
-          },
           "clientHostRuleIds": {
             "example": [
               1,
@@ -2110,7 +2103,6 @@
         "required": [
           "adTag",
           "allowedIPs",
-          "auth",
           "comment",
           "createdAt",
           "email",
@@ -2247,7 +2239,7 @@
         "type": "object"
       },
       "ClientSlim": {
-        "description": "ClientSlim is the row-shape used by the clients page. It drops fields the\ntable never reads (UUID, password, auth, flow, security, reverse, tgId)\nso the list payload stays compact even when the panel manages thousands\nof clients. Modals that need the full record still call /get/:email.",
+        "description": "ClientSlim is the row-shape used by the clients page. It drops fields the\ntable never reads (UUID, password, flow, security, reverse, tgId)\nso the list payload stays compact even when the panel manages thousands\nof clients. Modals that need the full record still call /get/:email.",
         "properties": {
           "comment": {
             "example": "Primary device",
@@ -3220,6 +3212,7 @@
               "vmess",
               "vless",
               "trojan",
+              "anytls",
               "shadowsocks",
               "wireguard",
               "hysteria",
@@ -8427,7 +8420,7 @@
         "tags": [
           "Clients"
         ],
-        "summary": "Filter, sort, and paginate clients on the server. Each item is a slim row (no uuid/password/auth/flow/security/reverse/tgId) so the clients page can ship 25-ish rows in a few KB instead of the full table. The response also includes a summary computed across the full DB row set so dashboard counters stay stable as the user paginates or filters: the *Count fields are exact, while the email arrays beside them stop at 200 entries so the payload does not grow with the panel. Page size capped at 200; fetch /get/:email to obtain the full per-client payload for an edit/info modal.",
+        "summary": "Filter, sort, and paginate clients on the server. Each item is a slim row (no uuid/password/flow/security/reverse/tgId) so the clients page can ship 25-ish rows in a few KB instead of the full table. The response also includes a summary computed across the full DB row set so dashboard counters stay stable as the user paginates or filters: the *Count fields are exact, while the email arrays beside them stop at 200 entries so the payload does not grow with the panel. Page size capped at 200; fetch /get/:email to obtain the full per-client payload for an edit/info modal.",
         "operationId": "get_panel_api_clients_list_paged",
         "parameters": [
           {
@@ -8454,7 +8447,7 @@
             "name": "search",
             "in": "query",
             "required": false,
-            "description": "Case-insensitive substring match on email, subId, comment, UUID, password, auth or Telegram ID.",
+            "description": "Case-insensitive substring match on email, subId, comment, UUID, password or Telegram ID.",
             "schema": {
               "type": "string"
             }
@@ -8846,7 +8839,7 @@
         ],
         "summary": "Create a new client and attach it to one or more inbounds in a single call. Body is JSON. Per-protocol secrets are generated server-side when omitted, so callers can send only the universal fields.",
         "operationId": "post_panel_api_clients_add",
-        "description": "Fields the server fills in when they are omitted — a valid value sent by the caller is never overwritten. Re-adding an email that already exists, with its stored `subId`, reuses the stored `id`, `password`, `auth` and `secret` instead of minting new ones, so the identity stays in sync across its inbounds.\n\n- **VLESS / VMess** — `id`, a fresh UUID\n- **Trojan** — `password`\n- **Shadowsocks** — `password`. On a `2022-blake3-*` inbound a supplied password that does not base64-decode to the key length of the cipher (16 or 32 bytes) is replaced by a generated key and the call still succeeds, so read the client back if you did not let the server pick. Legacy ciphers keep any non-empty password\n- **Hysteria** — `auth`\n- **mtproto** — `secret`, a FakeTLS secret derived from the fronting domain of the inbound, or from `www.cloudflare.com` when it has none\n- **WireGuard** — `privateKey` and `publicKey` when both are blank, or `publicKey` alone when only a `privateKey` was sent, plus `allowedIPs`: one free `/32` taken from the /24 the existing peers of that inbound already sit in, or from `10.0.0.0/24` when it has none\n\nAccepted on the same body but never generated: `preSharedKey` and `keepAlive` (WireGuard), `adTag` (mtproto).\n\nWireGuard is the only one of these that can fail. Allocation widens the search to the containing /16 before giving up with `inbound <id>: wireguard: no free address available in <scope>`, and an `allowedIPs` supplied by the caller is validated instead of allocated: `inbound <id>: wireguard: allowedIPs entry <entry> overlaps <address> used by another client` when its range overlaps an address or prefix a different client of that same inbound holds, or `... used by a client on <inbound>` when the holder sits on another WireGuard or AmneziaWG inbound. Ranges are compared, not strings, so `10.0.0.9/24` collides with `10.0.0.5/32`; a `0.0.0.0/0` or `::/0` default route claims no address. Allocation likewise skips every address inside a prefix another client holds. The same validation runs on POST /panel/api/clients/{email}/attach, where a client that already carries an address brings it along.\n\nAn `inboundIds` entry that names no existing inbound rejects the whole call before anything is written. Past that, the inbounds are applied concurrently and independently: one that fails no longer stops the others, so a `success:false` response can still have created the client on the rest. Every error names the inbound it came from (`inbound 7: <message>`), and several failures are reported together, one per line. `limitHwid` is applied only when every inbound succeeded, so re-run the call after fixing the failure.",
+        "description": "Fields the server fills in when they are omitted — a valid value sent by the caller is never overwritten. Re-adding an email that already exists, with its stored `subId`, reuses the stored `id`, `password` and `secret` instead of minting new ones, so the identity stays in sync across its inbounds.\n\n- **VLESS / VMess / Trojan / AnyTLS / Hysteria** — `id`, a fresh UUID shared across these protocols\n- **Shadowsocks** — `password`. On a `2022-blake3-*` inbound a supplied password that does not base64-decode to the key length of the cipher (16 or 32 bytes) is replaced by a generated key and the call still succeeds, so read the client back if you did not let the server pick. Legacy ciphers keep any non-empty password\n- **mtproto** — `secret`, a FakeTLS secret derived from the fronting domain of the inbound, or from `www.cloudflare.com` when it has none\n- **WireGuard** — `privateKey` and `publicKey` when both are blank, or `publicKey` alone when only a `privateKey` was sent, plus `allowedIPs`: one free `/32` taken from the /24 the existing peers of that inbound already sit in, or from `10.0.0.0/24` when it has none\n\nAccepted on the same body but never generated: `preSharedKey` and `keepAlive` (WireGuard), `adTag` (mtproto).\n\nWireGuard is the only one of these that can fail. Allocation widens the search to the containing /16 before giving up with `inbound <id>: wireguard: no free address available in <scope>`, and an `allowedIPs` supplied by the caller is validated instead of allocated: `inbound <id>: wireguard: allowedIPs entry <entry> overlaps <address> used by another client` when its range overlaps an address or prefix a different client of that same inbound holds, or `... used by a client on <inbound>` when the holder sits on another WireGuard or AmneziaWG inbound. Ranges are compared, not strings, so `10.0.0.9/24` collides with `10.0.0.5/32`; a `0.0.0.0/0` or `::/0` default route claims no address. Allocation likewise skips every address inside a prefix another client holds. The same validation runs on POST /panel/api/clients/{email}/attach, where a client that already carries an address brings it along.\n\nAn `inboundIds` entry that names no existing inbound rejects the whole call before anything is written. Past that, the inbounds are applied concurrently and independently: one that fails no longer stops the others, so a `success:false` response can still have created the client on the rest. Every error names the inbound it came from (`inbound 7: <message>`), and several failures are reported together, one per line. `limitHwid` is applied only when every inbound succeeded, so re-run the call after fixing the failure.",
         "requestBody": {
           "required": true,
           "content": {
@@ -8856,7 +8849,7 @@
                 "properties": {
                   "client": {
                     "type": "object",
-                    "description": "Client fields: email, subId, id (uuid), password, auth, flow, totalGB, expiryTime, limitIp, limitHwid, tgId (numeric Telegram user ID, 0 = none), comment, enable. Protocol-specific: secret and adTag (mtproto), privateKey, publicKey, preSharedKey, allowedIPs and keepAlive (WireGuard)."
+                    "description": "Client fields: email, subId, id (uuid), password, flow, totalGB, expiryTime, limitIp, limitHwid, tgId (numeric Telegram user ID, 0 = none), comment, enable. Protocol-specific: secret and adTag (mtproto), privateKey, publicKey, preSharedKey, allowedIPs and keepAlive (WireGuard)."
                   },
                   "inboundIds": {
                     "type": "array",

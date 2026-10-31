@@ -437,9 +437,19 @@ export function applyVlessRoute(id: string, route: string | undefined): string {
   if (r === '' || !/^\d{1,5}$/.test(r)) return id;
   const n = Number(r);
   if (n > 65535) return id;
-  if (!/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id))
+  let canonical = id;
+  if (/^[0-9a-fA-F]{32}$/.test(id)) {
+    canonical = `${id.slice(0, 8)}-${id.slice(8, 12)}-${id.slice(12, 16)}-${id.slice(16, 20)}-${id.slice(20)}`;
+  }
+  if (
+    !/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(canonical)
+  )
     return id;
-  return id.slice(0, 14) + n.toString(16).padStart(4, '0') + id.slice(18);
+  return (
+    canonical.slice(0, 14) +
+    n.toString(16).padStart(4, '0') +
+    canonical.slice(18)
+  ).toLowerCase();
 }
 
 // VLESS share link: vless://<uuid>@<host>:<port>?<query>#<remark>. The
@@ -670,6 +680,14 @@ export interface GenTrojanLinkInput {
 // Same query-string shape as VLESS minus the `encryption` and `flow`
 // fields. Returns '' if the inbound isn't trojan.
 export function genTrojanLink(input: GenTrojanLinkInput): string {
+  return genPasswordLink(input, 'trojan');
+}
+
+export function genAnyTLSLink(input: GenTrojanLinkInput): string {
+  return genPasswordLink(input, 'anytls');
+}
+
+function genPasswordLink(input: GenTrojanLinkInput, scheme: 'trojan' | 'anytls'): string {
   const {
     inbound,
     address,
@@ -681,7 +699,7 @@ export function genTrojanLink(input: GenTrojanLinkInput): string {
     externalProxy = null,
   } = input;
 
-  if (inbound.protocol !== 'trojan') return '';
+  if (inbound.protocol !== scheme) return '';
   const stream = inbound.streamSettings;
   if (!stream) return '';
 
@@ -705,7 +723,7 @@ export function genTrojanLink(input: GenTrojanLinkInput): string {
 
   pinUnsafeFingerprintForCipherSuites(params);
   const url = new URL(
-    `trojan://${encodeURIComponent(clientPassword)}@${formatUrlHost(address)}:${port}`,
+    `${scheme}://${encodeURIComponent(applyVlessRoute(clientPassword, externalProxy?.vlessRoute))}@${formatUrlHost(address)}:${port}`,
   );
   for (const [key, value] of params) url.searchParams.set(key, value);
   url.hash = encodeURIComponent(remark);
@@ -905,7 +923,8 @@ export function genHysteriaLink(input: GenHysteriaLinkInput): string {
     params.set('mport', hopPorts);
   }
 
-  const url = new URL(`${scheme}://${clientAuth}@${formatUrlHost(address)}:${port}`);
+  const credential = encodeURIComponent(applyVlessRoute(clientAuth, externalProxy?.vlessRoute));
+  const url = new URL(`${scheme}://${credential}@${formatUrlHost(address)}:${port}`);
   for (const [key, value] of params) url.searchParams.set(key, value);
   url.hash = encodeURIComponent(remark);
   return url.toString();
@@ -1428,7 +1447,6 @@ type ClientShape = {
   security?: VmessSecurity;
   flow?: VlessClient['flow'];
   password?: string;
-  auth?: string;
   secret?: string;
   email?: string;
   subId?: string;
@@ -1447,6 +1465,8 @@ export function getInboundClients(inbound: Inbound): ClientShape[] | null {
     case 'vless':
       return (inbound.settings.clients ?? []) as ClientShape[];
     case 'trojan':
+      return (inbound.settings.clients ?? []) as ClientShape[];
+    case 'anytls':
       return (inbound.settings.clients ?? []) as ClientShape[];
     case 'hysteria':
       return (inbound.settings.clients ?? []) as ClientShape[];
@@ -1525,6 +1545,17 @@ export function genLink(input: GenLinkInput): string {
         clientPassword: client.password ?? '',
         externalProxy,
       });
+    case 'anytls':
+      return genAnyTLSLink({
+        inbound,
+        address,
+        port,
+        forceTls,
+        remark,
+        clientPassword: client.id ?? '',
+        clientKey: clientSubKey(client),
+        externalProxy,
+      });
     case 'trojan':
       return genTrojanLink({
         inbound,
@@ -1532,7 +1563,7 @@ export function genLink(input: GenLinkInput): string {
         port,
         forceTls,
         remark,
-        clientPassword: client.password ?? '',
+        clientPassword: client.id ?? '',
         clientKey: clientSubKey(client),
         externalProxy,
       });
@@ -1542,7 +1573,7 @@ export function genLink(input: GenLinkInput): string {
         address,
         port,
         remark,
-        clientAuth: client.auth ?? '',
+        clientAuth: client.id ?? '',
         externalProxy,
       });
     case 'mtproto':

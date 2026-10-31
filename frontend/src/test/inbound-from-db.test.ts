@@ -148,8 +148,8 @@ describe('inboundFromDb', () => {
       protocol: 'trojan',
       settings: {
         clients: [
-          { password: 'pw1', email: 'one@test' },
-          { password: 'pw2', email: 'two@test' },
+          { id: 'pw1', email: 'one@test' },
+          { id: 'pw2', email: 'two@test' },
         ],
       },
       streamSettings: {
@@ -162,7 +162,7 @@ describe('inboundFromDb', () => {
     const entries = genAllLinks({
       inbound,
       remark: 'trojan',
-      client: { password: 'pw1', email: 'one@test' },
+      client: { id: 'pw1', email: 'one@test' },
       fallbackHostname: FALLBACK_HOST,
     });
     expect(entries.length).toBeGreaterThan(0);

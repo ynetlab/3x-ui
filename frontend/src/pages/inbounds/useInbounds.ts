@@ -61,6 +61,7 @@ const TRACKED_PROTOCOLS: readonly string[] = [
   Protocols.VMESS,
   Protocols.VLESS,
   Protocols.TROJAN,
+  Protocols.ANYTLS,
   Protocols.SHADOWSOCKS,
   Protocols.HYSTERIA,
   Protocols.WIREGUARD,

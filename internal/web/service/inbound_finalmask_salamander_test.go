@@ -17,7 +17,7 @@ func hysteriaSalamanderStream(password string) string {
 func hysteriaInbound(port int, stream string) *model.Inbound {
 	return &model.Inbound{
 		Enable: true, Listen: "127.0.0.1", Port: port, Protocol: model.Hysteria,
-		Settings:       `{"version":2,"clients":[{"email":"sal@example.test","auth":"a","enable":true}]}`,
+		Settings:       `{"version":2,"clients":[{"email":"sal@example.test","id":"5783a3e7-e373-4abc-8642-c83782b807c5","enable":true}]}`,
 		StreamSettings: stream,
 	}
 }

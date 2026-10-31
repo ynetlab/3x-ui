@@ -74,7 +74,7 @@ describe('createDefaultVmessClient', () => {
 
 describe('createDefaultTrojanClient', () => {
   it('produces a Zod-valid client', () => {
-    const c = createDefaultTrojanClient({ ...seed, password: 'fixed-trojan-pw' });
+    const c = createDefaultTrojanClient({ ...seed, id: '11111111-2222-4333-8444-555555555555' });
     expect(c).toMatchSnapshot();
     expect(TrojanClientSchema.parse(c)).toEqual(c);
   });
@@ -90,7 +90,7 @@ describe('createDefaultShadowsocksClient', () => {
 
 describe('createDefaultHysteriaClient', () => {
   it('produces a Zod-valid client', () => {
-    const c = createDefaultHysteriaClient({ ...seed, auth: 'fixed-hyst-auth' });
+    const c = createDefaultHysteriaClient({ ...seed, id: '11111111-2222-4333-8444-555555555555' });
     expect(c).toMatchSnapshot();
     expect(HysteriaClientSchema.parse(c)).toEqual(c);
   });

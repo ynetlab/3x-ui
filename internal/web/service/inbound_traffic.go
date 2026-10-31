@@ -742,7 +742,6 @@ func (s *InboundService) resetClientTrafficLocked(id int, clientEmail string) (b
 				clientMap := map[string]any{
 					"email":    client.Email,
 					"id":       client.ID,
-					"auth":     client.Auth,
 					"security": client.Security,
 					"flow":     client.Flow,
 					"password": client.Password,

@@ -103,7 +103,7 @@ func TestAdjustTraffics_DelayedStartConvertsDespiteStaleInboundId(t *testing.T) 
 	const uid = "ce8d33df-3a64-4f10-8f9b-91c3a8e0d001"
 	const sevenDays = int64(7 * 86400000)
 
-	client := model.Client{Email: email, ID: uid, Auth: uid, Enable: true, ExpiryTime: -sevenDays}
+	client := model.Client{Email: email, ID: uid, Enable: true, ExpiryTime: -sevenDays}
 	inbound := &model.Inbound{
 		Tag: "vless-delayed", Enable: true, Port: 45001, Protocol: model.VLESS,
 		StreamSettings: `{"network":"tcp","security":"reality"}`,

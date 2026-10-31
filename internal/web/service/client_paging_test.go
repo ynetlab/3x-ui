@@ -25,7 +25,6 @@ type pagingSeed struct {
 	subID      string
 	uuid       string
 	password   string
-	auth       string
 	comment    string
 	group      string
 	tgID       int64
@@ -53,7 +52,7 @@ func seedPagingClients(t *testing.T) (int64, []pagingSeed) {
 	seeds := []pagingSeed{
 		{email: "alpha@x", enable: true, totalGB: 0, expiryTime: 0, used: 5 * pagingGB, subID: "sub-alpha", uuid: "uuid-alpha", inbounds: []int{vless.Id}, lastOnline: now - 10*pagingDay},
 		{email: "bravo@x", enable: true, totalGB: 10 * pagingGB, expiryTime: now + 30*pagingDay, used: pagingGB, password: "pw-bravo", inbounds: []int{vless.Id, trojan.Id}, lastOnline: now - pagingDay},
-		{email: "charlie@x", enable: true, totalGB: 10 * pagingGB, expiryTime: now + 30*pagingDay, used: 10 * pagingGB, auth: "auth-charlie", inbounds: []int{trojan.Id}},
+		{email: "charlie@x", enable: true, totalGB: 10 * pagingGB, expiryTime: now + 30*pagingDay, used: 10 * pagingGB, uuid: "uuid-charlie", inbounds: []int{trojan.Id}},
 		{email: "delta@x", enable: true, totalGB: 10 * pagingGB, expiryTime: now - pagingDay, used: pagingGB, inbounds: []int{vless.Id}},
 		{email: "echo@x", enable: false, totalGB: 10 * pagingGB, expiryTime: now + 30*pagingDay, inbounds: []int{vless.Id}},
 		{email: "foxtrot@x", enable: false, totalGB: 10 * pagingGB, expiryTime: now - pagingDay, inbounds: []int{trojan.Id}},
@@ -71,7 +70,6 @@ func seedPagingClients(t *testing.T) (int64, []pagingSeed) {
 			SubID:      s.subID,
 			UUID:       s.uuid,
 			Password:   s.password,
-			Auth:       s.auth,
 			Comment:    s.comment,
 			Group:      s.group,
 			TgID:       s.tgID,
@@ -217,8 +215,8 @@ func TestListPagedFilters(t *testing.T) {
 			want:   []string{"bravo@x"},
 		},
 		{
-			name:   "search matches the auth",
-			params: ClientPageParams{PageSize: 50, Search: "auth-charlie"},
+			name:   "search matches another uuid",
+			params: ClientPageParams{PageSize: 50, Search: "uuid-charlie"},
 			want:   []string{"charlie@x"},
 		},
 		{

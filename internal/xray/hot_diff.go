@@ -250,10 +250,11 @@ func InboundUserOps(oldIb, newIb *InboundConfig) (*HotDiff, bool) {
 	return diff, true
 }
 
-var userDiffableProtocols = map[string]struct{}{"vless": {}, "vmess": {}, "trojan": {}, "hysteria": {}, "masque": {}, "shadowsocks": {}}
+var userDiffableProtocols = map[string]struct{}{"vless": {}, "vmess": {}, "trojan": {}, "anytls": {}, "hysteria": {}, "masque": {}, "shadowsocks": {}}
 
 // diffInboundUsers emits per-user AlterInbound ops when two same-tag inbounds
-// differ only in settings.clients, so the handler (and its listener) survives.
+// differ only in settings.clients (AnyTLS: settings.users), so the handler
+// and its listener survive.
 func diffInboundUsers(oldIb, newIb *InboundConfig, diff *HotDiff) bool {
 	if oldIb.Port != newIb.Port || oldIb.Protocol != newIb.Protocol || oldIb.Tag != newIb.Tag {
 		return false
@@ -325,7 +326,7 @@ type clientEntry struct {
 	norm []byte
 }
 
-// splitSettingsClients indexes settings.clients by email and returns the rest of
+// splitSettingsClients indexes settings.clients or AnyTLS settings.users by email and returns the rest of
 // the settings in canonical form; ok is false when a client has no unique email.
 func splitSettingsClients(raw json_util.RawMessage) (map[string]clientEntry, []byte, bool) {
 	if len(raw) == 0 {
@@ -337,7 +338,11 @@ func splitSettingsClients(raw json_util.RawMessage) (map[string]clientEntry, []b
 	if err := decoder.Decode(&settings); err != nil {
 		return nil, nil, false
 	}
-	clientsRaw, hasClients := settings["clients"].([]any)
+	clientsKey := "clients"
+	if _, ok := settings["users"]; ok {
+		clientsKey = "users"
+	}
+	clientsRaw, hasClients := settings[clientsKey].([]any)
 	if !hasClients {
 		return nil, nil, false
 	}
@@ -360,7 +365,7 @@ func splitSettingsClients(raw json_util.RawMessage) (map[string]clientEntry, []b
 		}
 		clients[email] = clientEntry{user: obj, norm: norm}
 	}
-	delete(settings, "clients")
+	delete(settings, clientsKey)
 	rest, err := json.Marshal(settings)
 	if err != nil {
 		return nil, nil, false

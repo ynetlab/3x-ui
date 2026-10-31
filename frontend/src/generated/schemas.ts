@@ -1717,10 +1717,6 @@ export const SCHEMAS: Record<string, unknown> = {
         "description": "AllowedIPsByInbound optionally overrides AllowedIPs on a per-inbound\nbasis, keyed by inbound id. Lets one identity attached to both\nWireGuard and AmneziaWG carry two genuinely different addresses in a\nsingle Create/Update call instead of the shared AllowedIPs field\nbeing broadcast to every attached tunnel inbound. Absent/unset for a\ngiven inbound id falls back to the shared AllowedIPs exactly as\nbefore -- fully backward compatible for callers that never set this.",
         "type": "object"
       },
-      "auth": {
-        "description": "Auth password (Hysteria)",
-        "type": "string"
-      },
       "clientHostRuleIds": {
         "description": "ClientHostRuleIds binds the client to these host rules, one link each; nil preserves, empty\nclears, and bindings with no usable host leave that inbound out of the subscription.",
         "example": [
@@ -1966,9 +1962,6 @@ export const SCHEMAS: Record<string, unknown> = {
       "allowedIPs": {
         "type": "string"
       },
-      "auth": {
-        "type": "string"
-      },
       "clientHostRuleIds": {
         "example": [
           1,
@@ -2084,7 +2077,6 @@ export const SCHEMAS: Record<string, unknown> = {
     "required": [
       "adTag",
       "allowedIPs",
-      "auth",
       "comment",
       "createdAt",
       "email",
@@ -2221,7 +2213,7 @@ export const SCHEMAS: Record<string, unknown> = {
     "type": "object"
   },
   "ClientSlim": {
-    "description": "ClientSlim is the row-shape used by the clients page. It drops fields the\ntable never reads (UUID, password, auth, flow, security, reverse, tgId)\nso the list payload stays compact even when the panel manages thousands\nof clients. Modals that need the full record still call /get/:email.",
+    "description": "ClientSlim is the row-shape used by the clients page. It drops fields the\ntable never reads (UUID, password, flow, security, reverse, tgId)\nso the list payload stays compact even when the panel manages thousands\nof clients. Modals that need the full record still call /get/:email.",
     "properties": {
       "comment": {
         "example": "Primary device",
@@ -3194,6 +3186,7 @@ export const SCHEMAS: Record<string, unknown> = {
           "vmess",
           "vless",
           "trojan",
+          "anytls",
           "shadowsocks",
           "wireguard",
           "hysteria",

@@ -66,6 +66,7 @@ export const MASQUE_NETWORK_OPTION = { value: 'masque', label: 'MASQUE' };
 // protocol section. Wireguard has an address but no port. DNS/freedom/
 // blackhole/loopback have no connect target.
 export const SERVER_PROTOCOLS = new Set<string>([
+  'anytls',
   'vmess',
   'vless',
   'trojan',

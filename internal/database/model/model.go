@@ -30,6 +30,7 @@ const (
 	Tunnel      Protocol = "tunnel"
 	HTTP        Protocol = "http"
 	Trojan      Protocol = "trojan"
+	AnyTLS      Protocol = "anytls"
 	Shadowsocks Protocol = "shadowsocks"
 	Mixed       Protocol = "mixed"
 	WireGuard   Protocol = "wireguard"
@@ -68,7 +69,7 @@ type Inbound struct {
 	// Xray configuration fields
 	Listen            string   `json:"listen" form:"listen"`
 	Port              int      `json:"port" form:"port" validate:"gte=0,lte=65535" example:"443"`
-	Protocol          Protocol `json:"protocol" form:"protocol" validate:"required,oneof=vmess vless trojan shadowsocks wireguard hysteria http mixed tunnel tun mtproto amneziawg tuic masque" example:"vless"`
+	Protocol          Protocol `json:"protocol" form:"protocol" validate:"required,oneof=vmess vless trojan anytls shadowsocks wireguard hysteria http mixed tunnel tun mtproto amneziawg tuic masque" example:"vless"`
 	Settings          string   `json:"settings" form:"settings"`
 	StreamSettings    string   `json:"streamSettings" form:"streamSettings"`
 	Tag               string   `json:"tag" form:"tag" gorm:"unique" example:"in-443-tcp"`
@@ -358,7 +359,7 @@ func (i *Inbound) GenXrayInboundConfig() *xray.InboundConfig {
 	}
 	listen = fmt.Sprintf("\"%v\"", listen)
 	protocol := string(i.Protocol)
-	settings := i.Settings
+	settings := UUIDClientsToCore(i.Protocol, i.Settings)
 	switch i.Protocol {
 	case Shadowsocks:
 		if healed, ok := HealShadowsocksClientMethods(settings); ok {
@@ -379,6 +380,10 @@ func (i *Inbound) GenXrayInboundConfig() *xray.InboundConfig {
 	case Hysteria:
 		if healed, ok := HealHysteriaVersion(settings); ok {
 			settings = healed
+		}
+	case AnyTLS:
+		if converted, ok := AnyTLSClientsToCore(settings); ok {
+			settings = converted
 		}
 	case MASQUE:
 		if converted, ok := MasqueClientsToCore(settings); ok {
@@ -936,7 +941,6 @@ type Client struct {
 	Password   string         `json:"password,omitempty"` // Client password
 	Flow       string         `json:"flow,omitempty"`     // Flow control (XTLS)
 	Reverse    *ClientReverse `json:"reverse,omitempty"`  // VLESS simple reverse proxy settings
-	Auth       string         `json:"auth,omitempty"`     // Auth password (Hysteria)
 	PrivateKey string         `json:"privateKey,omitempty"`
 	PublicKey  string         `json:"publicKey,omitempty"`
 	AllowedIPs []string       `json:"allowedIPs,omitempty"`
@@ -982,7 +986,6 @@ type ClientRecord struct {
 	SubID             string         `json:"subId" gorm:"index;column:sub_id"`
 	UUID              string         `json:"uuid" gorm:"column:uuid"`
 	Password          string         `json:"password"`
-	Auth              string         `json:"auth"`
 	Flow              string         `json:"flow"`
 	Security          string         `json:"security"`
 	Reverse           string         `json:"reverse" gorm:"column:reverse"`
@@ -1275,7 +1278,6 @@ func (c *Client) ToRecord() *ClientRecord {
 		SubID:             c.SubID,
 		UUID:              c.ID,
 		Password:          c.Password,
-		Auth:              c.Auth,
 		Flow:              c.Flow,
 		Security:          c.Security,
 		ClientHostRuleIds: CloneClientHostRuleIds(c.ClientHostRuleIds),
@@ -1335,7 +1337,6 @@ func (r *ClientRecord) ToClient() *Client {
 		Email:             r.Email,
 		SubID:             r.SubID,
 		Password:          r.Password,
-		Auth:              r.Auth,
 		Flow:              r.Flow,
 		Security:          r.Security,
 		ClientHostRuleIds: CloneClientHostRuleIds(r.ClientHostRuleIds),
@@ -1505,12 +1506,6 @@ func MergeClientRecord(existing *ClientRecord, incoming *ClientRecord) []ClientM
 		if incomingNewer || existing.Password == "" {
 			existing.Password = incoming.Password
 			keepSecret("password")
-		}
-	}
-	if existing.Auth != incoming.Auth && incoming.Auth != "" {
-		if incomingNewer || existing.Auth == "" {
-			existing.Auth = incoming.Auth
-			keepSecret("auth")
 		}
 	}
 	if existing.Flow != incoming.Flow && incoming.Flow != "" {

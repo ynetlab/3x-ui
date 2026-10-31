@@ -756,7 +756,7 @@ func (s *SubService) loadInboundsBySubId(subId string) ([]*model.Inbound, error)
 		JOIN client_inbounds ON client_inbounds.inbound_id = inbounds.id
 		JOIN clients ON clients.id = client_inbounds.client_id
 		WHERE
-			inbounds.protocol in ('vmess','vless','trojan','shadowsocks','hysteria','wireguard','amneziawg','mtproto','tuic','masque')
+			inbounds.protocol in ('vmess','vless','trojan','anytls','shadowsocks','hysteria','wireguard','amneziawg','mtproto','tuic','masque')
 			AND clients.sub_id = ? AND inbounds.enable = ?
 	)`, subId, true).Order("sub_sort_index ASC").Order("id ASC")
 	if cached {
@@ -927,6 +927,8 @@ func (s *SubService) GetLink(inbound *model.Inbound, email string) string {
 		return s.genVlessLink(inbound, email)
 	case "trojan":
 		return s.genTrojanLink(inbound, email)
+	case "anytls":
+		return s.genAnyTLSLink(inbound, email)
 	case "shadowsocks":
 		return s.genShadowsocksLink(inbound, email)
 	case "hysteria":
@@ -1372,7 +1374,15 @@ func (s *SubService) genVlessLink(inbound *model.Inbound, email string) string {
 }
 
 func (s *SubService) genTrojanLink(inbound *model.Inbound, email string) string {
-	if inbound.Protocol != model.Trojan {
+	return s.genPasswordLink(inbound, email, model.Trojan)
+}
+
+func (s *SubService) genAnyTLSLink(inbound *model.Inbound, email string) string {
+	return s.genPasswordLink(inbound, email, model.AnyTLS)
+}
+
+func (s *SubService) genPasswordLink(inbound *model.Inbound, email string, protocol model.Protocol) string {
+	if inbound.Protocol != protocol {
 		return ""
 	}
 	address := s.resolveInboundAddress(inbound)
@@ -1381,7 +1391,7 @@ func (s *SubService) genTrojanLink(inbound *model.Inbound, email string) string 
 	if !ok {
 		return ""
 	}
-	password := encodeUserinfo(client.Password)
+	password := encodeUserinfo(client.ID)
 	port := inbound.Port
 	streamNetwork, _ := stream["network"].(string)
 	params := make(map[string]string)
@@ -1397,7 +1407,7 @@ func (s *SubService) genTrojanLink(inbound *model.Inbound, email string) string 
 		applyShareTLSParams(stream, params)
 	case "reality":
 		applyShareRealityParams(stream, params, subKey(client))
-		if streamNetwork == "tcp" && len(client.Flow) > 0 && !inbound.DisableFlow {
+		if protocol == model.Trojan && streamNetwork == "tcp" && len(client.Flow) > 0 && !inbound.DisableFlow {
 			params["flow"] = client.Flow
 		}
 	default:
@@ -1411,8 +1421,9 @@ func (s *SubService) genTrojanLink(inbound *model.Inbound, email string) string 
 			externalProxies,
 			params,
 			security,
-			func(_ map[string]any, dest string, port int) string {
-				return fmt.Sprintf("trojan://%s@%s", password, joinHostPort(dest, port))
+			func(ep map[string]any, dest string, port int) string {
+				credential := encodeUserinfo(applyVlessRoute(client.ID, hostVlessRoute(ep)))
+				return fmt.Sprintf("%s://%s@%s", protocol, credential, joinHostPort(dest, port))
 			},
 			func(ep map[string]any) string {
 				return s.endpointRemark(inbound, email, ep, streamNetwork)
@@ -1420,7 +1431,7 @@ func (s *SubService) genTrojanLink(inbound *model.Inbound, email string) string 
 		)
 	}
 
-	link := fmt.Sprintf("trojan://%s@%s", password, joinHostPort(address, port))
+	link := fmt.Sprintf("%s://%s@%s", protocol, password, joinHostPort(address, port))
 	return buildLinkWithParams(link, params, s.genRemark(inbound, email, "", streamNetwork))
 }
 
@@ -1528,7 +1539,7 @@ func (s *SubService) genHysteriaLink(inbound *model.Inbound, email string) strin
 	if !ok {
 		return ""
 	}
-	auth := encodeUserinfo(client.Auth)
+	auth := encodeUserinfo(client.ID)
 	params := make(map[string]string)
 
 	params["security"] = "tls"
@@ -1637,7 +1648,8 @@ func (s *SubService) genHysteriaLink(inbound *model.Inbound, email string) strin
 			epParams := cloneStringMap(params)
 			applyExternalProxyHysteriaParams(ep, epParams)
 
-			link := fmt.Sprintf("%s://%s@%s", protocol, auth, joinHostPort(dest, int(portF)))
+			credential := encodeUserinfo(applyVlessRoute(client.ID, hostVlessRoute(ep)))
+			link := fmt.Sprintf("%s://%s@%s", protocol, credential, joinHostPort(dest, int(portF)))
 			// VLESS/Trojan/SS get the host's description through buildEndpointLinks;
 			// this loop renders the fragment itself, so add it here too (#6738).
 			remark := s.endpointRemark(inbound, email, ep, "quic")

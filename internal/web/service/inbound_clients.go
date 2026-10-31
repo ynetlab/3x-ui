@@ -197,7 +197,7 @@ func (s *InboundService) writeBackClientSubID(sourceInboundID int, client model.
 
 func (s *InboundService) generateRandomCredential(targetProtocol model.Protocol) string {
 	switch targetProtocol {
-	case model.VMESS, model.VLESS:
+	case model.VMESS, model.VLESS, model.Trojan, model.AnyTLS, model.Hysteria:
 		return uuid.NewString()
 	default:
 		return strings.ReplaceAll(uuid.NewString(), "-", "")
@@ -213,7 +213,6 @@ func (s *InboundService) buildTargetClientFromSource(source model.Client, target
 
 	target.ID = ""
 	target.Password = ""
-	target.Auth = ""
 	target.Flow = ""
 	target.Secret = ""
 
@@ -228,10 +227,10 @@ func (s *InboundService) buildTargetClientFromSource(source model.Client, target
 			inboundCanEnableTlsFlow(string(targetProtocol), targetInbound.StreamSettings, targetInbound.Settings) {
 			target.Flow = flow
 		}
-	case model.Trojan, model.Shadowsocks, model.MASQUE:
+	case model.Shadowsocks, model.MASQUE:
 		target.Password = s.generateRandomCredential(targetProtocol)
-	case model.Hysteria:
-		target.Auth = s.generateRandomCredential(targetProtocol)
+	case model.Trojan, model.AnyTLS, model.Hysteria:
+		target.ID = s.generateRandomCredential(targetProtocol)
 	case model.MTProto:
 		target.Secret = model.GenerateFakeTLSSecret(mtprotoDomainFromSettings(targetInbound.Settings))
 	case model.TUIC:

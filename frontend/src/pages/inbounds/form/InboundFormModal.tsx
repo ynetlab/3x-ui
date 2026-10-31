@@ -58,6 +58,7 @@ import {
   AmneziawgFields,
   HttpFields,
   HysteriaFields,
+  AnyTLSFields,
   MasqueSettingsFields,
   MasqueStreamFields,
   MixedFields,
@@ -810,6 +811,7 @@ export default function InboundFormModal({
       {protocol === Protocols.TUIC && <TuicFields />}
 
       {protocol === Protocols.MASQUE && <MasqueSettingsFields />}
+      {protocol === Protocols.ANYTLS && <AnyTLSFields />}
 
       {protocol === Protocols.TUN && <TunFields />}
 
@@ -1174,6 +1176,7 @@ export default function InboundFormModal({
                     Protocols.AMNEZIAWG,
                     Protocols.TUIC,
                     Protocols.MASQUE,
+                    Protocols.ANYTLS,
                   ] as string[]
                 ).includes(protocol) || isFallbackHost
                   ? [

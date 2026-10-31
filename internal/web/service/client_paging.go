@@ -15,7 +15,7 @@ import (
 )
 
 // ClientSlim is the row-shape used by the clients page. It drops fields the
-// table never reads (UUID, password, auth, flow, security, reverse, tgId)
+// table never reads (UUID, password, flow, security, reverse, tgId)
 // so the list payload stays compact even when the panel manages thousands
 // of clients. Modals that need the full record still call /get/:email.
 type ClientSlim struct {
@@ -117,7 +117,7 @@ const (
 // clientSearchCols are the text columns the search box matches.
 var clientSearchCols = []string{
 	"c.email", "COALESCE(c.sub_id, '')", "COALESCE(c.comment, '')",
-	"COALESCE(c.uuid, '')", "COALESCE(c.password, '')", "COALESCE(c.auth, '')",
+	"COALESCE(c.uuid, '')", "COALESCE(c.password, '')",
 }
 
 // caseVariants returns s lower-cased, as typed, upper-cased and title-cased.

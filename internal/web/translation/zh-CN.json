@@ -1,4 +1,15 @@
 {
+  "uuidRoute": {
+    "credentialHint": "VLESS、VMess、TUIC、Trojan、AnyTLS、Hysteria 使用此 UUID。主机路由编号仅在订阅中替换 UUID 第三组，原始 UUID 保持不变。"
+  },
+  "anytls": {
+    "paddingScheme": "填充规则",
+    "paddingSchemeHint": "每行一条规则，留空使用核心默认值。",
+    "level": "用户等级",
+    "idleSessionCheckInterval": "空闲会话检查间隔（秒）",
+    "idleSessionTimeout": "空闲会话超时（秒）",
+    "minIdleSession": "最少保留空闲会话数"
+  },
   "username": "用户名",
   "password": "密码",
   "login": "登录",
@@ -865,7 +876,7 @@
       "limitIpFail2banWindows": "Windows 上不支持 Fail2ban，无法实施 IP 限制。",
       "limitIpDisabled": "此服务器已禁用 IP 限制功能。",
       "password": "密码",
-      "passwordDesc": "用于 Trojan、Shadowsocks、TUIC 和 MASQUE 客户端；对 VLESS、VMess、Hysteria 和 WireGuard 忽略。",
+      "passwordDesc": "用于 Shadowsocks、TUIC 和 MASQUE 客户端；Trojan、AnyTLS、Hysteria 使用上方的 UUID。",
       "subId": "订阅 ID",
       "subIdDesc": "同时用作该客户端的 Telegram 机器人邀请码：任何人将其发送给机器人即会绑定到此客户端。请保持足够长且随机——过短或易猜的 ID 可能被他人抢先绑定。",
       "online": "在线",
@@ -971,8 +982,6 @@
       "delOrphansConfirmTitle": "删除没有入站的客户端？",
       "delOrphansConfirmContent": "删除所有未关联到任何入站的客户端及其流量记录。该操作不可撤销。",
       "auth": "认证",
-      "hysteriaAuth": "Hysteria 认证",
-      "hysteriaAuthDesc": "仅 Hysteria 客户端使用的凭据。Trojan 和 Shadowsocks 请改用上方的“密码”字段。",
       "uuid": "UUID",
       "flow": "Flow",
       "vmessSecurity": "VMess 加密",

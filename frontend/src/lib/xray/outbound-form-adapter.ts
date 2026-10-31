@@ -28,6 +28,7 @@ import type {
   OutboundStreamFormValues,
   ShadowsocksOutboundFormSettings,
   TrojanOutboundFormSettings,
+  AnyTLSOutboundFormSettings,
   VlessOutboundFormSettings,
   VmessOutboundFormSettings,
   WireguardOutboundFormPeer,
@@ -174,6 +175,19 @@ function vlessFromWire(raw: Raw): VlessOutboundFormSettings {
     reverseSniffing,
     testpre: asNumber(raw.testpre, 0),
     testseed,
+  };
+}
+
+function anytlsFromWire(raw: Raw): AnyTLSOutboundFormSettings {
+  return {
+    address: asString(raw.address),
+    port: asPort(raw.port, 443),
+    password: asString(raw.password),
+    email: asString(raw.email),
+    level: asNumber(raw.level),
+    idleSessionCheckInterval: asNumber(raw.idleSessionCheckInterval, 30),
+    idleSessionTimeout: asNumber(raw.idleSessionTimeout, 60),
+    minIdleSession: asNumber(raw.minIdleSession),
   };
 }
 
@@ -609,6 +623,9 @@ export function rawOutboundToFormValues(raw: RawOutboundRow): OutboundFormValues
     case 'vless':
       typed = { protocol: 'vless', settings: vlessFromWire(settings) };
       break;
+    case 'anytls':
+      typed = { protocol: 'anytls', settings: anytlsFromWire(settings) };
+      break;
     case 'trojan':
       typed = { protocol: 'trojan', settings: trojanFromWire(settings) };
       break;
@@ -881,7 +898,15 @@ function loopbackToWire(s: LoopbackOutboundFormSettings) {
 
 // canEnableMux mirrors the legacy Outbound.canEnableMux().
 const MUX_PROTOCOLS = new Set(['vmess', 'vless', 'trojan', 'shadowsocks', 'http', 'socks']);
-const STREAM_PROTOCOLS = new Set(['vmess', 'vless', 'trojan', 'shadowsocks', 'hysteria', 'masque']);
+const STREAM_PROTOCOLS = new Set([
+  'vmess',
+  'vless',
+  'trojan',
+  'anytls',
+  'shadowsocks',
+  'hysteria',
+  'masque',
+]);
 
 function dropEmptyStrings(obj: Raw): Raw {
   const out: Raw = {};
@@ -944,6 +969,9 @@ export function formValuesToWirePayload(values: OutboundFormValues): WireOutboun
         ...values.settings,
         flow: effectiveVlessFlow(values.settings, values.streamSettings),
       });
+      break;
+    case 'anytls':
+      settings = { ...values.settings };
       break;
     case 'trojan':
       settings = trojanToWire(values.settings);

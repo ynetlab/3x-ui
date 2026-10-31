@@ -498,7 +498,7 @@ func (s *ClientService) AddInboundClient(inboundSvc *InboundService, data *model
 			return false, common.NewError("client email is required")
 		}
 		switch oldInbound.Protocol {
-		case "trojan", "masque":
+		case "masque":
 			if client.Password == "" {
 				return false, common.NewError("empty client ID")
 			}
@@ -506,8 +506,8 @@ func (s *ClientService) AddInboundClient(inboundSvc *InboundService, data *model
 			if client.Email == "" {
 				return false, common.NewError("empty client ID")
 			}
-		case "hysteria":
-			if client.Auth == "" {
+		case "trojan", "anytls", "hysteria":
+			if client.ID == "" {
 				return false, common.NewError("empty client ID")
 			}
 		case "wireguard", "amneziawg":
@@ -661,7 +661,6 @@ func (s *ClientService) AddInboundClient(inboundSvc *InboundService, data *model
 				err1 := rt.AddUser(context.Background(), oldInbound, map[string]any{
 					"email":        client.Email,
 					"id":           client.ID,
-					"auth":         client.Auth,
 					"security":     client.Security,
 					"flow":         client.Flow,
 					"password":     client.Password,
@@ -759,12 +758,12 @@ func (s *ClientService) UpdateInboundClient(inboundSvc *InboundService, data *mo
 
 	newClientId := ""
 	switch oldInbound.Protocol {
-	case "trojan", "masque":
+	case "masque":
 		newClientId = clients[0].Password
 	case "shadowsocks":
 		newClientId = clients[0].Email
-	case "hysteria":
-		newClientId = clients[0].Auth
+	case "trojan", "anytls", "hysteria":
+		newClientId = clients[0].ID
 	case "wireguard", "amneziawg":
 		newClientId = clients[0].Email
 	case "mtproto":
@@ -774,7 +773,7 @@ func (s *ClientService) UpdateInboundClient(inboundSvc *InboundService, data *mo
 	}
 
 	// Locate the client to replace by email — the client's stable identity.
-	// Credentials (uuid/password/auth) can drift from the inbound JSON, so they
+	// Credentials (uuid/password) can drift from the inbound JSON, so they
 	// are never used for matching.
 	clientIndex := -1
 	for index, oldClient := range oldClients {
@@ -1122,7 +1121,6 @@ func (s *ClientService) UpdateInboundClient(inboundSvc *InboundService, data *mo
 						"id":           clients[0].ID,
 						"security":     clients[0].Security,
 						"flow":         clients[0].Flow,
-						"auth":         clients[0].Auth,
 						"password":     clients[0].Password,
 						"cipher":       cipher,
 						"publicKey":    clients[0].PublicKey,
