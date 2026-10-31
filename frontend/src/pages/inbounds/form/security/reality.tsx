@@ -17,7 +17,8 @@ import {
 import { RadarChartOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
-import { FormField } from '@/components/form/rhf';
+import { FormField, rhfZodValidate } from '@/components/form/rhf';
+import { RealityNonPQModeSchema } from '@/schemas/protocols/security/reality';
 import { UTLS_FINGERPRINT } from '@/schemas/primitives';
 import {
   validateRealityClientVer,
@@ -229,6 +230,21 @@ export default function RealityForm({
         }}
       >
         <Input placeholder="x.y.z" />
+      </FormField>
+      <FormField
+        name={['streamSettings', 'realitySettings', 'nonPQMode']}
+        label={t('pages.inbounds.form.realityNonPQMode')}
+        tooltip={t('pages.inbounds.form.realityNonPQModeHint')}
+        rules={{ validate: rhfZodValidate(RealityNonPQModeSchema.optional()) }}
+      >
+        <Select
+          placeholder={t('pages.inbounds.form.realityNonPQNone')}
+          options={[
+            { value: 'none', label: t('pages.inbounds.form.realityNonPQNone') },
+            { value: 'legacy', label: t('pages.inbounds.form.realityNonPQLegacy') },
+            { value: 'all', label: t('pages.inbounds.form.realityNonPQAll') },
+          ]}
+        />
       </FormField>
       <FormField
         name={['streamSettings', 'realitySettings', 'maxClientVer']}

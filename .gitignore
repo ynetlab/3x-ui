@@ -42,5 +42,10 @@ system_metrics.gob
 # Ignore Docker specific files
 docker-compose.override.yml
 
+# Keep newly created tests local; existing tracked tests remain tracked.
+*test.go
+*.test.ts
+*.test.tsx
+
 # Ignore .env (Environment Variables) file
 .env

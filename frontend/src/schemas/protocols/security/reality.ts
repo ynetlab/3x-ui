@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 import { UtlsFingerprintSchema } from '@/schemas/protocols/security/tls';
 
+export const RealityNonPQModeSchema = z.enum(['none', 'legacy', 'all']);
+
 // Reality client-side handshake config (sits under the inbound's
 // realitySettings.settings on the wire — the panel's class names the field
 // `settings` even though it's the "client" half of Reality).
@@ -60,6 +62,7 @@ export const RealityStreamSettingsSchema = z.preprocess(
     privateKey: z.string().default(''),
     minClientVer: z.string().default(''),
     maxClientVer: z.string().default(''),
+    nonPQMode: RealityNonPQModeSchema.optional(),
     maxTimediff: z.number().int().min(0).default(0),
     shortIds: z.array(z.string()).default([]),
     mldsa65Seed: z.string().default(''),

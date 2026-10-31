@@ -26,7 +26,7 @@ import (
 	routerService "github.com/xtls/xray-core/app/router/command"
 	statsService "github.com/xtls/xray-core/app/stats/command"
 	xnet "github.com/xtls/xray-core/common/net"
-	"github.com/xtls/xray-core/common/platform"
+	"github.com/xtls/xray-core/common/platform/filesystem"
 	"github.com/xtls/xray-core/common/protocol"
 	"github.com/xtls/xray-core/common/serial"
 	"github.com/xtls/xray-core/infra/conf"
@@ -513,7 +513,7 @@ func childLuaScriptPath(script string) string {
 	if script == "" || filepath.IsAbs(script) {
 		return script
 	}
-	if _, err := platform.ResolveLuaFile(script); err == nil {
+	if _, err := filesystem.ResolveLuaFile(script); err == nil {
 		return script
 	}
 	binDir, err := filepath.Abs(config.GetBinFolderPath())
