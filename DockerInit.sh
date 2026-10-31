@@ -52,10 +52,20 @@ if [ -z "$MTG_MULTI_VER" ]; then
 fi
 mkdir -p build/bin
 cd build/bin
-curl -sfLRO "https://github.com/XTLS/Xray-core/releases/download/v26.10.21/Xray-linux-${XRAY_ZIP}.zip"
-unzip "Xray-linux-${XRAY_ZIP}.zip"
-rm -f "Xray-linux-${XRAY_ZIP}.zip" geoip.dat geosite.dat
-mv xray "${XRAY_BIN}"
+XRAY_VERSION=${XRAY_VERSION:-v26.10.29}
+XRAY_URL="https://github.com/ynetlab/Xray-core/releases/download/${XRAY_VERSION}"
+if [ "$XRAY_VERSION" = "latest" ]; then
+    XRAY_URL="https://github.com/ynetlab/Xray-core/releases/latest/download"
+fi
+XRAY_ARCHIVE="Xray-linux-${XRAY_ZIP}.zip"
+curl -fL --retry 5 --retry-all-errors --retry-delay 3 -o "$XRAY_ARCHIVE" "$XRAY_URL/$XRAY_ARCHIVE"
+curl -fL --retry 5 --retry-all-errors --retry-delay 3 -o "$XRAY_ARCHIVE.dgst" "$XRAY_URL/$XRAY_ARCHIVE.dgst"
+XRAY_SHA256=$(awk '$1 == "SHA2-256=" { print $2; exit }' "$XRAY_ARCHIVE.dgst")
+[ "${#XRAY_SHA256}" -eq 64 ] || { echo "Invalid Xray release checksum" >&2; exit 1; }
+printf '%s  %s\n' "$XRAY_SHA256" "$XRAY_ARCHIVE" | sha256sum -c -
+unzip "$XRAY_ARCHIVE"
+rm -f "$XRAY_ARCHIVE" "$XRAY_ARCHIVE.dgst" geoip.dat geosite.dat
+mv xray "$XRAY_BIN"
 # mtg-multi (MTProto sidecar) ships prebuilt release binaries for every target
 # we package, so download and unpack the matching one instead of compiling.
 MTG_PKG="mtg-multi-${MTG_MULTI_VER#v}-linux-${PLATFORM}"

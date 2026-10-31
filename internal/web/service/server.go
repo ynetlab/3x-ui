@@ -916,8 +916,9 @@ func (s *ServerService) sampleCPUUtilization() (float64, error) {
 }
 
 const (
-	maxXrayArchiveBytes = 200 << 20
-	maxXrayBinaryBytes  = 200 << 20
+	xrayReleaseRepository = "ynetlab/Xray-core"
+	maxXrayArchiveBytes   = 200 << 20
+	maxXrayBinaryBytes    = 200 << 20
 	// maxXrayDigestBytes caps the .dgst checksum sidecar read; it is a few
 	// hundred bytes in practice.
 	maxXrayDigestBytes = 64 << 10
@@ -925,7 +926,7 @@ const (
 
 func (s *ServerService) GetXrayVersions() ([]string, error) {
 	const (
-		XrayURL    = "https://api.github.com/repos/XTLS/Xray-core/releases"
+		XrayURL    = "https://api.github.com/repos/" + xrayReleaseRepository + "/releases"
 		bufferSize = 8192
 	)
 
@@ -965,6 +966,8 @@ func (s *ServerService) GetXrayVersions() ([]string, error) {
 	var versions []string
 	for _, release := range releases {
 		tagVersion := strings.TrimPrefix(release.TagName, "v")
+		tagVersion, _, _ = strings.Cut(tagVersion, "-")
+		tagVersion, _, _ = strings.Cut(tagVersion, "+")
 		tagParts := strings.Split(tagVersion, ".")
 		if len(tagParts) != 3 {
 			continue
@@ -1031,7 +1034,7 @@ func (s *ServerService) downloadXRay(version string) (string, error) {
 	}
 
 	fileName := fmt.Sprintf("Xray-%s-%s.zip", osName, arch)
-	url := fmt.Sprintf("https://github.com/XTLS/Xray-core/releases/download/%s/%s", version, fileName)
+	url := fmt.Sprintf("https://github.com/%s/releases/download/%s/%s", xrayReleaseRepository, version, fileName)
 	client := s.settingService.NewProxiedHTTPClient(60 * time.Second)
 	req, reqErr := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
 	if reqErr != nil {
@@ -1085,11 +1088,8 @@ func (s *ServerService) downloadXRay(version string) (string, error) {
 		return "", err
 	}
 	if got := hex.EncodeToString(hasher.Sum(nil)); !strings.EqualFold(got, want) {
-		// User-facing warning: the archive's SHA-256 does not match the official
-		// release checksum, so the download is corrupted or has been tampered
-		// with. Abort the install so a bad binary is never run, and tell the user
-		// to retry/re-download rather than proceed with a mismatched image.
-		return "", fmt.Errorf("Xray update aborted: the downloaded archive does not match the official SHA-256 checksum, so the image is corrupted or differs from the official release. Please exit and re-download the official image, then try again (expected %s, got %s)", want, got)
+		// Never install an archive that differs from the fork's published digest.
+		return "", fmt.Errorf("Xray update aborted: the downloaded archive does not match the published SHA-256 checksum from %s (expected %s, got %s)", xrayReleaseRepository, want, got)
 	}
 
 	ok = true

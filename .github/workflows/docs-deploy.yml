@@ -5,14 +5,6 @@ name: Docs Deploy (GitHub Pages)
 # attached to this repository. The site URL defaults to the production domain in
 # docs/lib/shared.ts, so NEXT_PUBLIC_SITE_URL is optional.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'docs/**'
-      - 'frontend/src/components/**'
-      - 'frontend/.storybook/**'
-      - 'frontend/package-lock.json'
-      - '.github/workflows/docs-deploy.yml'
   workflow_dispatch:
 
 permissions:

@@ -20,6 +20,9 @@ on:
       - "x-ui.service.rhel"
       - ".github/workflows/release.yml"
 
+env:
+  XRAY_VERSION: ${{ vars.XRAY_VERSION || 'v26.10.29' }}
+
 jobs:
   build:
     permissions:
@@ -114,38 +117,26 @@ jobs:
           mkdir x-ui/bin
           cd x-ui/bin
 
-          # Download dependencies
-          Xray_URL="https://github.com/XTLS/Xray-core/releases/download/v26.10.21/"
-          if [ "${{ matrix.platform }}" == "amd64" ]; then
-            fetch ${Xray_URL}Xray-linux-64.zip
-            unzip Xray-linux-64.zip
-            rm -f Xray-linux-64.zip
-          elif [ "${{ matrix.platform }}" == "arm64" ]; then
-            fetch ${Xray_URL}Xray-linux-arm64-v8a.zip
-            unzip Xray-linux-arm64-v8a.zip
-            rm -f Xray-linux-arm64-v8a.zip
-          elif [ "${{ matrix.platform }}" == "armv7" ]; then
-            fetch ${Xray_URL}Xray-linux-arm32-v7a.zip
-            unzip Xray-linux-arm32-v7a.zip
-            rm -f Xray-linux-arm32-v7a.zip
-          elif [ "${{ matrix.platform }}" == "armv6" ]; then
-            fetch ${Xray_URL}Xray-linux-arm32-v6.zip
-            unzip Xray-linux-arm32-v6.zip
-            rm -f Xray-linux-arm32-v6.zip
-          elif [ "${{ matrix.platform }}" == "386" ]; then
-            fetch ${Xray_URL}Xray-linux-32.zip
-            unzip Xray-linux-32.zip
-            rm -f Xray-linux-32.zip
-          elif [ "${{ matrix.platform }}" == "armv5" ]; then
-            fetch ${Xray_URL}Xray-linux-arm32-v5.zip
-            unzip Xray-linux-arm32-v5.zip
-            rm -f Xray-linux-arm32-v5.zip
-          elif [ "${{ matrix.platform }}" == "s390x" ]; then
-            fetch ${Xray_URL}Xray-linux-s390x.zip
-            unzip Xray-linux-s390x.zip
-            rm -f Xray-linux-s390x.zip
+          Xray_URL="https://github.com/ynetlab/Xray-core/releases/download/${XRAY_VERSION}"
+          if [ "$XRAY_VERSION" = latest ]; then
+            Xray_URL="https://github.com/ynetlab/Xray-core/releases/latest/download"
           fi
-          rm -f geoip.dat geosite.dat
+          case "${{ matrix.platform }}" in
+            amd64) XRAY_ARCHIVE="Xray-linux-64.zip" ;;
+            arm64) XRAY_ARCHIVE="Xray-linux-arm64-v8a.zip" ;;
+            armv7) XRAY_ARCHIVE="Xray-linux-arm32-v7a.zip" ;;
+            armv6) XRAY_ARCHIVE="Xray-linux-arm32-v6.zip" ;;
+            386) XRAY_ARCHIVE="Xray-linux-32.zip" ;;
+            armv5) XRAY_ARCHIVE="Xray-linux-arm32-v5.zip" ;;
+            s390x) XRAY_ARCHIVE="Xray-linux-s390x.zip" ;;
+          esac
+          fetch "${Xray_URL}/${XRAY_ARCHIVE}"
+          fetch "${Xray_URL}/${XRAY_ARCHIVE}.dgst"
+          XRAY_SHA256=$(awk '$1 == "SHA2-256=" { print $2; exit }' "${XRAY_ARCHIVE}.dgst")
+          [ "${#XRAY_SHA256}" -eq 64 ] || { echo "Invalid Xray release checksum" >&2; exit 1; }
+          printf '%s  %s\n' "$XRAY_SHA256" "$XRAY_ARCHIVE" | sha256sum -c -
+          unzip "$XRAY_ARCHIVE"
+          rm -f "$XRAY_ARCHIVE" "${XRAY_ARCHIVE}.dgst" geoip.dat geosite.dat
           fetch https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
           fetch https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
           fetch -O geoip_IR.dat https://github.com/chocolate4u/Iran-v2ray-rules/releases/latest/download/geoip.dat
@@ -282,12 +273,14 @@ jobs:
           mkdir x-ui\bin
           cd x-ui\bin
 
-          # Download Xray for Windows
-          $Xray_URL = "https://github.com/XTLS/Xray-core/releases/download/v26.10.21/"
-          Invoke-WebRequest @retry -Uri "${Xray_URL}Xray-windows-64.zip" -OutFile "Xray-windows-64.zip"
-          Expand-Archive -Path "Xray-windows-64.zip" -DestinationPath .
-          Remove-Item "Xray-windows-64.zip"
-          Remove-Item geoip.dat, geosite.dat -ErrorAction SilentlyContinue
+          $Xray_URL = "https://github.com/ynetlab/Xray-core/releases/download/$env:XRAY_VERSION"
+          if ($env:XRAY_VERSION -eq 'latest') { $Xray_URL = 'https://github.com/ynetlab/Xray-core/releases/latest/download' }
+          Invoke-WebRequest @retry -Uri "${Xray_URL}/Xray-windows-64.zip" -OutFile 'Xray-windows-64.zip'
+          Invoke-WebRequest @retry -Uri "${Xray_URL}/Xray-windows-64.zip.dgst" -OutFile 'Xray-windows-64.zip.dgst'
+          $digest = [regex]::Match((Get-Content 'Xray-windows-64.zip.dgst' -Raw), '(?m)^SHA2-256=\s*([a-fA-F0-9]{64})\s*$')
+          if (-not $digest.Success -or (Get-FileHash 'Xray-windows-64.zip' -Algorithm SHA256).Hash -ne $digest.Groups[1].Value) { throw 'Xray release checksum mismatch' }
+          Expand-Archive -LiteralPath 'Xray-windows-64.zip' -DestinationPath .
+          Remove-Item 'Xray-windows-64.zip', 'Xray-windows-64.zip.dgst', 'geoip.dat', 'geosite.dat' -ErrorAction SilentlyContinue
           Invoke-WebRequest @retry -Uri "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat" -OutFile "geoip.dat"
           Invoke-WebRequest @retry -Uri "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat" -OutFile "geosite.dat"
           Invoke-WebRequest @retry -Uri "https://github.com/chocolate4u/Iran-v2ray-rules/releases/latest/download/geoip.dat" -OutFile "geoip_IR.dat"
