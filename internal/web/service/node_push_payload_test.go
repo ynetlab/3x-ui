@@ -76,3 +76,43 @@ func TestNodePushKeepsDisabledClientsLocalPushStripsThem(t *testing.T) {
 		}
 	})
 }
+
+func TestAddInbound_AnyTLSDeploysToNode(t *testing.T) {
+	setupConflictDB(t)
+	node := seedVersionedNode(t, "dev+anytls")
+	svc := &InboundService{}
+	inbound := &model.Inbound{
+		Tag: "anytls-node", Enable: true, Listen: "0.0.0.0", Port: 44300,
+		Protocol: model.AnyTLS, NodeID: &node.Id,
+		Settings:       `{"clients":[{"id":"8a4f0c7e-1d2b-4c3a-9e5f-6a7b8c9d0e1f","email":"anytls@node","enable":true}],"paddingScheme":"stop=8"}`,
+		StreamSettings: `{"network":"tcp","security":"tls","tlsSettings":{"serverName":"node.example.com","certificates":[{"certificateFile":"/node/cert.pem","keyFile":"/node/key.pem"}]}}`,
+	}
+	created, _, err := svc.AddInbound(inbound)
+	if err != nil {
+		t.Fatalf("AddInbound: %v", err)
+	}
+	var stored model.Inbound
+	if err := database.GetDB().First(&stored, created.Id).Error; err != nil {
+		t.Fatalf("read created inbound: %v", err)
+	}
+	if stored.NodeID == nil || *stored.NodeID != node.Id || stored.Protocol != model.AnyTLS {
+		t.Fatalf("stored inbound: nodeId = %v, protocol = %s", stored.NodeID, stored.Protocol)
+	}
+	payload, err := svc.buildInboundForNodePush(database.GetDB(), &stored)
+	if err != nil {
+		t.Fatalf("buildInboundForNodePush: %v", err)
+	}
+	if payload.Protocol != model.AnyTLS || payload.StreamSettings != inbound.StreamSettings {
+		t.Fatalf("node payload lost AnyTLS protocol or stream settings: %+v", payload)
+	}
+	var settings struct {
+		Clients       []model.Client `json:"clients"`
+		PaddingScheme string         `json:"paddingScheme"`
+	}
+	if err := json.Unmarshal([]byte(payload.Settings), &settings); err != nil {
+		t.Fatalf("decode node settings: %v", err)
+	}
+	if len(settings.Clients) != 1 || settings.Clients[0].ID != "8a4f0c7e-1d2b-4c3a-9e5f-6a7b8c9d0e1f" || settings.Clients[0].Email != "anytls@node" || settings.PaddingScheme != "stop=8" {
+		t.Fatalf("node payload lost AnyTLS credentials or padding: %+v", settings)
+	}
+}

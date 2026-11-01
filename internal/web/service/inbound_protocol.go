@@ -53,6 +53,7 @@ var nodeEligibleProtocols = map[model.Protocol]bool{
 	model.VLESS:       true,
 	model.VMESS:       true,
 	model.Trojan:      true,
+	model.AnyTLS:      true,
 	model.Shadowsocks: true,
 	model.Hysteria:    true,
 	model.WireGuard:   true,
