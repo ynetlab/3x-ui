@@ -4,10 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
+	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/xtls/xray-core/proxy/anytls"
 
 	"gorm.io/gorm"
 )
@@ -89,6 +93,14 @@ func (s *FallbackService) SetByMaster(masterId int, items []FallbackInput) error
 				return err
 			}
 		}
+		var master model.Inbound
+		if err := tx.Select("protocol").Where("id = ?", masterId).Find(&master).Error; err != nil {
+			return err
+		}
+		if master.Protocol == model.AnyTLS {
+			_, err := s.BuildFallbacksJSON(tx, masterId)
+			return err
+		}
 		return nil
 	})
 }
@@ -107,6 +119,12 @@ func (s *FallbackService) BuildFallbacksJSON(tx *gorm.DB, masterId int) ([]map[s
 	if len(rows) == 0 {
 		return nil, nil
 	}
+	var master model.Inbound
+	if err := tx.Select("protocol").Where("id = ?", masterId).Find(&master).Error; err != nil {
+		return nil, err
+	}
+	isAnyTLS := master.Protocol == model.AnyTLS
+	var anyTLSFallbacks []*anytls.Fallback
 
 	childIds := make([]int, 0, len(rows))
 	for i := range rows {
@@ -123,6 +141,9 @@ func (s *FallbackService) BuildFallbacksJSON(tx *gorm.DB, masterId int) ([]map[s
 
 	out := make([]map[string]any, 0, len(rows))
 	for _, r := range rows {
+		if isAnyTLS && (r.Name != "" || r.Path != "" || r.Xver != 0) {
+			return nil, fmt.Errorf("AnyTLS fallbacks support only ALPN and destination")
+		}
 		dest := strings.TrimSpace(r.Dest)
 		xver := r.Xver
 		if dest == "" {
@@ -135,6 +156,22 @@ func (s *FallbackService) BuildFallbacksJSON(tx *gorm.DB, masterId int) ([]map[s
 				listen = "127.0.0.1"
 			}
 			dest = fmt.Sprintf("%s:%d", listen, child.Port)
+			if isAnyTLS {
+				var stream struct {
+					Security string `json:"security"`
+				}
+				if err := json.Unmarshal([]byte(child.StreamSettings), &stream); err != nil && child.StreamSettings != "" {
+					return nil, fmt.Errorf("invalid AnyTLS fallback child stream settings: %w", err)
+				}
+				if (stream.Security != "" && stream.Security != "none") || acceptsProxyProtocol(child.StreamSettings) {
+					return nil, fmt.Errorf("AnyTLS fallback child must accept plaintext without PROXY protocol")
+				}
+				if filepath.IsAbs(listen) || strings.HasPrefix(listen, "@") {
+					dest = listen
+				} else {
+					dest = net.JoinHostPort(strings.Trim(listen, "[]"), strconv.Itoa(child.Port))
+				}
+			}
 			// A child that accepts PROXY protocol rejects a fallback without the header (#6835);
 			// deriving it here keeps the row right through either order of toggling.
 			if xver == 0 && acceptsProxyProtocol(child.StreamSettings) {
@@ -156,7 +193,15 @@ func (s *FallbackService) BuildFallbacksJSON(tx *gorm.DB, masterId int) ([]map[s
 		if xver > 0 {
 			entry["xver"] = xver
 		}
+		if isAnyTLS {
+			anyTLSFallbacks = append(anyTLSFallbacks, &anytls.Fallback{Alpn: r.Alpn, Dest: dest})
+		}
 		out = append(out, entry)
+	}
+	if isAnyTLS {
+		if err := anytls.ValidateFallbacks(anyTLSFallbacks); err != nil {
+			return nil, err
+		}
 	}
 	return out, nil
 }

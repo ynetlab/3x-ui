@@ -57,7 +57,7 @@ jobs:
           provenance: mode=max
           sbom: true
           build-args: |
-            XRAY_VERSION=${{ vars.XRAY_VERSION || 'v26.10.29' }}
+            XRAY_VERSION=${{ vars.XRAY_VERSION || 'v26.10.30' }}
           platforms: linux/amd64,linux/arm64/v8,linux/arm/v7,linux/arm/v6,linux/386
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

@@ -10,6 +10,7 @@ import {
 import type { FallbackRow } from '@/schemas/forms/inbound-form';
 
 interface FallbacksCardProps {
+  protocol?: string;
   fallbacks: FallbackRow[];
   fallbackChildOptions: { label: string; value: number }[];
   addFallback: () => void;
@@ -20,6 +21,7 @@ interface FallbacksCardProps {
 }
 
 export default function FallbacksCard({
+  protocol,
   fallbacks,
   fallbackChildOptions,
   addFallback,
@@ -29,6 +31,7 @@ export default function FallbacksCard({
   addAllFallbacks,
 }: FallbacksCardProps) {
   const { t } = useTranslation();
+  const isAnyTLS = protocol === 'anytls';
 
   const addButtons = (
     <Space size={8} wrap>
@@ -41,16 +44,18 @@ export default function FallbacksCard({
       >
         {t('pages.inbounds.fallbacks.add') || 'Add fallback'}
       </Button>
-      <Button
-        size="small"
-        onClick={addAllFallbacks}
-        disabled={
-          fallbackChildOptions.length === 0 || fallbacks.length >= fallbackChildOptions.length
-        }
-        title={t('pages.inbounds.form.addAllFallbackTooltip')}
-      >
-        {t('pages.inbounds.form.addAll')}
-      </Button>
+      {!isAnyTLS && (
+        <Button
+          size="small"
+          onClick={addAllFallbacks}
+          disabled={
+            fallbackChildOptions.length === 0 || fallbacks.length >= fallbackChildOptions.length
+          }
+          title={t('pages.inbounds.form.addAllFallbackTooltip')}
+        >
+          {t('pages.inbounds.form.addAll')}
+        </Button>
+      )}
     </Space>
   );
 
@@ -113,15 +118,17 @@ export default function FallbacksCard({
               />
             </Space.Compact>
             <Row gutter={[8, 8]}>
-              <Col xs={24} sm={12}>
-                <Input
-                  aria-label="SNI"
-                  prefix="SNI"
-                  placeholder={t('pages.inbounds.fallbacks.matchAny') || 'any'}
-                  value={record.name}
-                  onChange={(e) => updateFallback(record.rowKey, { name: e.target.value })}
-                />
-              </Col>
+              {!isAnyTLS && (
+                <Col xs={24} sm={12}>
+                  <Input
+                    aria-label="SNI"
+                    prefix="SNI"
+                    placeholder={t('pages.inbounds.fallbacks.matchAny') || 'any'}
+                    value={record.name}
+                    onChange={(e) => updateFallback(record.rowKey, { name: e.target.value })}
+                  />
+                </Col>
+              )}
               <Col xs={24} sm={12}>
                 <Input
                   aria-label="ALPN"
@@ -131,15 +138,17 @@ export default function FallbacksCard({
                   onChange={(e) => updateFallback(record.rowKey, { alpn: e.target.value })}
                 />
               </Col>
-              <Col xs={24} sm={12}>
-                <Input
-                  aria-label="Path"
-                  prefix="Path"
-                  placeholder="/"
-                  value={record.path}
-                  onChange={(e) => updateFallback(record.rowKey, { path: e.target.value })}
-                />
-              </Col>
+              {!isAnyTLS && (
+                <Col xs={24} sm={12}>
+                  <Input
+                    aria-label="Path"
+                    prefix="Path"
+                    placeholder="/"
+                    value={record.path}
+                    onChange={(e) => updateFallback(record.rowKey, { path: e.target.value })}
+                  />
+                </Col>
+              )}
               <Col xs={24} sm={12}>
                 <Input
                   aria-label="Dest"
@@ -149,17 +158,19 @@ export default function FallbacksCard({
                   onChange={(e) => updateFallback(record.rowKey, { dest: e.target.value })}
                 />
               </Col>
-              <Col xs={24} sm={12}>
-                <InputNumber
-                  aria-label="xver"
-                  prefix="xver"
-                  min={0}
-                  max={2}
-                  style={{ width: '100%' }}
-                  value={record.xver}
-                  onChange={(v) => updateFallback(record.rowKey, { xver: Number(v) || 0 })}
-                />
-              </Col>
+              {!isAnyTLS && (
+                <Col xs={24} sm={12}>
+                  <InputNumber
+                    aria-label="xver"
+                    prefix="xver"
+                    min={0}
+                    max={2}
+                    style={{ width: '100%' }}
+                    value={record.xver}
+                    onChange={(v) => updateFallback(record.rowKey, { xver: Number(v) || 0 })}
+                  />
+                </Col>
+              )}
             </Row>
           </Card>
         ))

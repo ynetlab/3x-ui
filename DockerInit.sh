@@ -52,7 +52,7 @@ if [ -z "$MTG_MULTI_VER" ]; then
 fi
 mkdir -p build/bin
 cd build/bin
-XRAY_VERSION=${XRAY_VERSION:-v26.10.29}
+XRAY_VERSION=${XRAY_VERSION:-v26.10.30}
 XRAY_URL="https://github.com/ynetlab/Xray-core/releases/download/${XRAY_VERSION}"
 if [ "$XRAY_VERSION" = "latest" ]; then
     XRAY_URL="https://github.com/ynetlab/Xray-core/releases/latest/download"

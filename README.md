@@ -8,10 +8,10 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/MHSanaei/3x-ui/releases"><img src="https://img.shields.io/github/v/release/mhsanaei/3x-ui" alt="Release"></a>
-  <a href="https://github.com/MHSanaei/3x-ui/actions"><img src="https://img.shields.io/github/actions/workflow/status/mhsanaei/3x-ui/release.yml.svg" alt="Build"></a>
-  <a href="#"><img src="https://img.shields.io/github/go-mod/go-version/mhsanaei/3x-ui.svg" alt="GO Version"></a>
-  <a href="https://github.com/MHSanaei/3x-ui/releases/latest"><img src="https://img.shields.io/github/downloads/mhsanaei/3x-ui/total.svg" alt="Downloads"></a>
+  <a href="https://github.com/ynetlab/3x-ui/releases"><img src="https://img.shields.io/github/v/release/ynetlab/3x-ui" alt="Release"></a>
+  <a href="https://github.com/ynetlab/3x-ui/actions"><img src="https://img.shields.io/github/actions/workflow/status/ynetlab/3x-ui/release.yml.svg" alt="Build"></a>
+  <a href="#"><img src="https://img.shields.io/github/go-mod/go-version/ynetlab/3x-ui.svg" alt="GO Version"></a>
+  <a href="https://github.com/ynetlab/3x-ui/releases/latest"><img src="https://img.shields.io/github/downloads/ynetlab/3x-ui/total.svg" alt="Downloads"></a>
   <a href="https://www.gnu.org/licenses/gpl-3.0.en.html"><img src="https://img.shields.io/badge/license-GPL%20V3-blue.svg?longCache=true" alt="License"></a>
   <a href="https://pkg.go.dev/github.com/mhsanaei/3x-ui/v3"><img src="https://pkg.go.dev/badge/github.com/mhsanaei/3x-ui/v3.svg" alt="Go Reference"></a>
   <a href="https://docs.sanaei.dev"><img src="https://img.shields.io/badge/docs-docs.sanaei.dev-22d3ee" alt="Documentation"></a>
@@ -23,6 +23,8 @@ Built as an enhanced fork of the original X-UI project, 3X-UI adds broader proto
 
 > [!IMPORTANT]
 > This project is intended for personal use only. Please do not use it for illegal purposes or in a production environment.
+
+> This is [ynetlab/3x-ui](https://github.com/ynetlab/3x-ui), based on [MHSanaei/3x-ui](https://github.com/MHSanaei/3x-ui), with [ynetlab/Xray-core](https://github.com/ynetlab/Xray-core). Installation commands and images below target this fork; `docs.sanaei.dev` documents upstream. Read the [upgrade compatibility notes](README.md#upgrading-from-upstream) before upgrading.
 
 ## Features
 
@@ -74,19 +76,19 @@ Built as an enhanced fork of the original X-UI project, 3X-UI adds broader proto
 ## Quick Start
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/ynetlab/3x-ui/main/install.sh)
 ```
 
-To install a specific version, append its tag (e.g. `v3.7.0`):
+To install a specific version, append its tag (e.g. `v3.11.0`):
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh) v3.7.0
+bash <(curl -Ls https://raw.githubusercontent.com/ynetlab/3x-ui/main/install.sh) v3.11.0
 ```
 
 To install the rolling **dev** build (latest per-commit pre-release from `main`, not a stable release), pass `dev-latest`:
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh) dev-latest
+bash <(curl -Ls https://raw.githubusercontent.com/ynetlab/3x-ui/main/install.sh) dev-latest
 ```
 
 During installation a random username, password, and access path are generated. After installation, run `x-ui` to open the management menu, where you can start/stop the service, view or reset your login credentials, manage SSL certificates, and more.
@@ -104,6 +106,23 @@ zero prompts, generating random credentials and writing them to
 
 - [Cloud-init user-data](deploy/cloud-init/) — unattended install on any cloud (Hetzner/AWS/DO/Vultr/GCP/Azure/Oracle)
 - [Hetzner Cloud notes](deploy/marketplace/hetzner/) — cloud-init deployment on Hetzner
+
+## Upgrading from upstream
+
+This fork is based on upstream **v3.11.0** and keeps the `x-ui` service name, CLI and default storage paths. Existing 3x-ui installations can be upgraded in place. Older releases have not been individually verified; test a database copy first.
+
+1. Stop `x-ui` and back up the database (default SQLite directory: `/etc/x-ui/`), `/usr/local/x-ui/`, `/usr/bin/x-ui`, certificates and your OS environment file (`/etc/default/x-ui`, `/etc/sysconfig/x-ui` or `/etc/conf.d/x-ui`). PostgreSQL users also need a database dump. Restart the existing service after the backup.
+2. As root, run this fork's updater directly. Before this first upgrade, the original installation's `x-ui update` still points to upstream:
+
+   ```bash
+   curl -fL https://raw.githubusercontent.com/ynetlab/3x-ui/main/update.sh -o /root/3x-ui-update.sh && bash /root/3x-ui-update.sh
+   ```
+
+3. Check `x-ui status`, the panel, inbounds and subscriptions. Subsequent updates through this fork's panel or `x-ui update` use `ynetlab/3x-ui`.
+
+The default command installs this repository's latest stable release. To select a published tag, run `XUI_UPDATE_TAG=v3.11.0 bash /root/3x-ui-update.sh`; `dev-latest` selects the rolling pre-release. Use tags published in this fork's [Releases](https://github.com/ynetlab/3x-ui/releases).
+
+To roll back, stop the service and restore the matching pre-upgrade database, program files, CLI and environment configuration, then start it again. Do not use an older binary with the migrated database. Docker users should back up their mounted database and configuration and switch to `ghcr.io/ynetlab/3x-ui`, retaining the original mounts.
 
 ## Supported Platforms
 
@@ -146,7 +165,7 @@ docker compose --profile postgres up -d
 The image bundles Fail2ban (enabled by default) to enforce per-client **IP limits**. Fail2ban bans offenders with `iptables`, which requires the `NET_ADMIN` capability. `docker-compose.yml` already grants it via `cap_add`; if you start the container with `docker run` instead, add the capabilities yourself, otherwise bans are logged but never applied:
 
 ```bash
-docker run -d --cap-add=NET_ADMIN --cap-add=NET_RAW ... ghcr.io/mhsanaei/3x-ui
+docker run -d --cap-add=NET_ADMIN --cap-add=NET_RAW ... ghcr.io/ynetlab/3x-ui
 ```
 
 ## Environment Variables

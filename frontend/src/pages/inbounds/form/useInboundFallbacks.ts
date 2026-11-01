@@ -4,15 +4,33 @@ import { HttpUtil } from '@/utils';
 import type { FallbackRow } from '@/schemas/forms/inbound-form';
 import { coerceInboundJsonField, type DBInbound } from '@/models/dbinbound';
 
-// Fallback rows for VLESS/Trojan TLS inbounds: state + the load/save/derive
+// Fallback rows for VLESS/Trojan/AnyTLS TLS inbounds: state + the load/save/derive
 // and add/update/remove/move handlers, plus the eligible-child option list.
 // Lifted out of InboundFormModal so the modal body stays focused on layout.
-export function useInboundFallbacks(dbInbound: DBInbound | null, dbInbounds: DBInbound[]) {
+export function useInboundFallbacks(
+  dbInbound: DBInbound | null,
+  dbInbounds: DBInbound[],
+  protocol?: string,
+) {
+  const isAnyTLS = protocol === 'anytls';
   const fallbackKeyRef = useRef(0);
   const [fallbacks, setFallbacks] = useState<FallbackRow[]>([]);
 
   const fallbackChildOptions = (dbInbounds || [])
     .filter((ib) => ib.id !== dbInbound?.id)
+    .filter((ib) => {
+      if (!isAnyTLS) return true;
+      const stream = coerceInboundJsonField(ib.streamSettings);
+      const network = typeof stream.network === 'string' ? stream.network : '';
+      if (!['tcp', 'raw', 'ws', 'http', 'grpc', 'httpupgrade', 'xhttp'].includes(network))
+        return false;
+      if (stream.security && stream.security !== 'none') return false;
+      const sockopt = stream.sockopt as Record<string, unknown> | undefined;
+      const transport = stream[network === 'raw' ? 'tcpSettings' : `${network}Settings`] as
+        | Record<string, unknown>
+        | undefined;
+      return !sockopt?.acceptProxyProtocol && !transport?.acceptProxyProtocol;
+    })
     .map((ib) => ({
       label: `${ib.remark || `#${ib.id}`} · ${ib.protocol}:${ib.port}`,
       value: ib.id,
@@ -57,11 +75,11 @@ export function useInboundFallbacks(dbInbound: DBInbound | null, dbInbounds: DBI
         .filter((c) => c.childId || (c.dest ?? '').trim())
         .map((c, i) => ({
           childId: c.childId,
-          name: c.name,
+          name: isAnyTLS ? '' : c.name,
           alpn: c.alpn,
-          path: c.path,
+          path: isAnyTLS ? '' : c.path,
           dest: c.dest,
-          xver: Number(c.xver) || 0,
+          xver: isAnyTLS ? 0 : Number(c.xver) || 0,
           sortOrder: i,
         })),
     };
@@ -79,6 +97,7 @@ export function useInboundFallbacks(dbInbound: DBInbound | null, dbInbounds: DBI
   // their own). xver stays 0 unless the child explicitly opts in via
   // PROXY-protocol sockopt.
   const deriveFallbackDefaults = (childId: number): Partial<FallbackRow> => {
+    if (isAnyTLS) return { name: '', alpn: '', path: '', xver: 0 };
     const child = (dbInbounds || []).find((ib) => ib.id === childId);
     if (!child) return {};
     const stream = coerceInboundJsonField(child.streamSettings);

@@ -8,10 +8,10 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/MHSanaei/3x-ui/releases"><img src="https://img.shields.io/github/v/release/mhsanaei/3x-ui" alt="Release"></a>
-  <a href="https://github.com/MHSanaei/3x-ui/actions"><img src="https://img.shields.io/github/actions/workflow/status/mhsanaei/3x-ui/release.yml.svg" alt="Build"></a>
-  <a href="#"><img src="https://img.shields.io/github/go-mod/go-version/mhsanaei/3x-ui.svg" alt="GO Version"></a>
-  <a href="https://github.com/MHSanaei/3x-ui/releases/latest"><img src="https://img.shields.io/github/downloads/mhsanaei/3x-ui/total.svg" alt="Downloads"></a>
+  <a href="https://github.com/ynetlab/3x-ui/releases"><img src="https://img.shields.io/github/v/release/ynetlab/3x-ui" alt="Release"></a>
+  <a href="https://github.com/ynetlab/3x-ui/actions"><img src="https://img.shields.io/github/actions/workflow/status/ynetlab/3x-ui/release.yml.svg" alt="Build"></a>
+  <a href="#"><img src="https://img.shields.io/github/go-mod/go-version/ynetlab/3x-ui.svg" alt="GO Version"></a>
+  <a href="https://github.com/ynetlab/3x-ui/releases/latest"><img src="https://img.shields.io/github/downloads/ynetlab/3x-ui/total.svg" alt="Downloads"></a>
   <a href="https://www.gnu.org/licenses/gpl-3.0.en.html"><img src="https://img.shields.io/badge/license-GPL%20V3-blue.svg?longCache=true" alt="License"></a>
   <a href="https://pkg.go.dev/github.com/mhsanaei/3x-ui/v3"><img src="https://pkg.go.dev/badge/github.com/mhsanaei/3x-ui/v3.svg" alt="Go Reference"></a>
   <a href="https://docs.sanaei.dev"><img src="https://img.shields.io/badge/docs-docs.sanaei.dev-22d3ee" alt="Documentation"></a>
@@ -23,6 +23,8 @@
 
 > [!IMPORTANT]
 > 本项目仅供个人使用。请勿将其用于非法目的，也请勿在生产环境中使用。
+
+> 本仓库是 [ynetlab/3x-ui](https://github.com/ynetlab/3x-ui)，基于 [MHSanaei/3x-ui](https://github.com/MHSanaei/3x-ui) 修改，并使用 [ynetlab/Xray-core](https://github.com/ynetlab/Xray-core)。下方安装命令和镜像指向本分支；`docs.sanaei.dev` 为上游参考文档。升级前请阅读[兼容性与升级](#兼容性与升级)。
 
 ## 功能特性
 
@@ -74,19 +76,19 @@
 ## 快速开始
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/ynetlab/3x-ui/main/install.sh)
 ```
 
-若要安装特定版本，请在命令后附加对应的标签（例如 `v3.7.0`）：
+若要安装特定版本，请在命令后附加对应的标签（例如 `v3.11.0`）：
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh) v3.7.0
+bash <(curl -Ls https://raw.githubusercontent.com/ynetlab/3x-ui/main/install.sh) v3.11.0
 ```
 
 若要安装滚动更新的 **dev** 版本（来自 `main` 的最新逐次提交预发布版本，而非稳定版本），请传入 `dev-latest`：
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh) dev-latest
+bash <(curl -Ls https://raw.githubusercontent.com/ynetlab/3x-ui/main/install.sh) dev-latest
 ```
 
 安装过程中会生成随机的用户名、密码和访问路径。安装完成后，运行 `x-ui` 打开管理菜单，您可以在其中启动/停止服务、查看或重置登录凭据、管理 SSL 证书等。
@@ -104,6 +106,23 @@ bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.
 
 - [Cloud-init user-data](deploy/cloud-init/) — 在任意云平台上无人值守安装（Hetzner/AWS/DO/Vultr/GCP/Azure/Oracle）
 - [Hetzner Cloud 说明](deploy/marketplace/hetzner/) — 在 Hetzner 上基于 cloud-init 的部署
+
+## 兼容性与升级
+
+本分支基于原版 **v3.11.0**，沿用 `x-ui` 服务名、命令及默认存储路径，已有 3x-ui 安装可原地升级。更早版本尚未逐版验证，请先用数据库副本验证。
+
+1. 停止 `x-ui`，备份数据库（默认 SQLite 目录为 `/etc/x-ui/`）、`/usr/local/x-ui/`、`/usr/bin/x-ui`、证书和系统环境文件（`/etc/default/x-ui`、`/etc/sysconfig/x-ui` 或 `/etc/conf.d/x-ui`）。PostgreSQL 用户还需导出数据库。备份后可重新启动原服务。
+2. 以 root 运行本分支的更新脚本。首次切换前，旧安装的 `x-ui update` 仍指向原版，需使用以下命令：
+
+   ```bash
+   curl -fL https://raw.githubusercontent.com/ynetlab/3x-ui/main/update.sh -o /root/3x-ui-update.sh && bash /root/3x-ui-update.sh
+   ```
+
+3. 检查 `x-ui status`、面板、入站和订阅。之后通过本分支面板或 `x-ui update` 更新，来源均为 `ynetlab/3x-ui`。
+
+默认更新本仓库的最新稳定版。指定已发布标签可运行 `XUI_UPDATE_TAG=v3.11.0 bash /root/3x-ui-update.sh`；使用 `dev-latest` 则安装滚动预发布版。标签必须存在于本分支的 [Releases](https://github.com/ynetlab/3x-ui/releases)。
+
+需要回退时，停止服务，配套恢复升级前的数据库、程序目录、CLI 和环境配置，再启动服务；不要直接用旧二进制打开迁移后的数据库。Docker 用户应先备份挂载的数据库及配置，再将镜像切换至 `ghcr.io/ynetlab/3x-ui` 并保留原挂载。
 
 ## 支持的平台
 
@@ -146,7 +165,7 @@ docker compose --profile postgres up -d
 该镜像捆绑了 Fail2ban（默认启用），用于强制执行按客户端的 **IP 限制**。Fail2ban 使用 `iptables` 封禁违规者，这需要 `NET_ADMIN` 权限。`docker-compose.yml` 已通过 `cap_add` 授予该权限；如果您改用 `docker run` 启动容器，请自行添加这些权限，否则封禁只会被记录而永远不会生效：
 
 ```bash
-docker run -d --cap-add=NET_ADMIN --cap-add=NET_RAW ... ghcr.io/mhsanaei/3x-ui
+docker run -d --cap-add=NET_ADMIN --cap-add=NET_RAW ... ghcr.io/ynetlab/3x-ui
 ```
 
 ## 环境变量

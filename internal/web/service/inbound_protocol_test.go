@@ -72,6 +72,10 @@ func TestInboundCanHostFallbacks_StaysTcpOnly(t *testing.T) {
 	}{
 		{"vless tcp tls", model.VLESS, `{"network":"tcp","security":"tls"}`, "", true},
 		{"trojan tcp reality", model.Trojan, `{"network":"tcp","security":"reality"}`, "", true},
+		{"anytls tcp tls", model.AnyTLS, `{"network":"tcp","security":"tls"}`, "", true},
+		{"anytls tcp reality", model.AnyTLS, `{"network":"tcp","security":"reality"}`, "", true},
+		{"anytls ws tls", model.AnyTLS, `{"network":"ws","security":"tls"}`, "", false},
+		{"anytls tcp none", model.AnyTLS, `{"network":"tcp","security":"none"}`, "", false},
 		{"vless xhttp vlessenc not fallback-capable", model.VLESS, `{"network":"xhttp","security":"none"}`, `{"encryption":"` + vlessEncValue + `"}`, false},
 		{"vmess tcp tls not fallback-capable", model.VMESS, `{"network":"tcp","security":"tls"}`, "", false},
 		{"nil-ish empty stream", model.VLESS, "", "", false},

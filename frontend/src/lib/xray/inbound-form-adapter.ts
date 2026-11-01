@@ -336,7 +336,7 @@ export function dropLegacyOptionalEmpties(
   settings: Record<string, unknown>,
   stream: Record<string, unknown> | undefined,
 ): void {
-  // VLESS/Trojan emit `fallbacks` only when non-empty.
+  // VLESS/Trojan/AnyTLS emit `fallbacks` only when non-empty.
   const fb = settings.fallbacks;
   if (Array.isArray(fb) && fb.length === 0) delete settings.fallbacks;
 

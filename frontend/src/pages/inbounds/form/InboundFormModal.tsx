@@ -230,6 +230,7 @@ export default function InboundFormModal({
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState<RealityScanResult | null>(null);
   const [activeTab, setActiveTab] = useState('basic');
+  const protocol = (useWatch({ control, name: 'protocol' }) ?? '') as string;
   const {
     fallbacks,
     fallbackChildOptions,
@@ -240,10 +241,9 @@ export default function InboundFormModal({
     removeFallback,
     moveFallback,
     addAllFallbacks,
-  } = useInboundFallbacks(dbInbound, dbInbounds);
+  } = useInboundFallbacks(dbInbound, dbInbounds, protocol);
 
   const selectableNodes = (availableNodes || []).filter((n) => n.enable);
-  const protocol = (useWatch({ control, name: 'protocol' }) ?? '') as string;
   const isNodeEligible = !!NODE_ELIGIBLE_PROTOCOLS[protocol];
   /*
    * The `node` share-address strategy only means something when the inbound can
@@ -297,7 +297,7 @@ export default function InboundFormModal({
     settings: { network: wSsNetwork, allowedNetwork: wTunnelNetwork, udp: mixedUdpOn },
   });
   const isFallbackHost =
-    (protocol === Protocols.VLESS || protocol === Protocols.TROJAN) &&
+    [Protocols.VLESS, Protocols.TROJAN, Protocols.ANYTLS].some((p) => p === protocol) &&
     network === 'tcp' &&
     (security === 'tls' || security === 'reality');
 
@@ -452,7 +452,7 @@ export default function InboundFormModal({
     if (
       mode === 'edit' &&
       dbInbound &&
-      (dbInbound.protocol === Protocols.VLESS || dbInbound.protocol === Protocols.TROJAN)
+      [Protocols.VLESS, Protocols.TROJAN, Protocols.ANYTLS].some((p) => p === dbInbound.protocol)
     ) {
       loadFallbacks(dbInbound.id);
     } else {
@@ -586,7 +586,10 @@ export default function InboundFormModal({
         if (isFallbackHost) {
           const obj = msg.obj as { id?: number; Id?: number } | null;
           const masterId = mode === 'edit' ? dbInbound!.id : (obj?.id ?? obj?.Id ?? 0);
-          if (masterId) await saveFallbacks(masterId);
+          if (masterId) {
+            const saved = await saveFallbacks(masterId);
+            if (protocol === Protocols.ANYTLS && !saved) return;
+          }
         }
         onSaved();
         onClose();
@@ -784,6 +787,7 @@ export default function InboundFormModal({
 
   const fallbacksCard = (
     <FallbacksCard
+      protocol={protocol}
       fallbacks={fallbacks}
       fallbackChildOptions={fallbackChildOptions}
       addFallback={addFallback}
@@ -837,7 +841,7 @@ export default function InboundFormModal({
       )}
 
       {isFallbackHost && fallbacksCard}
-      {(protocol === Protocols.VLESS || protocol === Protocols.TROJAN) &&
+      {[Protocols.VLESS, Protocols.TROJAN, Protocols.ANYTLS].some((p) => p === protocol) &&
         network === 'tcp' &&
         !isFallbackHost && (
           <Alert

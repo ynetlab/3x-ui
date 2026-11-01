@@ -94,6 +94,8 @@ require (
 	github.com/power-devops/perfstat v0.0.0-20260916203055-22a1a467d9f0 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/rogpeppe/go-internal v1.15.0 // indirect
+	github.com/sagernet/sing v0.8.14 // indirect
+	github.com/sagernet/sing-anytls v0.0.0-20260928104022-580984e4d8cb // indirect
 	github.com/tklauser/go-sysconf v0.4.0 // indirect
 	github.com/tklauser/numcpus v0.12.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
@@ -120,6 +122,6 @@ require (
 	lukechampine.com/blake3 v1.4.1 // indirect
 )
 
-replace github.com/xtls/xray-core => github.com/ynetlab/Xray-core v0.0.0-20261031104240-4af4330d438f
+replace github.com/xtls/xray-core => github.com/ynetlab/Xray-core v0.0.0-20261101031655-55221b9d69a5
 
 replace github.com/xtls/reality => github.com/ynetlab/REALITY v0.0.0-20261031030901-0a425ae54855

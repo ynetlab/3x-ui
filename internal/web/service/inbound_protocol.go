@@ -128,7 +128,7 @@ func vlessEncValueSet(v string) bool {
 }
 
 // inboundCanHostFallbacks gates the settings.fallbacks injection.
-// Xray only honors fallbacks on VLESS and Trojan inbounds carried over
+// Xray honors fallbacks on VLESS, Trojan and AnyTLS inbounds carried over
 // TCP transport with TLS or Reality security. This is intentionally stricter
 // than inboundCanEnableTlsFlow (which also accepts any vlessenc stream): fallbacks
 // are a raw-TCP-only feature.
@@ -136,7 +136,7 @@ func inboundCanHostFallbacks(ib *model.Inbound) bool {
 	if ib == nil {
 		return false
 	}
-	if ib.Protocol != model.VLESS && ib.Protocol != model.Trojan {
+	if ib.Protocol != model.VLESS && ib.Protocol != model.Trojan && ib.Protocol != model.AnyTLS {
 		return false
 	}
 	return streamSupportsFallbacks(ib.StreamSettings)

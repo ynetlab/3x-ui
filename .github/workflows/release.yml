@@ -21,7 +21,7 @@ on:
       - ".github/workflows/release.yml"
 
 env:
-  XRAY_VERSION: ${{ vars.XRAY_VERSION || 'v26.10.29' }}
+  XRAY_VERSION: ${{ vars.XRAY_VERSION || 'v26.10.30' }}
 
 jobs:
   build:

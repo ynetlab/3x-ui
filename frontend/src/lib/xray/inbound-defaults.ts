@@ -396,7 +396,7 @@ export function createDefaultInboundSettings(protocol: string): AnyInboundSettin
     case 'vmess':
       return createDefaultVmessInboundSettings();
     case 'anytls':
-      return { clients: [], paddingScheme: [] };
+      return { clients: [], paddingScheme: [], fallbacks: [] };
     case 'trojan':
       return createDefaultTrojanInboundSettings();
     case 'shadowsocks':
