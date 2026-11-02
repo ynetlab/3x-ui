@@ -1,4 +1,25 @@
 {
+  "nodeStatus": {
+    "title": "System status",
+    "subtitle": "Live resources and Xray status across your panels.",
+    "live": "LIVE MONITORING",
+    "panelCount": "{count} panels",
+    "master": "Master",
+    "child": "Node",
+    "details": "Details",
+    "restart": "Restart",
+    "stop": "Stop",
+    "online": "Online",
+    "offline": "Offline",
+    "disabled": "Disabled",
+    "connecting": "Connecting",
+    "unknown": "Unknown",
+    "indirect": "Indirect node",
+    "indirectHint": "Manage this node from its parent panel. Cached metrics are shown here.",
+    "container": "Container",
+    "connections": "Connections",
+    "load": "Load · 1 / 5 / 15m"
+  },
   "nodeXray": {
     "target": "Configuration target",
     "local": "Master (this panel)",

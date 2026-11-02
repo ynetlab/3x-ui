@@ -19,8 +19,10 @@ import { Sparkline } from '@/components/viz';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { Status } from '@/models/status';
 import './SystemHistoryModal.css';
+import { nodeTargetUrl, useNodeTarget } from '@/api/nodeTarget';
 
 interface SystemHistoryModalProps {
+  targetName?: string;
   open: boolean;
   status: Status;
   onClose: () => void;
@@ -216,9 +218,15 @@ const EMPTY_CHART: HistoryChart = {
   timestamps: [],
 };
 
-async function loadBucket(metric: (typeof METRICS)[number], bucket: number): Promise<HistoryChart> {
+async function loadBucket(
+  metric: (typeof METRICS)[number],
+  bucket: number,
+  nodeId?: number,
+): Promise<HistoryChart> {
   try {
-    const msg = await HttpUtil.get(`/panel/api/server/history/${metric.key}/${bucket}`);
+    const msg = await HttpUtil.get(
+      nodeTargetUrl(`/panel/api/server/history/${metric.key}/${bucket}`, nodeId),
+    );
     if (!msg?.success || !Array.isArray(msg.obj)) return EMPTY_CHART;
     const points: number[] = [];
     const labels: string[] = [];
@@ -242,7 +250,9 @@ async function loadBucket(metric: (typeof METRICS)[number], bucket: number): Pro
     }
     const fetchAligned = async (key?: string): Promise<number[]> => {
       if (!key) return [];
-      const m = await HttpUtil.get(`/panel/api/server/history/${key}/${bucket}`);
+      const m = await HttpUtil.get(
+        nodeTargetUrl(`/panel/api/server/history/${key}/${bucket}`, nodeId),
+      );
       if (!m?.success || !Array.isArray(m.obj)) return [];
       const byTs = new Map<number, number>();
       for (const p of m.obj) byTs.set(Number(p.t) || 0, Number(p.v) || 0);
@@ -261,7 +271,13 @@ async function loadBucket(metric: (typeof METRICS)[number], bucket: number): Pro
   }
 }
 
-export default function SystemHistoryModal({ open, status, onClose }: SystemHistoryModalProps) {
+export default function SystemHistoryModal({
+  open,
+  status,
+  onClose,
+  targetName,
+}: SystemHistoryModalProps) {
+  const target = useNodeTarget();
   const { t } = useTranslation();
   const { isMobile } = useMediaQuery();
   const [activeKey, setActiveKey] = useState('cpu');
@@ -295,9 +311,9 @@ export default function SystemHistoryModal({ open, status, onClose }: SystemHist
 
   const fetchBucket = useCallback(async () => {
     if (!activeMetric) return;
-    const next = await loadBucket(activeMetric, bucket);
+    const next = await loadBucket(activeMetric, bucket, target.nodeId);
     setChart(next);
-  }, [activeMetric, bucket]);
+  }, [activeMetric, bucket, target.nodeId]);
 
   const [wasOpen, setWasOpen] = useState(false);
   if (open !== wasOpen) {
@@ -309,13 +325,13 @@ export default function SystemHistoryModal({ open, status, onClose }: SystemHist
     if (!open || !activeMetric) return;
     let cancelled = false;
     void (async () => {
-      const next = await loadBucket(activeMetric, bucket);
+      const next = await loadBucket(activeMetric, bucket, target.nodeId);
       if (!cancelled) setChart(next);
     })();
     return () => {
       cancelled = true;
     };
-  }, [open, activeMetric, bucket]);
+  }, [open, activeMetric, bucket, target.nodeId]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -332,7 +348,10 @@ export default function SystemHistoryModal({ open, status, onClose }: SystemHist
       onCancel={onClose}
       title={
         <div className="metric-modal-title">
-          <span>{t('pages.index.systemHistoryTitle')}</span>
+          <span>
+            {t('pages.index.systemHistoryTitle')}
+            {targetName && <span className="node-modal-target">{targetName}</span>}
+          </span>
           <Select
             aria-label={t('pages.index.timeRange')}
             value={bucket}

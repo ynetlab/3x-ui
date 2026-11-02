@@ -15,10 +15,12 @@ import { HttpUtil, Msg, SizeFormatter } from '@/utils';
 import { Sparkline } from '@/components/viz';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import './XrayMetricsModal.css';
+import { nodeTargetUrl, useNodeTarget } from '@/api/nodeTarget';
 
 const OBS_KEY = 'xrObs';
 
 interface XrayMetricsModalProps {
+  targetName?: string;
   open: boolean;
   onClose: () => void;
 }
@@ -182,9 +184,11 @@ async function loadHistory(url: string | null, bucket: number): Promise<MetricsC
   }
 }
 
-async function loadState(): Promise<XrayState | null> {
+async function loadState(nodeId?: number): Promise<XrayState | null> {
   try {
-    const msg = await HttpUtil.get<XrayState>('/panel/api/server/xrayMetricsState');
+    const msg = await HttpUtil.get<XrayState>(
+      nodeTargetUrl('/panel/api/server/xrayMetricsState', nodeId),
+    );
     return msg?.success && msg.obj ? msg.obj : null;
   } catch (e) {
     console.error('Failed to fetch xray metrics state', e);
@@ -192,9 +196,11 @@ async function loadState(): Promise<XrayState | null> {
   }
 }
 
-async function loadObservatory(): Promise<ObservatoryTag[]> {
+async function loadObservatory(nodeId?: number): Promise<ObservatoryTag[]> {
   try {
-    const msg = await HttpUtil.get<ObservatoryTag[]>('/panel/api/server/xrayObservatory');
+    const msg = await HttpUtil.get<ObservatoryTag[]>(
+      nodeTargetUrl('/panel/api/server/xrayObservatory', nodeId),
+    );
     return msg?.success && Array.isArray(msg.obj) ? msg.obj : [];
   } catch (e) {
     console.error('Failed to fetch observatory snapshot', e);
@@ -202,7 +208,8 @@ async function loadObservatory(): Promise<ObservatoryTag[]> {
   }
 }
 
-export default function XrayMetricsModal({ open, onClose }: XrayMetricsModalProps) {
+export default function XrayMetricsModal({ open, onClose, targetName }: XrayMetricsModalProps) {
+  const target = useNodeTarget();
   const { t } = useTranslation();
   const { isMobile } = useMediaQuery();
   const [activeKey, setActiveKey] = useState('xrAlloc');
@@ -246,13 +253,13 @@ export default function XrayMetricsModal({ open, onClose }: XrayMetricsModalProp
     if (!open) return;
     let cancelled = false;
     void (async () => {
-      const next = await loadState();
+      const next = await loadState(target.nodeId);
       if (!cancelled && next) setState(next);
     })();
     return () => {
       cancelled = true;
     };
-  }, [open]);
+  }, [open, target.nodeId]);
 
   // The observatory snapshot is a live view, so it re-polls; obsTick then pulls
   // the chart along with it.
@@ -260,7 +267,7 @@ export default function XrayMetricsModal({ open, onClose }: XrayMetricsModalProp
     if (!open || !isObservatory) return;
     let cancelled = false;
     const tick = async () => {
-      const tags = await loadObservatory();
+      const tags = await loadObservatory(target.nodeId);
       if (cancelled) return;
       setObsTags(tags);
       setObsActiveTag((prev) => (tags.find((tg) => tg.tag === prev) ? prev : tags[0]?.tag || ''));
@@ -272,7 +279,7 @@ export default function XrayMetricsModal({ open, onClose }: XrayMetricsModalProp
       cancelled = true;
       window.clearInterval(id);
     };
-  }, [open, isObservatory]);
+  }, [open, isObservatory, target.nodeId]);
 
   const historyUrl = isObservatory
     ? obsActiveTag
@@ -286,13 +293,13 @@ export default function XrayMetricsModal({ open, onClose }: XrayMetricsModalProp
     if (!open) return;
     let cancelled = false;
     void (async () => {
-      const next = await loadHistory(historyUrl, bucket);
+      const next = await loadHistory(historyUrl ? target.url(historyUrl) : null, bucket);
       if (!cancelled) setChart(next);
     })();
     return () => {
       cancelled = true;
     };
-  }, [open, historyUrl, bucket, obsTick]);
+  }, [open, historyUrl, bucket, obsTick, target]);
 
   return (
     <Modal
@@ -302,7 +309,10 @@ export default function XrayMetricsModal({ open, onClose }: XrayMetricsModalProp
       onCancel={onClose}
       title={
         <div className="metric-modal-title">
-          <span>{t('pages.index.xrayMetricsTitle')}</span>
+          <span>
+            {t('pages.index.xrayMetricsTitle')}
+            {targetName && <span className="node-modal-target">{targetName}</span>}
+          </span>
           <Select
             aria-label={t('pages.index.timeRange')}
             value={bucket}

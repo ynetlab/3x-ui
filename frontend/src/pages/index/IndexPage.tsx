@@ -1,6 +1,6 @@
 import { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, ConfigProvider, Layout, Modal, Result, Spin, message } from 'antd';
+import { Alert, Button, ConfigProvider, Layout, Modal, Result, Spin, message } from 'antd';
 import {
   CopyOutlined,
   CloudDownloadOutlined,
@@ -19,6 +19,8 @@ import {
 } from '@/models/status';
 import { useTheme } from '@/hooks/useTheme';
 import { useStatusQuery } from '@/api/queries/useStatusQuery';
+import { useNodesQuery } from '@/api/queries/useNodesQuery';
+import NodeStatusOverview from './NodeStatusOverview';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import AppSidebar from '@/layouts/AppSidebar';
 import { LazyMount } from '@/components/utility';
@@ -46,6 +48,8 @@ export default function IndexPage() {
   const { t } = useTranslation();
   const { isDark, isUltra, antdThemeConfig } = useTheme();
   const { status, fetched, fetchError, refresh } = useStatusQuery();
+  const { nodes, fetchError: nodesError } = useNodesQuery({ refetchInterval: 10000 });
+  const hasNodes = nodes.length > 0;
   const { isMobile } = useMediaQuery();
   const [messageApi, messageContextHolder] = message.useMessage();
   useEffect(() => {
@@ -173,13 +177,25 @@ export default function IndexPage() {
 
         <Layout className="content-shell">
           <Layout.Content className="content-area">
+            {nodesError && (
+              <Alert type="error" showIcon title={nodesError} style={{ marginBottom: 16 }} />
+            )}
             <Spin
-              spinning={loading || !fetched}
+              spinning={loading || (!fetched && !hasNodes)}
               delay={200}
               description={loading ? loadingTip : t('loading')}
               size="large"
             >
-              {!fetched ? (
+              {hasNodes ? (
+                <NodeStatusOverview
+                  nodes={nodes}
+                  masterVersion={displayVersion}
+                  onMasterBackup={() => setBackupOpen(true)}
+                  onMasterPanelUpdate={() => setPanelUpdateOpen(true)}
+                  onMasterVersionSwitch={() => setVersionOpen(true)}
+                  onMasterAmneziaWGLogs={() => setAmneziawgLogsOpen(true)}
+                />
+              ) : !fetched ? (
                 <div className="loading-spacer" />
               ) : fetchError ? (
                 <Result

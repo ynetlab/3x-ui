@@ -78,7 +78,7 @@ func (a *APIController) forwardNodeXray(c *gin.Context) {
 // allowlist checks their concrete values before a request reaches another panel.
 func nodeXrayRequestPath(c *gin.Context) string {
 	path := relAPIPath(c.FullPath())
-	for _, key := range []string{"action", "id"} {
+	for _, key := range []string{"action", "id", "count", "metric", "bucket", "tag", "version", "fileName"} {
 		path = strings.ReplaceAll(path, ":"+key, c.Param(key))
 	}
 	return path

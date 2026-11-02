@@ -1,4 +1,25 @@
 {
+  "nodeStatus": {
+    "title": "系统状态",
+    "subtitle": "集中查看各面板的资源使用情况与 Xray 运行状态。",
+    "live": "实时监控",
+    "panelCount": "{count} 个面板",
+    "master": "Master",
+    "child": "子节点",
+    "details": "详细",
+    "restart": "重启",
+    "stop": "停止",
+    "online": "在线",
+    "offline": "离线",
+    "disabled": "已禁用",
+    "connecting": "连接中",
+    "unknown": "未知",
+    "indirect": "间接节点",
+    "indirectHint": "请在其上级面板管理此节点。此处显示已采集的指标。",
+    "container": "容器",
+    "connections": "连接数",
+    "load": "负载 · 1 / 5 / 15 分钟"
+  },
   "nodeXray": {
     "target": "配置目标",
     "local": "Master（当前面板）",

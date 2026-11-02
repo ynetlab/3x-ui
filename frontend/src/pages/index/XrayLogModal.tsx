@@ -5,12 +5,14 @@ import { Button, Checkbox, Form, Input, Modal, Select, Tag } from 'antd';
 import { DownloadOutlined, SyncOutlined } from '@ant-design/icons';
 
 import { HttpUtil, FileManager, IntlUtil, PromiseUtil } from '@/utils';
+import { useNodeTarget } from '@/api/nodeTarget';
 import { activateOnKey } from '@/utils/a11y';
 import { useDatepicker } from '@/hooks/useDatepicker';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import './XrayLogModal.css';
 
 interface XrayLogModalProps {
+  targetName?: string;
   open: boolean;
   onClose: () => void;
 }
@@ -61,7 +63,8 @@ function shortTime(value?: string | number): string {
 
 const AUTO_UPDATE_INTERVAL = 5000;
 
-export default function XrayLogModal({ open, onClose }: XrayLogModalProps) {
+export default function XrayLogModal({ open, onClose, targetName }: XrayLogModalProps) {
+  const target = useNodeTarget();
   const { t } = useTranslation();
   const uid = useId();
   const { datepicker } = useDatepicker();
@@ -79,18 +82,21 @@ export default function XrayLogModal({ open, onClose }: XrayLogModalProps) {
 
   const runRefresh = useCallback(async () => {
     try {
-      const msg = await HttpUtil.post<XrayLogEntry[]>(`/panel/api/server/xraylogs/${rows}`, {
-        filter,
-        showDirect,
-        showBlocked,
-        showProxy,
-      });
+      const msg = await HttpUtil.post<XrayLogEntry[]>(
+        target.url(`/panel/api/server/xraylogs/${rows}`),
+        {
+          filter,
+          showDirect,
+          showBlocked,
+          showProxy,
+        },
+      );
       if (msg?.success) setLogs(msg.obj || []);
       await PromiseUtil.sleep(300);
     } finally {
       setLoading(false);
     }
-  }, [rows, filter, showDirect, showBlocked, showProxy]);
+  }, [rows, filter, showDirect, showBlocked, showProxy, target]);
 
   const refresh = useCallback(() => {
     setLoading(true);
@@ -159,6 +165,7 @@ export default function XrayLogModal({ open, onClose }: XrayLogModalProps) {
       title={
         <>
           {t('pages.index.accessLogs')}
+          {targetName && <span className="node-modal-target">{targetName}</span>}
           <SyncOutlined
             spin={loading}
             className="reload-icon"

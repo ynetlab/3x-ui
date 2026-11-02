@@ -6,6 +6,7 @@ import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { XrayConfigPayloadSchema } from '@/schemas/xray';
 import { isOutboundProtocol } from '@/schemas/primitives';
 import { HttpUtil } from '@/utils';
+import { useNodeTarget } from '@/api/nodeTarget';
 
 interface GeodataAssetRow {
   url: string;
@@ -33,6 +34,7 @@ function fileNameFromUrl(url: string): string {
 
 export default function GeodataSection({ active, onBusy, onClose }: GeodataSectionProps) {
   const { t } = useTranslation();
+  const target = useNodeTarget();
   const uid = useId();
   const [modal, modalContextHolder] = Modal.useModal();
   const [messageApi, messageContextHolder] = message.useMessage();
@@ -47,7 +49,7 @@ export default function GeodataSection({ active, onBusy, onClose }: GeodataSecti
 
   const load = useCallback(async () => {
     try {
-      const msg = await HttpUtil.post('/panel/api/xray/', undefined, { silent: true });
+      const msg = await HttpUtil.post(target.url('/panel/api/xray/'), undefined, { silent: true });
       if (!msg?.success || typeof msg.obj !== 'string') return;
       const parsed = XrayConfigPayloadSchema.safeParse(JSON.parse(msg.obj));
       if (!parsed.success) return;
@@ -91,7 +93,7 @@ export default function GeodataSection({ active, onBusy, onClose }: GeodataSecti
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [target]);
 
   const [wasActive, setWasActive] = useState(false);
   if (active !== wasActive) {
@@ -160,12 +162,12 @@ export default function GeodataSection({ active, onBusy, onClose }: GeodataSecti
         onClose();
         onBusy({ busy: true, tip: t('pages.index.dontRefresh') });
         try {
-          const msg = await HttpUtil.post('/panel/api/xray/update', {
+          const msg = await HttpUtil.post(target.url('/panel/api/xray/update'), {
             xraySetting: JSON.stringify(next, null, 2),
             outboundTestUrl: outboundTestUrlRef.current,
           });
           if (msg?.success) {
-            await HttpUtil.post('/panel/api/server/restartXrayService');
+            await HttpUtil.post(target.url('/panel/api/server/restartXrayService'));
           }
         } finally {
           onBusy({ busy: false });

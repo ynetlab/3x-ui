@@ -4,6 +4,7 @@ import { Alert, Button, Collapse, Modal, Radio, Spin, Tag, Tooltip } from 'antd'
 import { ReloadOutlined } from '@ant-design/icons';
 
 import { HttpUtil } from '@/utils';
+import { useNodeTarget } from '@/api/nodeTarget';
 import { activateOnKey } from '@/utils/a11y';
 import type { Status } from '@/models/status';
 import GeodataSection from './GeodataSection';
@@ -16,6 +17,7 @@ interface BusyEvent {
 
 interface VersionModalProps {
   open: boolean;
+  targetName?: string;
   status: Status;
   onClose: () => void;
   onBusy: (e: BusyEvent) => void;
@@ -30,8 +32,15 @@ const GEOFILES = [
   'geoip_RU.dat',
 ];
 
-export default function VersionModal({ open, status, onClose, onBusy }: VersionModalProps) {
+export default function VersionModal({
+  open,
+  status,
+  onClose,
+  onBusy,
+  targetName,
+}: VersionModalProps) {
   const { t } = useTranslation();
+  const target = useNodeTarget();
   const [modal, modalContextHolder] = Modal.useModal();
   const [activeKey, setActiveKey] = useState<string | string[]>('1');
   const [versions, setVersions] = useState<string[]>([]);
@@ -39,12 +48,12 @@ export default function VersionModal({ open, status, onClose, onBusy }: VersionM
 
   const fetchVersions = useCallback(async () => {
     try {
-      const msg = await HttpUtil.get<string[]>('/panel/api/server/getXrayVersion');
+      const msg = await HttpUtil.get<string[]>(target.url('/panel/api/server/getXrayVersion'));
       if (msg?.success) setVersions(msg.obj || []);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [target]);
 
   const [wasOpen, setWasOpen] = useState(false);
   if (open !== wasOpen) {
@@ -58,7 +67,7 @@ export default function VersionModal({ open, status, onClose, onBusy }: VersionM
 
   function switchXrayVersion(version: string) {
     modal.confirm({
-      title: t('pages.index.xraySwitchVersionDialog'),
+      title: [t('pages.index.xraySwitchVersionDialog'), targetName].filter(Boolean).join(' · '),
       content: t('pages.index.xraySwitchVersionDialogDesc').replace('#version#', version),
       okText: t('confirm'),
       cancelText: t('cancel'),
@@ -66,7 +75,9 @@ export default function VersionModal({ open, status, onClose, onBusy }: VersionM
         onClose();
         onBusy({ busy: true, tip: t('pages.index.dontRefresh') });
         try {
-          await HttpUtil.post(`/panel/api/server/installXray/${version}`);
+          await HttpUtil.post(
+            target.url(`/panel/api/server/installXray/${encodeURIComponent(version)}`),
+          );
         } finally {
           onBusy({ busy: false });
         }
@@ -77,7 +88,7 @@ export default function VersionModal({ open, status, onClose, onBusy }: VersionM
   function updateGeofile(fileName: string) {
     const isSingle = !!fileName;
     modal.confirm({
-      title: t('pages.index.geofileUpdateDialog'),
+      title: [t('pages.index.geofileUpdateDialog'), targetName].filter(Boolean).join(' · '),
       content: isSingle
         ? t('pages.index.geofileUpdateDialogDesc').replace('#filename#', fileName)
         : t('pages.index.geofilesUpdateDialogDesc'),
@@ -90,7 +101,7 @@ export default function VersionModal({ open, status, onClose, onBusy }: VersionM
           ? `/panel/api/server/updateGeofile/${fileName}`
           : '/panel/api/server/updateGeofile';
         try {
-          await HttpUtil.post(url);
+          await HttpUtil.post(target.url(url));
         } finally {
           onBusy({ busy: false });
         }
@@ -101,7 +112,12 @@ export default function VersionModal({ open, status, onClose, onBusy }: VersionM
   const activeKeyStr = Array.isArray(activeKey) ? activeKey[0] : activeKey;
 
   return (
-    <Modal open={open} title={t('pages.index.xrayUpdates')} footer={null} onCancel={onClose}>
+    <Modal
+      open={open}
+      title={[t('pages.index.xrayUpdates'), targetName].filter(Boolean).join(' · ')}
+      footer={null}
+      onCancel={onClose}
+    >
       {modalContextHolder}
       <Spin spinning={loading}>
         <Collapse

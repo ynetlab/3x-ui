@@ -4,19 +4,22 @@ import { Button, Checkbox, Form, Modal, Select, Space } from 'antd';
 import { DownloadOutlined, SyncOutlined } from '@ant-design/icons';
 
 import { HttpUtil, FileManager, PromiseUtil } from '@/utils';
+import { useNodeTarget } from '@/api/nodeTarget';
 import { activateOnKey } from '@/utils/a11y';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { parseLogLine } from './logParse';
 import './LogModal.css';
 
 interface LogModalProps {
+  targetName?: string;
   open: boolean;
   onClose: () => void;
 }
 
 const AUTO_UPDATE_INTERVAL = 5000;
 
-export default function LogModal({ open, onClose }: LogModalProps) {
+export default function LogModal({ open, onClose, targetName }: LogModalProps) {
+  const target = useNodeTarget();
   const { t } = useTranslation();
   const { isMobile } = useMediaQuery();
   const [rows, setRows] = useState('20');
@@ -28,7 +31,7 @@ export default function LogModal({ open, onClose }: LogModalProps) {
 
   const runRefresh = useCallback(async () => {
     try {
-      const msg = await HttpUtil.post<string[]>(`/panel/api/server/logs/${rows}`, {
+      const msg = await HttpUtil.post<string[]>(target.url(`/panel/api/server/logs/${rows}`), {
         level,
         syslog,
       });
@@ -39,7 +42,7 @@ export default function LogModal({ open, onClose }: LogModalProps) {
     } finally {
       setLoading(false);
     }
-  }, [rows, level, syslog]);
+  }, [rows, level, syslog, target]);
 
   const refresh = useCallback(() => {
     setLoading(true);
@@ -79,6 +82,7 @@ export default function LogModal({ open, onClose }: LogModalProps) {
   const titleNode = (
     <>
       {t('pages.index.logs')}
+      {targetName && <span className="node-modal-target">{targetName}</span>}
       <SyncOutlined
         spin={loading}
         className="reload-icon"

@@ -27,10 +27,11 @@ async function fetchNodes(): Promise<NodeRecord[]> {
   return Array.isArray(validated.obj) ? validated.obj : [];
 }
 
-export function useNodesQuery() {
+export function useNodesQuery(options: { refetchInterval?: number } = {}) {
   const query = useQuery({
     queryKey: keys.nodes.list(),
     queryFn: fetchNodes,
+    refetchInterval: options.refetchInterval,
   });
 
   const nodes = useMemo(() => query.data ?? [], [query.data]);
