@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation, useNavigate } from 'react-router';
+import { useLocation, useNavigate, useSearchParams } from 'react-router';
 import {
   Alert,
   Button,
@@ -24,6 +24,8 @@ import type { XraySettingsValue } from '@/hooks/useXraySetting';
 import AppSidebar from '@/layouts/AppSidebar';
 import { JsonEditor } from '@/components/form';
 import { setMessageInstance } from '@/utils/messageBus';
+import { NodeTargetContext, useNodeTarget } from '@/api/nodeTarget';
+import NodeXrayTarget from './NodeXrayTarget';
 
 import { BasicsTab } from './basics';
 import { propagateOutboundTagRename } from './basics/helpers';
@@ -44,6 +46,25 @@ const SECTION_SLUGS = ['basic', 'routing', 'outbound', 'balancer', 'dns', 'advan
 type AdvKey = 'xraySetting' | 'inboundSettings' | 'outboundSettings' | 'routingRuleSettings';
 
 export default function XrayPage() {
+  const { t } = useTranslation();
+  const [params] = useSearchParams();
+  const rawNodeId = params.get('nodeId');
+  const nodeId = rawNodeId === null ? undefined : Number(rawNodeId);
+  if (
+    nodeId !== undefined &&
+    (!/^\d+$/.test(rawNodeId!) || !Number.isSafeInteger(nodeId) || nodeId <= 0)
+  ) {
+    return <Result status="error" title={t('nodeXray.invalidNode')} />;
+  }
+  return (
+    <NodeTargetContext.Provider key={nodeId ?? 'local'} value={nodeId}>
+      <XrayEditor />
+    </NodeTargetContext.Provider>
+  );
+}
+
+function XrayEditor() {
+  const target = useNodeTarget();
   const { t } = useTranslation();
   const { isDark, isUltra, antdThemeConfig } = useTheme();
   const { isMobile } = useMediaQuery();
@@ -196,7 +217,7 @@ export default function XrayPage() {
       JSON.parse(xraySetting);
     } catch (e) {
       messageApi.error(`Advanced JSON: ${(e as Error).message}`);
-      navigate('/xray#advanced');
+      navigate(target.url('/xray') + '#advanced');
       return;
     }
     if (templateSettings) {
@@ -318,6 +339,7 @@ export default function XrayPage() {
 
         <Layout className="content-shell">
           <Layout.Content id="content-layout" className="content-area">
+            <NodeXrayTarget dirty={!saveDisabled} busy={spinning || testingAll} />
             <Spin
               spinning={spinning || !fetched}
               delay={200}

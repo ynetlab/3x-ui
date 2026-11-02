@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 
 import { keys } from '@/api/queryKeys';
+import { nodeTargetUrl, useNodeTarget } from '@/api/nodeTarget';
 import {
   GeoCategoryPageSchema,
   GeoEntryPageSchema,
@@ -25,16 +26,24 @@ export interface ValidateGeoTokensInput {
   kind: GeoTokenKind;
 }
 
-async function fetchGeodataFiles(): Promise<GeoFile[]> {
-  const msg = await HttpUtil.get('/panel/api/xray/geodata/files', undefined, { silent: true });
+async function fetchGeodataFiles(nodeId?: number): Promise<GeoFile[]> {
+  const msg = await HttpUtil.get(
+    nodeTargetUrl('/panel/api/xray/geodata/files', nodeId),
+    undefined,
+    { silent: true },
+  );
   if (!msg?.success) throw new Error(msg?.msg || 'Failed to fetch geodata files');
   const validated = parseMsg(msg, GeoFileListSchema, 'xray/geodata/files');
   return Array.isArray(validated.obj) ? validated.obj : [];
 }
 
-async function fetchGeodataCategories(file: string, query: string): Promise<GeoCategoryPage> {
+async function fetchGeodataCategories(
+  file: string,
+  query: string,
+  nodeId?: number,
+): Promise<GeoCategoryPage> {
   const msg = await HttpUtil.get(
-    '/panel/api/xray/geodata/categories',
+    nodeTargetUrl('/panel/api/xray/geodata/categories', nodeId),
     { file, q: query },
     { silent: true },
   );
@@ -49,9 +58,10 @@ async function fetchGeodataEntries(
   query: string,
   offset: number,
   limit: number,
+  nodeId?: number,
 ): Promise<GeoEntryPage> {
   const msg = await HttpUtil.get(
-    '/panel/api/xray/geodata/entries',
+    nodeTargetUrl('/panel/api/xray/geodata/entries', nodeId),
     { file, code, q: query, offset, limit },
     { silent: true },
   );
@@ -61,18 +71,20 @@ async function fetchGeodataEntries(
 }
 
 export function useGeodataFiles(enabled: boolean) {
+  const target = useNodeTarget();
   return useQuery({
-    queryKey: keys.xray.geodata.files(),
-    queryFn: fetchGeodataFiles,
+    queryKey: target.queryKey(keys.xray.geodata.files()),
+    queryFn: () => fetchGeodataFiles(target.nodeId),
     enabled,
     staleTime: 5 * 60 * 1000,
   });
 }
 
 export function useGeodataCategories(file: string | undefined, query: string, enabled: boolean) {
+  const target = useNodeTarget();
   return useQuery({
-    queryKey: keys.xray.geodata.categories(file ?? '', query),
-    queryFn: () => fetchGeodataCategories(file ?? '', query),
+    queryKey: target.queryKey(keys.xray.geodata.categories(file ?? '', query)),
+    queryFn: () => fetchGeodataCategories(file ?? '', query, target.nodeId),
     enabled: enabled && !!file,
     staleTime: 5 * 60 * 1000,
     placeholderData: keepPreviousData,
@@ -87,19 +99,23 @@ export function useGeodataEntries(
   limit: number,
   enabled: boolean,
 ) {
+  const target = useNodeTarget();
   return useQuery({
-    queryKey: keys.xray.geodata.entries(file ?? '', code ?? '', query, offset, limit),
-    queryFn: () => fetchGeodataEntries(file ?? '', code ?? '', query, offset, limit),
+    queryKey: target.queryKey(
+      keys.xray.geodata.entries(file ?? '', code ?? '', query, offset, limit),
+    ),
+    queryFn: () => fetchGeodataEntries(file ?? '', code ?? '', query, offset, limit, target.nodeId),
     enabled: enabled && !!file && !!code,
     placeholderData: keepPreviousData,
   });
 }
 
 export function useValidateGeoTokens() {
+  const target = useNodeTarget();
   return useMutation<GeodataTokenIssue[], Error, ValidateGeoTokensInput>({
     mutationFn: async ({ tokens, kind }) => {
       const msg = await HttpUtil.post(
-        '/panel/api/xray/geodata/validate',
+        target.url('/panel/api/xray/geodata/validate'),
         { tokens: tokens.join(','), kind },
         { silent: true },
       );

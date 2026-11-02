@@ -1,5 +1,7 @@
-import { act, fireEvent, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter, useLocation } from 'react-router';
+import i18next from 'i18next';
+import { NodeTargetContext } from '@/api/nodeTarget';
 import { afterEach, expect, test, vi } from 'vitest';
 
 import AppSidebar from '@/layouts/AppSidebar';
@@ -73,4 +75,41 @@ test('labels the palette shortcut with the modifier the platform actually uses',
   const view = await renderSidebar();
   const chip = view.container.querySelector('.sidebar-command-kbd');
   expect(chip?.textContent).toBe('CtrlK');
+});
+
+function CurrentLocation() {
+  const location = useLocation();
+  return (
+    <output data-testid="current-location">
+      {location.pathname + location.search + location.hash}
+    </output>
+  );
+}
+
+test('keeps the selected node between full Xray settings, general settings and routing', async () => {
+  renderWithProviders(
+    <MemoryRouter initialEntries={['/xray?nodeId=2#dns']}>
+      <NodeTargetContext.Provider value={2}>
+        <AppSidebar />
+        <CurrentLocation />
+      </NodeTargetContext.Provider>
+    </MemoryRouter>,
+  );
+  await act(async () => {});
+  fireEvent.mouseEnter(document.querySelector('.ant-sidebar')!);
+  fireEvent.click(await screen.findByText(i18next.t('pages.xray.Balancers')));
+  await waitFor(() =>
+    expect(screen.getByTestId('current-location').textContent).toBe('/xray?nodeId=2#balancer'),
+  );
+  fireEvent.click(screen.getByText(i18next.t('menu.settings')));
+  fireEvent.click(await screen.findByText(i18next.t('pages.settings.panelSettings')));
+  await waitFor(() =>
+    expect(screen.getByTestId('current-location').textContent).toBe('/settings?nodeId=2#general'),
+  );
+  expect(screen.queryByText(i18next.t('pages.settings.securitySettings'))).toBeNull();
+  expect(screen.queryByText(i18next.t('pages.settings.TGBotSettings'))).toBeNull();
+  fireEvent.click(screen.getByText(i18next.t('menu.routing')));
+  await waitFor(() =>
+    expect(screen.getByTestId('current-location').textContent).toBe('/routing?nodeId=2'),
+  );
 });

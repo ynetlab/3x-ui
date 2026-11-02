@@ -1,4 +1,14 @@
 {
+  "nodeXray": {
+    "target": "Configuration target",
+    "local": "Master (this panel)",
+    "editing": "Editing node: {name}. Changes are saved directly on this node.",
+    "discardTitle": "Discard unsaved changes?",
+    "discardContent": "Switching nodes will discard the current unsaved changes.",
+    "invalidNode": "Invalid target node",
+    "restartContent": "Restart the selected node's panel. This page stays on the master. If connection settings changed, update the connection in Nodes after restarting.",
+    "connectionHint": "Connection and certificate paths belong to the selected node. After changing its port, base path or HTTPS settings, update its connection in Nodes as needed."
+  },
   "uuidRoute": {
     "credentialHint": "Used by VLESS, VMess, TUIC, Trojan, AnyTLS and Hysteria. Host routing replaces the third UUID group in subscriptions without changing the stored UUID."
   },

@@ -12,6 +12,7 @@ import {
 import type { AllSetting } from '@/models/setting';
 import { isOutboundProtocol } from '@/schemas/primitives';
 import { HttpUtil, LanguageManager } from '@/utils';
+import { useNodeTarget } from '@/api/nodeTarget';
 import { onNumber } from '@/utils/onNumber';
 import { DefaultSettingTag, SettingListItem } from '@/components/ui';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -31,6 +32,7 @@ interface GeneralTabProps {
 
 export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProps) {
   const { t } = useTranslation();
+  const target = useNodeTarget();
   const { isMobile } = useMediaQuery();
 
   const [lang, setLang] = useState<string>(() => LanguageManager.getLanguage());
@@ -43,7 +45,7 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
     (async () => {
       // /options is the slim picker-shaped endpoint — it skips the heavy
       // per-client settings and clientStats payloads that /list ships.
-      const msg = (await HttpUtil.get('/panel/api/inbounds/options')) as ApiMsg<
+      const msg = (await HttpUtil.get(target.url('/panel/api/inbounds/options'))) as ApiMsg<
         {
           tag: string;
           protocol: string;
@@ -65,7 +67,7 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [target]);
 
   useEffect(() => {
     let cancelled = false;
@@ -75,7 +77,7 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
       // is injected as a routing rule, so a balancer tag is a valid target
       // (it load-balances the panel's own traffic). The geodata picker, by
       // contrast, dials a forced tag and can only use a concrete outbound.
-      const msg = (await HttpUtil.post('/panel/api/xray/', undefined, {
+      const msg = (await HttpUtil.post(target.url('/panel/api/xray/'), undefined, {
         silent: true,
       })) as ApiMsg<string>;
       if (cancelled || !msg?.success || typeof msg.obj !== 'string') return;
@@ -115,7 +117,7 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [target]);
 
   // Outbound tags and balancer tags share one picker. When balancers exist they
   // get their own labeled group so it's clear the selection routes through a

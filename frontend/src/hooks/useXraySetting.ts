@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { HttpUtil, Msg } from '@/utils';
 import { parseMsg } from '@/utils/zodValidate';
 import { keys } from '@/api/queryKeys';
+import { nodeTargetUrl, useNodeTarget } from '@/api/nodeTarget';
 import { isOutboundProtocol } from '@/schemas/primitives';
 import {
   OutboundTrafficListSchema,
@@ -103,7 +104,13 @@ export interface UseXraySettingResult {
 type XrayConfigPayload = z.infer<typeof XrayConfigPayloadSchema>;
 
 export async function fetchXrayConfig(): Promise<XrayConfigPayload> {
-  const msg = await HttpUtil.post('/panel/api/xray/', undefined, { silent: true });
+  return fetchNodeXrayConfig();
+}
+
+async function fetchNodeXrayConfig(nodeId?: number): Promise<XrayConfigPayload> {
+  const msg = await HttpUtil.post(nodeTargetUrl('/panel/api/xray/', nodeId), undefined, {
+    silent: true,
+  });
   if (!msg?.success) throw new Error(msg?.msg || 'Failed to load xray config');
   if (typeof msg.obj !== 'string')
     throw new Error('Malformed xray config response: expected string');
@@ -119,13 +126,22 @@ export async function fetchXrayConfig(): Promise<XrayConfigPayload> {
     console.warn('[zod] xray/ config payload failed validation', result.error.issues);
     return parsed as XrayConfigPayload;
   }
+  // Validating a remote template must not materialize local form defaults in
+  // untouched sections (for example DNS) when only routing/outbounds are saved.
+  if (nodeId !== undefined) {
+    return { ...result.data, xraySetting: (parsed as XrayConfigPayload).xraySetting };
+  }
   return result.data;
 }
 
-async function fetchOutboundsTraffic(): Promise<OutboundTrafficRow[]> {
-  const msg = await HttpUtil.get('/panel/api/xray/getOutboundsTraffic', undefined, {
-    silent: true,
-  });
+async function fetchOutboundsTraffic(nodeId?: number): Promise<OutboundTrafficRow[]> {
+  const msg = await HttpUtil.get(
+    nodeTargetUrl('/panel/api/xray/getOutboundsTraffic', nodeId),
+    undefined,
+    {
+      silent: true,
+    },
+  );
   if (!msg?.success) throw new Error(msg?.msg || 'Failed to fetch outbounds traffic');
   const validated = parseMsg(msg, OutboundTrafficListSchema, 'xray/getOutboundsTraffic');
   return Array.isArray(validated.obj) ? validated.obj : [];
@@ -133,17 +149,20 @@ async function fetchOutboundsTraffic(): Promise<OutboundTrafficRow[]> {
 
 export function useXraySetting(): UseXraySettingResult {
   const queryClient = useQueryClient();
+  const target = useNodeTarget();
 
   const configQuery = useQuery({
-    queryKey: keys.xray.config(),
-    queryFn: fetchXrayConfig,
-    staleTime: Infinity,
+    queryKey: target.queryKey(keys.xray.config()),
+    queryFn: () => fetchNodeXrayConfig(target.nodeId),
+    staleTime: target.nodeId === undefined ? Infinity : 0,
+    gcTime: target.nodeId === undefined ? undefined : 0,
   });
 
   const trafficQuery = useQuery({
-    queryKey: keys.xray.outboundsTraffic(),
-    queryFn: fetchOutboundsTraffic,
-    staleTime: Infinity,
+    queryKey: target.queryKey(keys.xray.outboundsTraffic()),
+    queryFn: () => fetchOutboundsTraffic(target.nodeId),
+    staleTime: target.nodeId === undefined ? Infinity : 0,
+    gcTime: target.nodeId === undefined ? undefined : 0,
   });
 
   const [xraySetting, setXraySettingState] = useState('');
@@ -243,18 +262,20 @@ export function useXraySetting(): UseXraySettingResult {
   }, []);
 
   const fetchAll = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: keys.xray.config() });
-  }, [queryClient]);
+    await queryClient.invalidateQueries({ queryKey: target.queryKey(keys.xray.config()) });
+  }, [queryClient, target]);
 
   const fetchOutboundsTrafficCb = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: keys.xray.outboundsTraffic() });
-  }, [queryClient]);
+    await queryClient.invalidateQueries({
+      queryKey: target.queryKey(keys.xray.outboundsTraffic()),
+    });
+  }, [queryClient, target]);
 
   const saveMut = useMutation({
     mutationFn: async () => {
       const sentXraySetting = xraySettingRef.current;
       const sentTestUrl = normalizeOutboundTestUrl(outboundTestUrlRef.current);
-      const msg = await HttpUtil.post('/panel/api/xray/update', {
+      const msg = await HttpUtil.post(target.url('/panel/api/xray/update'), {
         xraySetting: sentXraySetting,
         outboundTestUrl: sentTestUrl,
       });
@@ -264,20 +285,22 @@ export function useXraySetting(): UseXraySettingResult {
       if (!msg?.success) return;
       setSavedXraySetting(sentXraySetting);
       setSavedOutboundTestUrl(sentTestUrl);
-      queryClient.invalidateQueries({ queryKey: keys.xray.config() });
+      queryClient.invalidateQueries({ queryKey: target.queryKey(keys.xray.config()) });
     },
   });
 
   const resetTrafficMut = useMutation({
-    mutationFn: (tag: string) => HttpUtil.post('/panel/api/xray/resetOutboundsTraffic', { tag }),
+    mutationFn: (tag: string) =>
+      HttpUtil.post(target.url('/panel/api/xray/resetOutboundsTraffic'), { tag }),
     onSuccess: (msg) => {
-      if (msg?.success) queryClient.invalidateQueries({ queryKey: keys.xray.outboundsTraffic() });
+      if (msg?.success)
+        queryClient.invalidateQueries({ queryKey: target.queryKey(keys.xray.outboundsTraffic()) });
     },
   });
 
   const resetDefaultMut = useMutation({
     mutationFn: async (): Promise<Msg<XraySettingsValue>> => {
-      const raw = await HttpUtil.get('/panel/api/setting/getDefaultJsonConfig');
+      const raw = await HttpUtil.get(target.url('/panel/api/setting/getDefaultJsonConfig'));
       return parseMsg(raw, XraySettingsValueSchema, 'setting/getDefaultJsonConfig');
     },
     onSuccess: (msg) => {
@@ -312,7 +335,7 @@ export function useXraySetting(): UseXraySettingResult {
       const failAll = (error: string): OutboundTestResult[] =>
         outbounds.map(() => ({ success: false, error, mode: effMode }));
       try {
-        const raw = await HttpUtil.post('/panel/api/xray/testOutbounds', {
+        const raw = await HttpUtil.post(target.url('/panel/api/xray/testOutbounds'), {
           outbounds: JSON.stringify(outbounds),
           allOutbounds: JSON.stringify(templateSettingsRef.current?.outbounds || []),
           mode: effMode,
@@ -327,7 +350,7 @@ export function useXraySetting(): UseXraySettingResult {
         return failAll(String(e));
       }
     },
-    [],
+    [target],
   );
 
   const testOutbound = useCallback(

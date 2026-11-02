@@ -6,6 +6,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/middleware"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/runtime"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/panel"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service/tgbot"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/session"
@@ -169,7 +170,7 @@ func (a *APIController) enforceTokenScope(c *gin.Context) {
 			return
 		}
 	case model.ApiScopeNodeAdmin:
-		if scopeAllows(nodeSyncScopeAllow, rel, c.Request.Method) || scopeAllows(nodeAdminScopeAllow, rel, c.Request.Method) {
+		if scopeAllows(nodeSyncScopeAllow, rel, c.Request.Method) || scopeAllows(nodeAdminScopeAllow, rel, c.Request.Method) || runtime.NodeXrayEndpoint(c.Request.Method, nodeXrayRequestPath(c)) {
 			c.Next()
 			return
 		}
@@ -199,6 +200,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	// advertise support, before CSRF/handlers read the body.
 	api.Use(middleware.ConfigEnvelopeMiddleware())
 	api.Use(middleware.CSRFMiddleware(getRemoteIp))
+	api.Use(a.forwardNodeXray)
 
 	api.GET("/openapi.json", ServeOpenAPISpec)
 

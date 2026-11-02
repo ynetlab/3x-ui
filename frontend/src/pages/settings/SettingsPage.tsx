@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation } from 'react-router';
+import { Navigate, useLocation, useSearchParams } from 'react-router';
 import {
   Alert,
   Button,
@@ -11,6 +11,7 @@ import {
   Layout,
   Modal,
   Row,
+  Result,
   Space,
   Spin,
   message,
@@ -23,6 +24,9 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useAllSettings } from '@/api/queries/useAllSettings';
 import { AllSettingSchema } from '@/schemas/setting';
 import AppSidebar from '@/layouts/AppSidebar';
+import { NodeTargetContext, useNodeTarget } from '@/api/nodeTarget';
+import NodeXrayTarget from '@/pages/xray/NodeXrayTarget';
+import { useNodesQuery } from '@/api/queries/useNodesQuery';
 import GeneralTab from './GeneralTab';
 import SecurityTab from './SecurityTab';
 import TelegramTab from './TelegramTab';
@@ -70,6 +74,31 @@ function scrollTarget() {
 
 export default function SettingsPage() {
   const { t } = useTranslation();
+  const location = useLocation();
+  const [params] = useSearchParams();
+  const rawNodeId = params.get('nodeId');
+  const nodeId = rawNodeId === null ? undefined : Number(rawNodeId);
+  if (
+    nodeId !== undefined &&
+    (!/^\d+$/.test(rawNodeId!) || !Number.isSafeInteger(nodeId) || nodeId <= 0)
+  ) {
+    return <Result status="error" title={t('nodeXray.invalidNode')} />;
+  }
+  if (nodeId !== undefined && location.hash && location.hash !== '#general') {
+    return <Navigate to={`/settings?nodeId=${nodeId}#general`} replace />;
+  }
+  return (
+    <NodeTargetContext.Provider key={nodeId ?? 'local'} value={nodeId}>
+      <SettingsEditor />
+    </NodeTargetContext.Provider>
+  );
+}
+
+function SettingsEditor() {
+  const target = useNodeTarget();
+  const { nodes } = useNodesQuery();
+  const selectedNode = nodes.find((node) => node.id === target.nodeId && !node.transitive);
+  const { t } = useTranslation();
   const { isDark, isUltra, antdThemeConfig } = useTheme();
   const { isMobile } = useMediaQuery();
   const [modal, modalContextHolder] = Modal.useModal();
@@ -83,6 +112,8 @@ export default function SettingsPage() {
     allSetting,
     updateSetting,
     fetched,
+    fetchError,
+    refetch,
     spinning,
     setSpinning,
     saveDisabled,
@@ -139,17 +170,23 @@ export default function SettingsPage() {
   function restartPanel() {
     modal.confirm({
       title: t('pages.settings.restartPanel'),
-      content: t('pages.settings.restartPanelDesc'),
+      content:
+        target.nodeId === undefined
+          ? t('pages.settings.restartPanelDesc')
+          : t('nodeXray.restartContent'),
       okText: t('pages.settings.restartPanel'),
       okButtonProps: { danger: true },
       cancelText: t('cancel'),
       onOk: async () => {
         setSpinning(true);
         try {
-          const msg = (await HttpUtil.post('/panel/api/setting/restartPanel')) as ApiMsg;
+          const msg = (await HttpUtil.post(
+            target.url('/panel/api/setting/restartPanel'),
+          )) as ApiMsg;
           if (!msg?.success) return;
           await PromiseUtil.sleep(5000);
-          window.location.replace(rebuildUrlAfterRestart());
+          if (target.nodeId === undefined) window.location.replace(rebuildUrlAfterRestart());
+          else await refetch();
         } finally {
           setSpinning(false);
         }
@@ -159,14 +196,18 @@ export default function SettingsPage() {
 
   const confAlerts = useMemo<string[]>(() => {
     const out: string[] = [];
-    if (window.location.protocol !== 'https:') {
+    if (
+      target.nodeId === undefined
+        ? window.location.protocol !== 'https:'
+        : selectedNode?.scheme === 'http'
+    ) {
       out.push(t('pages.settings.warnHttp'));
     }
     if (allSetting.webPort === 2053) {
       out.push(t('pages.settings.warnDefaultPort'));
     }
     const segs = window.location.pathname.split('/').length < 4;
-    if (segs && allSetting.webBasePath === '/') {
+    if ((target.nodeId !== undefined || segs) && allSetting.webBasePath === '/') {
       out.push(t('pages.settings.warnDefaultBasePath'));
     }
     if (allSetting.subEnable) {
@@ -196,7 +237,7 @@ export default function SettingsPage() {
       }
     }
     return out;
-  }, [allSetting, t]);
+  }, [allSetting, t, target.nodeId, selectedNode?.scheme]);
 
   const pageClass = useMemo(() => {
     const classes = ['settings-page'];
@@ -241,6 +282,15 @@ export default function SettingsPage() {
 
         <Layout className="content-shell">
           <Layout.Content id="content-layout" className="content-area">
+            {activeSlug === 'general' && <NodeXrayTarget dirty={!saveDisabled} busy={spinning} />}
+            {target.nodeId !== undefined && (
+              <Alert
+                type="info"
+                showIcon
+                title={t('nodeXray.connectionHint')}
+                style={{ marginBottom: 16 }}
+              />
+            )}
             <Spin
               spinning={spinning || !fetched}
               delay={200}
@@ -249,6 +299,13 @@ export default function SettingsPage() {
             >
               {!fetched ? (
                 <div className="loading-spacer" />
+              ) : fetchError ? (
+                <Result
+                  status="error"
+                  title={t('somethingWentWrong')}
+                  subTitle={fetchError}
+                  extra={<Button onClick={() => refetch()}>{t('check')}</Button>}
+                />
               ) : (
                 <>
                   {confAlerts.length > 0 && alertVisible && (

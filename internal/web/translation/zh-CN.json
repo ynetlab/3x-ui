@@ -1,4 +1,14 @@
 {
+  "nodeXray": {
+    "target": "配置目标",
+    "local": "Master（当前面板）",
+    "editing": "正在编辑节点：{name}。修改将直接保存在该节点上。",
+    "discardTitle": "放弃未保存的修改？",
+    "discardContent": "切换节点将丢弃当前未保存的修改。",
+    "invalidNode": "目标节点无效",
+    "restartContent": "重启所选节点的面板，当前页面仍停留在 Master。如果修改了连接参数，请在重启后通过节点管理更新连接信息。",
+    "connectionHint": "连接参数和证书路径属于当前所选节点。修改端口、访问路径或 HTTPS 设置后，请按实际情况在节点管理中更新连接信息。"
+  },
   "uuidRoute": {
     "credentialHint": "VLESS、VMess、TUIC、Trojan、AnyTLS、Hysteria 使用此 UUID。主机路由编号仅在订阅中替换 UUID 第三组，原始 UUID 保持不变。"
   },

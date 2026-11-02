@@ -30,6 +30,7 @@ import {
 } from '@ant-design/icons';
 
 import { HttpUtil } from '@/utils';
+import { useNodeTarget } from '@/api/nodeTarget';
 import { formatPanelVersion } from '@/lib/panel-version';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
 import { useAllSettings } from '@/api/queries/useAllSettings';
@@ -147,6 +148,7 @@ function saveSidebarPinned(pinned: boolean) {
 }
 
 export default function AppSidebar() {
+  const { nodeId } = useNodeTarget();
   const { t } = useTranslation();
   const { isDark, isUltra, toggleTheme, toggleUltra } = useTheme();
   const { open: openCommandPalette } = useCommandPalette();
@@ -250,8 +252,8 @@ export default function AppSidebar() {
         label: t('pages.settings.subBalancers.menu'),
       });
     }
-    return children;
-  }, [t, showSubFormats, showSubBalancers]);
+    return nodeId === undefined ? children : children.slice(0, 1);
+  }, [t, showSubFormats, showSubBalancers, nodeId]);
 
   const xrayChildren = useMemo<NonNullable<MenuProps['items']>>(
     () => [
@@ -323,9 +325,14 @@ export default function AppSidebar() {
         window.location.href = window.X_UI_BASE_PATH || '/';
         return;
       }
-      navigate(key);
+      const [path, hash] = key.split('#');
+      navigate(
+        nodeId !== undefined && ['/routing', '/outbound', '/xray', '/settings'].includes(path)
+          ? `${path}?nodeId=${nodeId}${hash ? `#${hash}` : ''}`
+          : key,
+      );
     },
-    [navigate],
+    [navigate, nodeId],
   );
 
   const onMenuClick = useCallback<NonNullable<MenuProps['onClick']>>(

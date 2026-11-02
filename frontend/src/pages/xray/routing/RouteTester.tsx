@@ -4,6 +4,7 @@ import { Alert, Button, Col, Input, InputNumber, Row, Select, Space, Tag } from 
 import { AimOutlined } from '@ant-design/icons';
 
 import { HttpUtil } from '@/utils';
+import { useNodeTarget } from '@/api/nodeTarget';
 import { useInboundOptions } from '@/api/queries/useInboundOptions';
 import { buildRemarkByTag, formatInboundTag } from './helpers';
 
@@ -22,6 +23,7 @@ interface RouteTestResult {
 const PROTOCOL_OPTIONS = ['http', 'tls', 'quic', 'bittorrent'].map((p) => ({ label: p, value: p }));
 
 export default function RouteTester({ inboundTags, isMobile }: RouteTesterProps) {
+  const target = useNodeTarget();
   const { t } = useTranslation();
   const { data: inboundOptions } = useInboundOptions();
   const remarkByTag = useMemo(() => buildRemarkByTag(inboundOptions || []), [inboundOptions]);
@@ -42,7 +44,7 @@ export default function RouteTester({ inboundTags, isMobile }: RouteTesterProps)
     setTesting(true);
     setResult(null);
     try {
-      const msg = await HttpUtil.post('/panel/api/xray/routeTest', {
+      const msg = await HttpUtil.post(target.url('/panel/api/xray/routeTest'), {
         domain: isIp ? '' : value,
         ip: isIp ? value : '',
         port: port ?? 0,

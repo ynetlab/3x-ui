@@ -5,6 +5,7 @@ import { LoginOutlined } from '@ant-design/icons';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
 import { HttpUtil } from '@/utils';
+import { useNodeTarget } from '@/api/nodeTarget';
 import { FormField } from '@/components/form/rhf';
 import { countryFlag, countryName } from '../outbounds/outbounds-tab-helpers';
 import './PiaModal.css';
@@ -132,6 +133,7 @@ export default function PiaModal({
   onAddOutbound,
   onResetOutbound,
 }: PiaModalProps) {
+  const target = useNodeTarget();
   const { t, i18n } = useTranslation();
   const [messageApi, messageContextHolder] = message.useMessage();
   const [loading, setLoading] = useState(false);
@@ -180,14 +182,14 @@ export default function PiaModal({
   }, [filteredServers, methods]);
 
   const fetchCountries = useCallback(async () => {
-    const msg = await HttpUtil.post<PiaCountry[]>('/panel/api/xray/pia/countries');
+    const msg = await HttpUtil.post<PiaCountry[]>(target.url('/panel/api/xray/pia/countries'));
     if (msg?.success && Array.isArray(msg.obj)) setCountries(msg.obj);
-  }, []);
+  }, [target]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const msg = await HttpUtil.post<PiaAccount | null>('/panel/api/xray/pia/data');
+      const msg = await HttpUtil.post<PiaAccount | null>(target.url('/panel/api/xray/pia/data'));
       if (msg?.success) {
         const next = msg.obj ?? null;
         setPiaData(next);
@@ -196,7 +198,7 @@ export default function PiaModal({
     } finally {
       setLoading(false);
     }
-  }, [fetchCountries]);
+  }, [fetchCountries, target]);
 
   useEffect(() => {
     if (!open) return;
@@ -213,7 +215,7 @@ export default function PiaModal({
   async function login() {
     setLoading(true);
     try {
-      const msg = await HttpUtil.post<PiaAccount>('/panel/api/xray/pia/reg', {
+      const msg = await HttpUtil.post<PiaAccount>(target.url('/panel/api/xray/pia/reg'), {
         username: methods.getValues('username'),
         password: methods.getValues('password'),
       });
@@ -230,7 +232,7 @@ export default function PiaModal({
   async function logout() {
     setLoading(true);
     try {
-      const msg = await HttpUtil.post('/panel/api/xray/pia/del');
+      const msg = await HttpUtil.post(target.url('/panel/api/xray/pia/del'));
       if (msg?.success) {
         setPiaData(null);
         methods.reset(EMPTY);
@@ -251,7 +253,7 @@ export default function PiaModal({
     methods.setValue('regionId', null);
     try {
       const msg = await HttpUtil.post<{ regions?: PiaRegion[]; servers?: PiaServer[] }>(
-        '/panel/api/xray/pia/servers',
+        target.url('/panel/api/xray/pia/servers'),
         { countryCode: newCountryCode },
       );
       if (!msg?.success || !msg.obj) return;
@@ -269,7 +271,7 @@ export default function PiaModal({
     selectedHostname: string,
   ): Promise<Record<string, unknown> | null> {
     if (!selectedHostname) return null;
-    const msg = await HttpUtil.post<PiaKey>('/panel/api/xray/pia/addKey', {
+    const msg = await HttpUtil.post<PiaKey>(target.url('/panel/api/xray/pia/addKey'), {
       hostname: selectedHostname,
     });
     if (!msg?.success) return null;

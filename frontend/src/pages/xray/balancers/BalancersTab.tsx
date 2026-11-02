@@ -41,6 +41,7 @@ import DeletionImpactList from '../DeletionImpactList';
 import ObservatorySettingsTab from './ObservatorySettingsTab';
 import { catTabLabel } from '@/pages/settings/catTabLabel';
 import { HttpUtil } from '@/utils';
+import { useNodeTarget } from '@/api/nodeTarget';
 import type { XraySettingsValue, SetTemplate } from '@/hooks/useXraySetting';
 import type {
   BalancerObject,
@@ -92,6 +93,7 @@ export default function BalancersTab({
   isMobile,
 }: BalancersTabProps) {
   const { t } = useTranslation();
+  const nodeTarget = useNodeTarget();
   const [modal, modalContextHolder] = Modal.useModal();
   const [messageApi, messageContextHolder] = message.useMessage();
   const [modalOpen, setModalOpen] = useState(false);
@@ -177,7 +179,7 @@ export default function BalancersTab({
     setLiveLoading(true);
     try {
       const msg = await HttpUtil.post(
-        '/panel/api/xray/balancerStatus',
+        nodeTarget.url('/panel/api/xray/balancerStatus'),
         { tags: liveTags },
         { silent: true },
       );
@@ -187,7 +189,7 @@ export default function BalancersTab({
     } finally {
       setLiveLoading(false);
     }
-  }, [liveTags]);
+  }, [liveTags, nodeTarget]);
 
   useEffect(() => {
     let cancelled = false;
@@ -201,7 +203,10 @@ export default function BalancersTab({
   }, [refreshLive]);
 
   async function setOverride(tag: string, target: string) {
-    const msg = await HttpUtil.post('/panel/api/xray/balancerOverride', { tag, target });
+    const msg = await HttpUtil.post(nodeTarget.url('/panel/api/xray/balancerOverride'), {
+      tag,
+      target,
+    });
     if (msg?.success) await refreshLive();
   }
 

@@ -5,6 +5,7 @@ import { LoginOutlined, SaveOutlined } from '@ant-design/icons';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
 import { HttpUtil } from '@/utils';
+import { useNodeTarget } from '@/api/nodeTarget';
 import { FormField } from '@/components/form/rhf';
 import { countryFlag, countryName } from '../outbounds/outbounds-tab-helpers';
 import './NordModal.css';
@@ -126,6 +127,7 @@ export default function NordModal({
   onAddOutbound,
   onResetOutbound,
 }: NordModalProps) {
+  const target = useNodeTarget();
   const { t, i18n } = useTranslation();
   const [messageApi, messageContextHolder] = message.useMessage();
   const [loading, setLoading] = useState(false);
@@ -182,14 +184,14 @@ export default function NordModal({
   }, [filteredServers, methods]);
 
   const fetchCountries = useCallback(async () => {
-    const msg = await HttpUtil.post<string>('/panel/api/xray/nord/countries');
+    const msg = await HttpUtil.post<string>(target.url('/panel/api/xray/nord/countries'));
     if (msg?.success && msg.obj) setCountries(JSON.parse(msg.obj));
-  }, []);
+  }, [target]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const msg = await HttpUtil.post<string>('/panel/api/xray/nord/data');
+      const msg = await HttpUtil.post<string>(target.url('/panel/api/xray/nord/data'));
       if (msg?.success) {
         const next = msg.obj ? JSON.parse(msg.obj) : null;
         setNordData(next);
@@ -198,7 +200,7 @@ export default function NordModal({
     } finally {
       setLoading(false);
     }
-  }, [fetchCountries]);
+  }, [fetchCountries, target]);
 
   useEffect(() => {
     if (!open) return;
@@ -215,7 +217,7 @@ export default function NordModal({
   async function login() {
     setLoading(true);
     try {
-      const msg = await HttpUtil.post<string>('/panel/api/xray/nord/reg', {
+      const msg = await HttpUtil.post<string>(target.url('/panel/api/xray/nord/reg'), {
         token: methods.getValues('token'),
       });
       if (msg?.success && msg.obj) {
@@ -230,7 +232,7 @@ export default function NordModal({
   async function saveKey() {
     setLoading(true);
     try {
-      const msg = await HttpUtil.post<string>('/panel/api/xray/nord/setKey', {
+      const msg = await HttpUtil.post<string>(target.url('/panel/api/xray/nord/setKey'), {
         key: methods.getValues('manualKey'),
       });
       if (msg?.success && msg.obj) {
@@ -245,7 +247,7 @@ export default function NordModal({
   async function logout() {
     setLoading(true);
     try {
-      const msg = await HttpUtil.post('/panel/api/xray/nord/del');
+      const msg = await HttpUtil.post(target.url('/panel/api/xray/nord/del'));
       if (msg?.success) {
         setNordData(null);
         methods.reset(EMPTY);
@@ -265,7 +267,7 @@ export default function NordModal({
     methods.setValue('serverId', null);
     methods.setValue('cityId', null);
     try {
-      const msg = await HttpUtil.post<string>('/panel/api/xray/nord/servers', {
+      const msg = await HttpUtil.post<string>(target.url('/panel/api/xray/nord/servers'), {
         countryId: newCountryId,
       });
       if (!msg?.success || !msg.obj) return;
