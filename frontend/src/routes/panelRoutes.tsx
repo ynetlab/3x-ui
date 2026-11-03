@@ -8,6 +8,7 @@ import {
   ExportOutlined,
   GlobalOutlined,
   ImportOutlined,
+  FileSearchOutlined,
   SettingOutlined,
   SwapOutlined,
   TagsOutlined,
@@ -20,6 +21,7 @@ const InboundsPage = lazy(() => import('@/pages/inbounds/InboundsPage'));
 const ClientsPage = lazy(() => import('@/pages/clients/ClientsPage'));
 const GroupsPage = lazy(() => import('@/pages/groups/GroupsPage'));
 const NodesPage = lazy(() => import('@/pages/nodes/NodesPage'));
+const AccessLogsPage = lazy(() => import('@/pages/access-logs/AccessLogsPage'));
 const HostsPage = lazy(() => import('@/pages/hosts/HostsPage'));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
 const XrayPage = lazy(() => import('@/pages/xray/XrayPage'));
@@ -41,6 +43,12 @@ export const PANEL_ROUTES: PanelRoute[] = [
   { path: '/clients', titleKey: 'menu.clients', icon: TeamOutlined, component: ClientsPage },
   { path: '/groups', titleKey: 'menu.groups', icon: TagsOutlined, component: GroupsPage },
   { path: '/nodes', titleKey: 'menu.nodes', icon: ClusterOutlined, component: NodesPage },
+  {
+    path: '/access-logs',
+    titleKey: 'accessLogs.title',
+    icon: FileSearchOutlined,
+    component: AccessLogsPage,
+  },
   { path: '/hosts', titleKey: 'menu.hosts', icon: GlobalOutlined, component: HostsPage },
   { path: '/outbound', titleKey: 'menu.outbounds', icon: ExportOutlined, component: XrayPage },
   { path: '/routing', titleKey: 'menu.routing', icon: SwapOutlined, component: XrayPage },

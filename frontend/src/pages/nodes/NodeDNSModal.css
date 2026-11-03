@@ -1,0 +1,65 @@
+.node-dns-summary {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 1fr 1fr;
+  gap: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: var(--ant-color-fill-quaternary);
+  border-radius: 8px;
+}
+.node-dns-summary > div {
+  min-width: 0;
+}
+.node-dns-domain,
+.node-dns-address {
+  overflow-wrap: anywhere;
+}
+.node-dns-address {
+  font-family: ui-monospace, monospace;
+}
+.node-dns-toolbar,
+.node-dns-error {
+  margin-bottom: 12px;
+}
+.node-dns-editor,
+.node-dns-certificates {
+  padding: 16px;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 8px;
+}
+.node-dns-editor {
+  margin-bottom: 16px;
+}
+.node-dns-editor h5 {
+  margin-top: 0;
+}
+.node-dns-form-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 0.6fr 1.5fr;
+  gap: 0 16px;
+}
+.node-dns-selected-domains {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.node-dns-selected-domains .ant-tag {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.node-dns-certificates .ant-typography {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 767px) {
+  .node-dns-summary {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .node-dns-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .node-dns-modal .ant-modal-body {
+    max-height: 68vh !important;
+  }
+}

@@ -70,12 +70,13 @@ type Client struct {
 
 // Hub fan-outs messages to all connected clients.
 type Hub struct {
-	clients   map[*Client]struct{}
-	broadcast chan []byte
-	ops       chan clientOp
-	mu        sync.RWMutex
-	ctx       context.Context
-	cancel    context.CancelFunc
+	clients         map[*Client]struct{}
+	broadcast       chan []byte
+	ops             chan clientOp
+	mu              sync.RWMutex
+	clientsDisabled bool
+	ctx             context.Context
+	cancel          context.CancelFunc
 
 	throttleMu    sync.Mutex
 	lastBroadcast map[MessageType]time.Time
@@ -164,6 +165,11 @@ func (h *Hub) runOnce() (stopped bool) {
 			switch op.kind {
 			case opRegister:
 				h.mu.Lock()
+				if h.clientsDisabled {
+					op.c.closeOnce.Do(func() { close(op.c.Send) })
+					h.mu.Unlock()
+					continue
+				}
 				h.clients[op.c] = struct{}{}
 				n := len(h.clients)
 				h.mu.Unlock()
@@ -187,6 +193,21 @@ func (h *Hub) shutdown() {
 	h.clients = make(map[*Client]struct{})
 	h.mu.Unlock()
 	logger.Info("WebSocket hub stopped")
+}
+
+// SetClientsDisabled disconnects browser clients when the panel becomes a
+// slave, and rejects queued registrations until browser access is enabled.
+// The hub keeps running so proxy jobs can continue using its broadcast API.
+func (h *Hub) SetClientsDisabled(disabled bool) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.clientsDisabled = disabled
+	if disabled {
+		for c := range h.clients {
+			c.closeOnce.Do(func() { close(c.Send) })
+		}
+		h.clients = make(map[*Client]struct{})
+	}
 }
 
 // removeClient deletes a client and closes its send channel exactly once.
@@ -219,7 +240,6 @@ func (h *Hub) fanout(msg []byte) {
 	for c := range h.clients {
 		targets = append(targets, c)
 	}
-	h.mu.RUnlock()
 
 	var dead []*Client
 	for _, c := range targets {
@@ -227,6 +247,9 @@ func (h *Hub) fanout(msg []byte) {
 			dead = append(dead, c)
 		}
 	}
+	// A role change can close client channels outside the event loop. Keep the
+	// read lock through the non-blocking sends so closing cannot race a send.
+	h.mu.RUnlock()
 
 	if len(dead) == 0 {
 		return

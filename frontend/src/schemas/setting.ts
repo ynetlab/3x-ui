@@ -12,6 +12,14 @@ export type SubHostSortMode = z.infer<typeof SubHostSortModeSchema>;
 
 export const AllSettingSchema = z
   .object({
+    cloudflareZoneId: z
+      .string()
+      .trim()
+      .regex(/^$|^[a-fA-F0-9]{32}$/, 'cloudflare.invalidZoneId')
+      .optional(),
+    cloudflareApiToken: z.string().trim().max(512).optional(),
+    hasCloudflareApiToken: z.boolean().optional(),
+    clearCloudflareApiToken: z.boolean().optional(),
     webListen: z.string().optional(),
     webDomain: z.string().optional(),
     webPort: port.optional(),

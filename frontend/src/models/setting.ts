@@ -2,6 +2,10 @@ import { ObjectUtil } from '@/utils';
 import type { SubProfileMode, SubHostSortMode } from '@/schemas/setting';
 
 export class AllSetting {
+  cloudflareZoneId = '';
+  cloudflareApiToken = '';
+  hasCloudflareApiToken = false;
+  clearCloudflareApiToken = false;
   webListen = '';
   webDomain = '';
   webPort = 2053;

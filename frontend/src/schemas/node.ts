@@ -34,6 +34,8 @@ export const NodeRecordSchema = z
     xrayState: z.string().optional(),
     xrayError: z.string().optional(),
     allowPrivateAddress: z.boolean().optional(),
+    controlConnection: z.boolean().optional(),
+    controlRecoveryRequired: z.boolean().optional(),
     tlsVerifyMode: z.enum(['verify', 'skip', 'pin', 'mtls']).optional(),
     pinnedCertSha256: z.string().optional(),
     inboundSyncMode: z.enum(['all', 'selected']).optional(),

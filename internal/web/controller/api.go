@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/cluster"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/middleware"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/runtime"
@@ -55,6 +56,12 @@ func (a *APIController) checkAPIAuth(c *gin.Context) {
 		scope := model.ApiScopeNodeSync
 		if matchedScope == model.ApiScopeNodeAdmin {
 			scope = model.ApiScopeNodeAdmin
+		}
+		// Only the control-port middleware establishes this context. Full admin
+		// requires both a bound master identity and a valid admin bearer token.
+		// The existing panel listener retains its historical mTLS scope rules.
+		if peer, ok := cluster.AuthenticatedPeer(c.Request.Context()); ok && peer.Role == cluster.RoleMaster && matchedScope == model.ApiScopeAdmin {
+			scope = model.ApiScopeAdmin
 		}
 		setAuthenticated(scope)
 		c.Next()
@@ -203,6 +210,11 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	api.Use(a.forwardNodeXray)
 
 	api.GET("/openapi.json", ServeOpenAPISpec)
+	NewPairingController(api)
+	NewAccessLogController(api)
+	NewCloudflareController(api)
+	NewNodeCertificateController(api)
+	NewControlPKIController(api)
 
 	// Inbounds API
 	inbounds := api.Group("/inbounds")

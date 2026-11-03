@@ -28,6 +28,12 @@
     "schemas": {
       "AllSetting": {
         "properties": {
+          "cloudflareApiToken": {
+            "type": "string"
+          },
+          "cloudflareZoneId": {
+            "type": "string"
+          },
           "datepicker": {
             "type": "string"
           },
@@ -610,6 +616,8 @@
           }
         },
         "required": [
+          "cloudflareApiToken",
+          "cloudflareZoneId",
           "datepicker",
           "discordAdminIds",
           "discordBotBackup",
@@ -795,6 +803,12 @@
       },
       "AllSettingView": {
         "properties": {
+          "cloudflareApiToken": {
+            "type": "string"
+          },
+          "cloudflareZoneId": {
+            "type": "string"
+          },
           "datepicker": {
             "type": "string"
           },
@@ -849,6 +863,9 @@
             "type": "boolean"
           },
           "hasApiToken": {
+            "type": "boolean"
+          },
+          "hasCloudflareApiToken": {
             "type": "boolean"
           },
           "hasDiscordBotToken": {
@@ -1401,6 +1418,8 @@
           }
         },
         "required": [
+          "cloudflareApiToken",
+          "cloudflareZoneId",
           "datepicker",
           "discordAdminIds",
           "discordBotBackup",
@@ -1418,6 +1437,7 @@
           "externalTrafficInformURI",
           "happLinkEnable",
           "hasApiToken",
+          "hasCloudflareApiToken",
           "hasDiscordBotToken",
           "hasLdapPassword",
           "hasNordSecret",
@@ -3642,6 +3662,13 @@
             "format": "int64",
             "type": "integer"
           },
+          "controlConnection": {
+            "description": "ControlConnection selects the private-CA transport for paired nodes only.",
+            "type": "boolean"
+          },
+          "controlRecoveryRequired": {
+            "type": "boolean"
+          },
           "cpuPct": {
             "example": 23.5,
             "type": "number"
@@ -3808,6 +3835,8 @@
           "clientCount",
           "configDirty",
           "configDirtyAt",
+          "controlConnection",
+          "controlRecoveryRequired",
           "cpuPct",
           "createdAt",
           "depletedCount",
@@ -3963,6 +3992,14 @@
             "example": 0,
             "format": "int64",
             "type": "integer"
+          },
+          "controlConnection": {
+            "example": false,
+            "type": "boolean"
+          },
+          "controlRecoveryRequired": {
+            "example": false,
+            "type": "boolean"
           },
           "cpuPct": {
             "example": 12.5,
@@ -4122,6 +4159,8 @@
           "clientCount",
           "configDirty",
           "configDirtyAt",
+          "controlConnection",
+          "controlRecoveryRequired",
           "cpuPct",
           "createdAt",
           "depletedCount",
@@ -5029,7 +5068,7 @@
     },
     {
       "name": "Nodes",
-      "description": "Manage remote 3x-ui panels acting as nodes for a central panel. All endpoints under /panel/api/nodes."
+      "description": "Manage remote panels and installed-node pairing. Node management uses /panel/api/nodes; pairing uses /panel/api/pairings."
     },
     {
       "name": "Hosts",
@@ -5058,6 +5097,18 @@
     {
       "name": "Subscription Server",
       "description": "A separate HTTP/HTTPS server that serves proxy subscription links (standard, JSON, and Clash) to clients. The server listens on its own port (default 2096) and is configured in Settings → Subscription. Fresh panels generate random path prefixes for each format; all paths remain configurable. Every subscription endpoint sets response headers for client apps to read traffic/expiry info."
+    },
+    {
+      "name": "Cloudflare DNS",
+      "description": "Master-only node DNS management using the single zone and API token in General Settings. Requires full admin scope or a login session. Supports A/AAAA only. Bindings are scoped to zone and record ID. Bound records automatically follow fresh public IP reports from paired nodes; unavailable families preserve the existing DNS content."
+    },
+    {
+      "name": "Node panel certificates",
+      "description": "Master-only DNS-01 issuance through Let's Encrypt and Cloudflare. Full admin scope or login session required. The private control CA is unchanged. Jobs persist across restarts; only a successful public TLS callback commits the new panel certificate. Renewals are checked every 12 hours, starting 30 days before expiry."
+    },
+    {
+      "name": "Access Logs",
+      "description": "Query the master archive of collected Xray connection logs. Requires a master panel and an admin session or full admin token. Restricted monitor, node-sync and node-admin tokens cannot read these logs."
     },
     {
       "name": "WebSocket",
@@ -11222,6 +11273,437 @@
         }
       }
     },
+    "/panel/api/pairings/control": {
+      "get": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": "Read the configured control port and public identity fingerprint. No private credentials are returned.",
+        "operationId": "get_panel_api_pairings_control",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/control-pki/status": {
+      "get": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": "Master-only control CA and identity expiry, public fingerprint and emergency migration status. No private key material is returned.",
+        "operationId": "get_panel_api_control_pki_status",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/control-pki/rotate-ca": {
+      "post": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": "Immediately revoke the old control CA and issue a new 30-year CA and 3-year master identity. Attempt pinned online-node migration for 15 minutes; offline nodes require explicit root recovery. Irreversible; full admin required.",
+        "operationId": "post_panel_api_control_pki_rotate_ca",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "confirm": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ]
+                  }
+                },
+                "required": [
+                  "confirm"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "confirm": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/pairings/enrollments": {
+      "post": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": "Create a one-time enrollment for an installed or newly installed node. Optional existingNodeId migrates that original unpaired Node in place: its verified GUID, Node ID, inbounds, users, traffic baselines, sync selection and enabled state are preserved; configuration changes or a different GUID are refused. Normal enrollment requires domains, primaryDomain, configured Cloudflare/ACME, public IP reporting, DNS-only A/AAAA provisioning, a DNS-01 SAN certificate, mTLS deployment and callback verification. The resulting Node address is primaryDomain. Explicit recovery=true instead restores an existing paired Node marked controlRecoveryRequired, retains its address and public panel certificate, and requires the root-only pairing recover command plus a signed proof of the previously pinned key (or its exact recorded pending successor); DNS/ACME are skipped. The profile token is returned once; full admin or an authenticated admin session is required.",
+        "operationId": "post_panel_api_pairings_enrollments",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "masterAddress": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "allowPrivateAddress": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "domains": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 100,
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "primaryDomain": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "existingNodeId": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Original Node ID to migrate; omit or use 0 to add a new Node."
+                  },
+                  "recovery": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Explicit recovery for an existing paired Node marked controlRecoveryRequired. Keeps its public panel certificate and address, requires the root-only pairing recover command, and skips DNS/ACME provisioning."
+                  }
+                },
+                "required": [
+                  "masterAddress"
+                ],
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "recovery": {
+                          "const": true
+                        }
+                      },
+                      "required": [
+                        "recovery"
+                      ]
+                    },
+                    "then": {
+                      "required": [
+                        "existingNodeId"
+                      ]
+                    },
+                    "else": {
+                      "required": [
+                        "domains",
+                        "primaryDomain"
+                      ]
+                    }
+                  }
+                ],
+                "anyOf": [
+                  {
+                    "required": [
+                      "name"
+                    ],
+                    "properties": {
+                      "name": {
+                        "maxLength": 256
+                      }
+                    }
+                  },
+                  {
+                    "required": [
+                      "existingNodeId"
+                    ],
+                    "properties": {
+                      "existingNodeId": {
+                        "minimum": 1
+                      }
+                    }
+                  }
+                ]
+              },
+              "example": {
+                "name": "node-1",
+                "masterAddress": "203.0.113.10",
+                "allowPrivateAddress": false,
+                "domains": [
+                  "node.example.com",
+                  "panel.example.com"
+                ],
+                "primaryDomain": "node.example.com"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/pairings/enrollments/{id}": {
+      "get": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": "Read master-side pairing status without exposing the enrollment token, CSR, certificate or admin key.",
+        "operationId": "get_panel_api_pairings_enrollments_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/pairings/joins": {
+      "post": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": "Start or recover a durable installed-node join using a master profile and an explicit callback address. Repeated identical requests reuse the same job.",
+        "operationId": "post_panel_api_pairings_joins",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "profile": {
+                  "enrollmentId": "...",
+                  "masterAddress": "203.0.113.10",
+                  "masterPort": 2054,
+                  "master": {
+                    "guid": "...",
+                    "role": "master",
+                    "fingerprint": "..."
+                  },
+                  "token": "...",
+                  "expiresAt": 0
+                },
+                "address": "203.0.113.20",
+                "port": 2054,
+                "allowPrivateMaster": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/pairings/joins/{id}": {
+      "get": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": "Read local join progress, retry time and a sanitized failure code. No stored pairing secrets are returned.",
+        "operationId": "get_panel_api_pairings_joins_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/pairings/joins/{id}/resume": {
+      "post": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": "Retry an unfinished durable join immediately. Completed jobs are idempotent; expired or rejected jobs require a new enrollment.",
+        "operationId": "post_panel_api_pairings_joins_id_resume",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/nodes/list": {
       "get": {
         "tags": [
@@ -11262,6 +11744,8 @@
                       "clientCount": 25,
                       "configDirty": false,
                       "configDirtyAt": 0,
+                      "controlConnection": false,
+                      "controlRecoveryRequired": false,
                       "cpuPct": 12.5,
                       "createdAt": 1700000000,
                       "depletedCount": 1,
@@ -11466,6 +11950,8 @@
                     "clientCount": 25,
                     "configDirty": false,
                     "configDirtyAt": 0,
+                    "controlConnection": false,
+                    "controlRecoveryRequired": false,
                     "cpuPct": 12.5,
                     "createdAt": 1700000000,
                     "depletedCount": 1,
@@ -11619,6 +12105,8 @@
                     "clientCount": 25,
                     "configDirty": false,
                     "configDirtyAt": 0,
+                    "controlConnection": false,
+                    "controlRecoveryRequired": false,
                     "cpuPct": 12.5,
                     "createdAt": 1700000000,
                     "depletedCount": 1,
@@ -13220,6 +13708,7 @@
         ],
         "summary": "Return every panel setting: web server, Telegram bot, subscription, security, LDAP. The full JSON blob that the Settings page edits.",
         "operationId": "post_panel_api_setting_all",
+        "description": "Cloudflare settings use cloudflareZoneId and a redacted cloudflareApiToken (always blank in this response), with hasCloudflareApiToken indicating whether a token is configured.",
         "responses": {
           "200": {
             "description": "Successful response",
@@ -13310,6 +13799,7 @@
         ],
         "summary": "Persist every setting at once. The body mirrors the shape returned by /all. Invalid values (bad ports, missing cert pairs, etc.) are rejected before write.",
         "operationId": "post_panel_api_setting_update",
+        "description": "Cloudflare: cloudflareZoneId is empty or a 32-character hexadecimal Zone ID; cloudflareApiToken supplies a new token, blank preserves it; clearCloudflareApiToken=true explicitly clears it. Changing these fields requires full admin scope or a login session. DNS settings take effect without restarting the panel.",
         "requestBody": {
           "required": true,
           "content": {
@@ -16147,6 +16637,933 @@
         }
       }
     },
+    "/panel/api/cloudflare/nodes/{id}/ip": {
+      "get": {
+        "tags": [
+          "Cloudflare DNS"
+        ],
+        "summary": "Read persisted public IPv4/IPv6 and availability from the latest mTLS report, even before Cloudflare is configured.",
+        "operationId": "get_panel_api_cloudflare_nodes_id_ip",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Existing local Node ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "nodeId": 1,
+                    "nodeGuid": "22222222-2222-4222-8222-222222222222",
+                    "ipv4": "203.0.113.20",
+                    "ipv6": "2001:db8::20",
+                    "ipv4Available": true,
+                    "ipv6Available": true,
+                    "observedAt": 1793664000000,
+                    "receivedAt": 1793664000100
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/cloudflare/nodes/{id}/records": {
+      "get": {
+        "tags": [
+          "Cloudflare DNS"
+        ],
+        "summary": "List DNS records matching known node IPs plus explicitly bound records, including externally changed or deleted records. Reading does not create bindings.",
+        "operationId": "get_panel_api_cloudflare_nodes_id_records",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "zoneId": "11111111111111111111111111111111",
+                    "zoneName": "example.com",
+                    "nodeId": 1,
+                    "nodeAddress": "203.0.113.20",
+                    "records": [],
+                    "publicIp": {
+                      "nodeId": 1,
+                      "ipv4": "203.0.113.20",
+                      "ipv4Available": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Cloudflare DNS"
+        ],
+        "summary": "Create an A/AAAA record and bind it to the node. An identical existing record is reused to recover a lost create response.",
+        "operationId": "post_panel_api_cloudflare_nodes_id_records",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Full name inside the configured zone, or @ for the zone apex. Unicode is normalized to Punycode."
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "A",
+                      "AAAA"
+                    ],
+                    "description": "Inferred from the target IP when omitted."
+                  },
+                  "content": {
+                    "type": "string",
+                    "description": "Explicit target IP. Defaults to the node address only when that address is an IP; required for hostname nodes."
+                  },
+                  "ttl": {
+                    "type": "integer",
+                    "default": 1,
+                    "description": "1=automatic, or 30–86400 subject to Cloudflare plan limits. Proxied records use 1."
+                  },
+                  "proxied": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Orange-cloud proxy."
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              },
+              "example": {
+                "name": "node.example.com",
+                "type": "A",
+                "content": "203.0.113.20",
+                "ttl": 1,
+                "proxied": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/cloudflare/nodes/{id}/records/{recordId}/bind": {
+      "post": {
+        "tags": [
+          "Cloudflare DNS"
+        ],
+        "summary": "Explicitly bind an existing record whose target matches the supplied/node IP. Does not modify Cloudflare. A record owned by another existing node cannot be taken over.",
+        "operationId": "post_panel_api_cloudflare_nodes_id_records_recordId_bind",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "recordId",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "description": "Expected record IP; required for hostname nodes."
+                  }
+                }
+              },
+              "example": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/cloudflare/nodes/{id}/records/{recordId}/update": {
+      "post": {
+        "tags": [
+          "Cloudflare DNS"
+        ],
+        "summary": "Update an explicitly bound record via Cloudflare PATCH. Omitted name/type/content/ttl/proxied fields retain their values; comments, tags and other metadata are preserved.",
+        "operationId": "post_panel_api_cloudflare_nodes_id_records_recordId_update",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "recordId",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": ""
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "A",
+                      "AAAA"
+                    ],
+                    "description": ""
+                  },
+                  "content": {
+                    "type": "string",
+                    "description": ""
+                  },
+                  "ttl": {
+                    "type": "integer",
+                    "description": ""
+                  },
+                  "proxied": {
+                    "type": "boolean",
+                    "description": ""
+                  }
+                }
+              },
+              "example": {
+                "name": "renamed.example.com"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/cloudflare/nodes/{id}/records/{recordId}/proxied": {
+      "post": {
+        "tags": [
+          "Cloudflare DNS"
+        ],
+        "summary": "Enable or disable the orange-cloud proxy for a bound record.",
+        "operationId": "post_panel_api_cloudflare_nodes_id_records_recordId_proxied",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "recordId",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "proxied": {
+                    "type": "boolean",
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "proxied"
+                ]
+              },
+              "example": {
+                "proxied": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/cloudflare/nodes/{id}/records/{recordId}/delete": {
+      "post": {
+        "tags": [
+          "Cloudflare DNS"
+        ],
+        "summary": "Delete a bound Cloudflare record, then its local binding. If the remote record is already missing, remove the stale binding. Provider failure retains the binding for retry.",
+        "operationId": "post_panel_api_cloudflare_nodes_id_records_recordId_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "recordId",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/certificates/settings": {
+      "get": {
+        "tags": [
+          "Node panel certificates"
+        ],
+        "summary": "Read ACME contact email and explicit terms consent.",
+        "operationId": "get_panel_api_certificates_settings",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "email": "admin@example.com",
+                    "acceptTos": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Node panel certificates"
+        ],
+        "summary": "Save ACME email and terms consent separately from general panel settings.",
+        "operationId": "post_panel_api_certificates_settings",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "description": ""
+                  },
+                  "acceptTos": {
+                    "type": "boolean",
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "email",
+                  "acceptTos"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/certificates/nodes/{id}": {
+      "get": {
+        "tags": [
+          "Node panel certificates"
+        ],
+        "summary": "Read the latest certificate task, retry state, active fingerprint and expiration. No private material is returned.",
+        "operationId": "get_panel_api_certificates_nodes_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Node panel certificates"
+        ],
+        "summary": "Queue one SAN certificate from explicitly selected, unchanged DNS bindings for a paired node. One pending job per node. DNS-01 uses temporary TXT records; A/AAAA proxy settings are preserved.",
+        "operationId": "post_panel_api_certificates_nodes_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "recordIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": ""
+                  },
+                  "primaryDomain": {
+                    "type": "string",
+                    "description": "One selected, non-wildcard domain used for the TLS callback."
+                  }
+                },
+                "required": [
+                  "recordIds",
+                  "primaryDomain"
+                ]
+              },
+              "example": {
+                "recordIds": [
+                  "11111111111111111111111111111111"
+                ],
+                "primaryDomain": "node.example.com"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/certificates/nodes/{id}/retry": {
+      "post": {
+        "tags": [
+          "Node panel certificates"
+        ],
+        "summary": "Request an immediate retry of the pending job, reusing any already issued valid bundle.",
+        "operationId": "post_panel_api_certificates_nodes_id_retry",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access-logs": {
+      "get": {
+        "tags": [
+          "Access Logs"
+        ],
+        "summary": "Filter and paginate retained access logs, newest connection first (ID breaks timestamp ties).",
+        "operationId": "get_panel_api_access_logs",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "1–1000000. Clamped to the last available page.",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "description": "1–200 records.",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          },
+          {
+            "name": "nodeGuid",
+            "in": "query",
+            "required": false,
+            "description": "Exact source GUID, including this master or a historical node.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "Inclusive connection timestamp, Unix milliseconds. Omit or use 0 for no lower bound.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "Inclusive connection timestamp, Unix milliseconds. Omit or use 0 for no upper bound.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "user",
+            "in": "query",
+            "required": false,
+            "description": "Email substring, up to 512 characters. Text filters are case insensitive for ASCII, and % and _ are literal.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "description": "Source address substring, up to 512 characters.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "target",
+            "in": "query",
+            "required": false,
+            "description": "Target address substring, up to 512 characters.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "inbound",
+            "in": "query",
+            "required": false,
+            "description": "Inbound tag substring, up to 512 characters.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "outbound",
+            "in": "query",
+            "required": false,
+            "description": "Outbound tag substring, up to 512 characters.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "description": "Exact classification.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "direct",
+                "proxy",
+                "blocked"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "items": [],
+                    "total": 0,
+                    "page": 1,
+                    "pageSize": 50
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "success": false,
+                  "msg": "invalid_access_log_query"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access-logs/nodes": {
+      "get": {
+        "tags": [
+          "Access Logs"
+        ],
+        "summary": "List public node labels for access-log filtering, including the local master and retained historical GUIDs.",
+        "operationId": "get_panel_api_access_logs_nodes",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "guid": "a13a3fd4-d8ce-4364-bbdf-4b76bfe50913",
+                      "name": "",
+                      "local": true
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/ws": {
       "get": {
         "tags": [
@@ -16849,6 +18266,8 @@
                   "clientCount": 25,
                   "configDirty": false,
                   "configDirtyAt": 0,
+                  "controlConnection": false,
+                  "controlRecoveryRequired": false,
                   "cpuPct": 12.5,
                   "createdAt": 1700000000,
                   "depletedCount": 1,

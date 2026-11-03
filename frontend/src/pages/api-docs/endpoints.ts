@@ -1697,8 +1697,98 @@ export const sections: readonly Section[] = [
     id: 'nodes',
     title: 'Nodes',
     description:
-      'Manage remote 3x-ui panels acting as nodes for a central panel. All endpoints under /panel/api/nodes.',
+      'Manage remote panels and installed-node pairing. Node management uses /panel/api/nodes; pairing uses /panel/api/pairings.',
     endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/pairings/control',
+        summary:
+          'Read the configured control port and public identity fingerprint. No private credentials are returned.',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/control-pki/status',
+        summary:
+          'Master-only control CA and identity expiry, public fingerprint and emergency migration status. No private key material is returned.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/control-pki/rotate-ca',
+        summary:
+          'Immediately revoke the old control CA and issue a new 30-year CA and 3-year master identity. Attempt pinned online-node migration for 15 minutes; offline nodes require explicit root recovery. Irreversible; full admin required.',
+        requestSchema: {
+          type: 'object',
+          properties: { confirm: { type: 'boolean', enum: [true] } },
+          required: ['confirm'],
+          additionalProperties: false,
+        },
+        body: '{"confirm":true}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/pairings/enrollments',
+        summary:
+          'Create a one-time enrollment for an installed or newly installed node. Optional existingNodeId migrates that original unpaired Node in place: its verified GUID, Node ID, inbounds, users, traffic baselines, sync selection and enabled state are preserved; configuration changes or a different GUID are refused. Normal enrollment requires domains, primaryDomain, configured Cloudflare/ACME, public IP reporting, DNS-only A/AAAA provisioning, a DNS-01 SAN certificate, mTLS deployment and callback verification. The resulting Node address is primaryDomain. Explicit recovery=true instead restores an existing paired Node marked controlRecoveryRequired, retains its address and public panel certificate, and requires the root-only pairing recover command plus a signed proof of the previously pinned key (or its exact recorded pending successor); DNS/ACME are skipped. The profile token is returned once; full admin or an authenticated admin session is required.',
+        requestSchema: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', minLength: 1 },
+            masterAddress: { type: 'string', minLength: 1 },
+            allowPrivateAddress: { type: 'boolean', default: false },
+            domains: { type: 'array', minItems: 1, maxItems: 100, items: { type: 'string' } },
+            primaryDomain: { type: 'string', minLength: 1 },
+            existingNodeId: {
+              type: 'integer',
+              minimum: 0,
+              description: 'Original Node ID to migrate; omit or use 0 to add a new Node.',
+            },
+            recovery: {
+              type: 'boolean',
+              default: false,
+              description:
+                'Explicit recovery for an existing paired Node marked controlRecoveryRequired. Keeps its public panel certificate and address, requires the root-only pairing recover command, and skips DNS/ACME provisioning.',
+            },
+          },
+          required: ['masterAddress'],
+          allOf: [
+            {
+              if: { properties: { recovery: { const: true } }, required: ['recovery'] },
+              then: { required: ['existingNodeId'] },
+              else: { required: ['domains', 'primaryDomain'] },
+            },
+          ],
+          anyOf: [
+            { required: ['name'], properties: { name: { maxLength: 256 } } },
+            { required: ['existingNodeId'], properties: { existingNodeId: { minimum: 1 } } },
+          ],
+        },
+        body: '{"name":"node-1","masterAddress":"203.0.113.10","allowPrivateAddress":false,"domains":["node.example.com","panel.example.com"],"primaryDomain":"node.example.com"}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/pairings/enrollments/:id',
+        summary:
+          'Read master-side pairing status without exposing the enrollment token, CSR, certificate or admin key.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/pairings/joins',
+        summary:
+          'Start or recover a durable installed-node join using a master profile and an explicit callback address. Repeated identical requests reuse the same job.',
+        body: '{"profile":{"enrollmentId":"...","masterAddress":"203.0.113.10","masterPort":2054,"master":{"guid":"...","role":"master","fingerprint":"..."},"token":"...","expiresAt":0},"address":"203.0.113.20","port":2054,"allowPrivateMaster":false}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/pairings/joins/:id',
+        summary:
+          'Read local join progress, retry time and a sanitized failure code. No stored pairing secrets are returned.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/pairings/joins/:id/resume',
+        summary:
+          'Retry an unfinished durable join immediately. Completed jobs are idempotent; expired or rejected jobs require a new enrollment.',
+      },
       {
         method: 'GET',
         path: '/panel/api/nodes/list',
@@ -1958,6 +2048,8 @@ export const sections: readonly Section[] = [
       {
         method: 'POST',
         path: '/panel/api/setting/all',
+        description:
+          'Cloudflare settings use cloudflareZoneId and a redacted cloudflareApiToken (always blank in this response), with hasCloudflareApiToken indicating whether a token is configured.',
         summary:
           'Return every panel setting: web server, Telegram bot, subscription, security, LDAP. The full JSON blob that the Settings page edits.',
         response:
@@ -1978,6 +2070,8 @@ export const sections: readonly Section[] = [
       {
         method: 'POST',
         path: '/panel/api/setting/update',
+        description:
+          'Cloudflare: cloudflareZoneId is empty or a 32-character hexadecimal Zone ID; cloudflareApiToken supplies a new token, blank preserves it; clearCloudflareApiToken=true explicitly clears it. Changing these fields requires full admin scope or a login session. DNS settings take effect without restarting the panel.',
         summary:
           'Persist every setting at once. The body mirrors the shape returned by /all. Invalid values (bad ports, missing cert pairs, etc.) are rejected before write.',
         body: '{\n  "webPort": 2053,\n  "webBasePath": "/",\n  "subPort": 10882,\n  "subPath": "/sub/",\n  "subClashAutoDetect": false,\n  "subClashUserAgentRegex": "",\n  "subJsonEnable": false,\n  "subJsonAutoDetect": false,\n  "subJsonAlwaysArray": false,\n  "subJsonUserAgentRegex": "",\n  "subJsonPath": "/json/",\n  "subJsonURI": "https://sub.example.com/json/",\n  "subClashEnable": true,\n  "subClashPath": "/clash/",\n  "subClashURI": "https://sub.example.com/clash/",\n  "tgBotEnable": false,\n  ...\n}',
@@ -2829,6 +2923,295 @@ export const sections: readonly Section[] = [
     ],
   },
 
+  {
+    id: 'cloudflare',
+    title: 'Cloudflare DNS',
+    description:
+      'Master-only node DNS management using the single zone and API token in General Settings. Requires full admin scope or a login session. Supports A/AAAA only. Bindings are scoped to zone and record ID. Bound records automatically follow fresh public IP reports from paired nodes; unavailable families preserve the existing DNS content.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/cloudflare/nodes/:id/ip',
+        summary:
+          'Read persisted public IPv4/IPv6 and availability from the latest mTLS report, even before Cloudflare is configured.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Existing local Node ID.' }],
+        response:
+          '{"success":true,"obj":{"nodeId":1,"nodeGuid":"22222222-2222-4222-8222-222222222222","ipv4":"203.0.113.20","ipv6":"2001:db8::20","ipv4Available":true,"ipv6Available":true,"observedAt":1793664000000,"receivedAt":1793664000100}}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/cloudflare/nodes/:id/records',
+        summary:
+          'List DNS records matching known node IPs plus explicitly bound records, including externally changed or deleted records. Reading does not create bindings.',
+        params: [{ name: 'id', in: 'path', type: 'integer' }],
+        response:
+          '{"success":true,"obj":{"zoneId":"11111111111111111111111111111111","zoneName":"example.com","nodeId":1,"nodeAddress":"203.0.113.20","records":[],"publicIp":{"nodeId":1,"ipv4":"203.0.113.20","ipv4Available":true}}}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/cloudflare/nodes/:id/records',
+        summary:
+          'Create an A/AAAA record and bind it to the node. An identical existing record is reused to recover a lost create response.',
+        params: [
+          { name: 'id', in: 'path', type: 'integer' },
+          {
+            name: 'name',
+            in: 'body (json)',
+            type: 'string',
+            desc: 'Full name inside the configured zone, or @ for the zone apex. Unicode is normalized to Punycode.',
+          },
+          {
+            name: 'type',
+            in: 'body (json)',
+            type: 'string',
+            optional: true,
+            enum: ['A', 'AAAA'],
+            desc: 'Inferred from the target IP when omitted.',
+          },
+          {
+            name: 'content',
+            in: 'body (json)',
+            type: 'string',
+            optional: true,
+            desc: 'Explicit target IP. Defaults to the node address only when that address is an IP; required for hostname nodes.',
+          },
+          {
+            name: 'ttl',
+            in: 'body (json)',
+            type: 'integer',
+            optional: true,
+            defaultValue: 1,
+            desc: '1=automatic, or 30–86400 subject to Cloudflare plan limits. Proxied records use 1.',
+          },
+          {
+            name: 'proxied',
+            in: 'body (json)',
+            type: 'boolean',
+            optional: true,
+            defaultValue: false,
+            desc: 'Orange-cloud proxy.',
+          },
+        ],
+        body: '{"name":"node.example.com","type":"A","content":"203.0.113.20","ttl":1,"proxied":false}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/cloudflare/nodes/:id/records/:recordId/bind',
+        summary:
+          'Explicitly bind an existing record whose target matches the supplied/node IP. Does not modify Cloudflare. A record owned by another existing node cannot be taken over.',
+        params: [
+          { name: 'id', in: 'path', type: 'integer' },
+          { name: 'recordId', in: 'path', type: 'string' },
+          {
+            name: 'content',
+            in: 'body (json)',
+            type: 'string',
+            optional: true,
+            desc: 'Expected record IP; required for hostname nodes.',
+          },
+        ],
+        body: '{}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/cloudflare/nodes/:id/records/:recordId/update',
+        summary:
+          'Update an explicitly bound record via Cloudflare PATCH. Omitted name/type/content/ttl/proxied fields retain their values; comments, tags and other metadata are preserved.',
+        params: [
+          { name: 'id', in: 'path', type: 'integer' },
+          { name: 'recordId', in: 'path', type: 'string' },
+          { name: 'name', in: 'body (json)', type: 'string', optional: true },
+          { name: 'type', in: 'body (json)', type: 'string', optional: true, enum: ['A', 'AAAA'] },
+          { name: 'content', in: 'body (json)', type: 'string', optional: true },
+          { name: 'ttl', in: 'body (json)', type: 'integer', optional: true },
+          { name: 'proxied', in: 'body (json)', type: 'boolean', optional: true },
+        ],
+        body: '{"name":"renamed.example.com"}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/cloudflare/nodes/:id/records/:recordId/proxied',
+        summary: 'Enable or disable the orange-cloud proxy for a bound record.',
+        params: [
+          { name: 'id', in: 'path', type: 'integer' },
+          { name: 'recordId', in: 'path', type: 'string' },
+          { name: 'proxied', in: 'body (json)', type: 'boolean' },
+        ],
+        body: '{"proxied":true}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/cloudflare/nodes/:id/records/:recordId/delete',
+        summary:
+          'Delete a bound Cloudflare record, then its local binding. If the remote record is already missing, remove the stale binding. Provider failure retains the binding for retry.',
+        params: [
+          { name: 'id', in: 'path', type: 'integer' },
+          { name: 'recordId', in: 'path', type: 'string' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'node-certificates',
+    title: 'Node panel certificates',
+    description:
+      "Master-only DNS-01 issuance through Let's Encrypt and Cloudflare. Full admin scope or login session required. The private control CA is unchanged. Jobs persist across restarts; only a successful public TLS callback commits the new panel certificate. Renewals are checked every 12 hours, starting 30 days before expiry.",
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/certificates/settings',
+        summary: 'Read ACME contact email and explicit terms consent.',
+        response: '{"success":true,"obj":{"email":"admin@example.com","acceptTos":true}}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/certificates/settings',
+        summary: 'Save ACME email and terms consent separately from general panel settings.',
+        params: [
+          { name: 'email', in: 'body (json)', type: 'string' },
+          { name: 'acceptTos', in: 'body (json)', type: 'boolean' },
+        ],
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/certificates/nodes/:id',
+        summary:
+          'Read the latest certificate task, retry state, active fingerprint and expiration. No private material is returned.',
+        params: [{ name: 'id', in: 'path', type: 'integer' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/certificates/nodes/:id',
+        summary:
+          'Queue one SAN certificate from explicitly selected, unchanged DNS bindings for a paired node. One pending job per node. DNS-01 uses temporary TXT records; A/AAAA proxy settings are preserved.',
+        params: [
+          { name: 'id', in: 'path', type: 'integer' },
+          { name: 'recordIds', in: 'body (json)', type: 'string[]' },
+          {
+            name: 'primaryDomain',
+            in: 'body (json)',
+            type: 'string',
+            desc: 'One selected, non-wildcard domain used for the TLS callback.',
+          },
+        ],
+        body: '{"recordIds":["11111111111111111111111111111111"],"primaryDomain":"node.example.com"}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/certificates/nodes/:id/retry',
+        summary:
+          'Request an immediate retry of the pending job, reusing any already issued valid bundle.',
+        params: [{ name: 'id', in: 'path', type: 'integer' }],
+      },
+    ],
+  },
+  {
+    id: 'access-logs',
+    title: 'Access Logs',
+    description:
+      'Query the master archive of collected Xray connection logs. Requires a master panel and an admin session or full admin token. Restricted monitor, node-sync and node-admin tokens cannot read these logs.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/access-logs',
+        summary:
+          'Filter and paginate retained access logs, newest connection first (ID breaks timestamp ties).',
+        params: [
+          {
+            name: 'page',
+            in: 'query',
+            type: 'integer',
+            optional: true,
+            defaultValue: 1,
+            desc: '1–1000000. Clamped to the last available page.',
+          },
+          {
+            name: 'pageSize',
+            in: 'query',
+            type: 'integer',
+            optional: true,
+            defaultValue: 50,
+            desc: '1–200 records.',
+          },
+          {
+            name: 'nodeGuid',
+            in: 'query',
+            type: 'string',
+            optional: true,
+            desc: 'Exact source GUID, including this master or a historical node.',
+          },
+          {
+            name: 'from',
+            in: 'query',
+            type: 'integer',
+            optional: true,
+            desc: 'Inclusive connection timestamp, Unix milliseconds. Omit or use 0 for no lower bound.',
+          },
+          {
+            name: 'to',
+            in: 'query',
+            type: 'integer',
+            optional: true,
+            desc: 'Inclusive connection timestamp, Unix milliseconds. Omit or use 0 for no upper bound.',
+          },
+          {
+            name: 'user',
+            in: 'query',
+            type: 'string',
+            optional: true,
+            desc: 'Email substring, up to 512 characters. Text filters are case insensitive for ASCII, and % and _ are literal.',
+          },
+          {
+            name: 'source',
+            in: 'query',
+            type: 'string',
+            optional: true,
+            desc: 'Source address substring, up to 512 characters.',
+          },
+          {
+            name: 'target',
+            in: 'query',
+            type: 'string',
+            optional: true,
+            desc: 'Target address substring, up to 512 characters.',
+          },
+          {
+            name: 'inbound',
+            in: 'query',
+            type: 'string',
+            optional: true,
+            desc: 'Inbound tag substring, up to 512 characters.',
+          },
+          {
+            name: 'outbound',
+            in: 'query',
+            type: 'string',
+            optional: true,
+            desc: 'Outbound tag substring, up to 512 characters.',
+          },
+          {
+            name: 'category',
+            in: 'query',
+            type: 'string',
+            optional: true,
+            enum: ['direct', 'proxy', 'blocked'],
+            desc: 'Exact classification.',
+          },
+        ],
+        response: '{"success":true,"obj":{"items":[],"total":0,"page":1,"pageSize":50}}',
+        errorStatus: 400,
+        errorResponse: '{"success":false,"msg":"invalid_access_log_query"}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/access-logs/nodes',
+        summary:
+          'List public node labels for access-log filtering, including the local master and retained historical GUIDs.',
+        response:
+          '{"success":true,"obj":[{"guid":"a13a3fd4-d8ce-4364-bbdf-4b76bfe50913","name":"","local":true}]}',
+      },
+    ],
+  },
   {
     id: 'websocket',
     title: 'WebSocket',

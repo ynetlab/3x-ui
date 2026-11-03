@@ -452,30 +452,31 @@ func (s *NodeService) Create(n *model.Node) error {
 	if err := s.normalize(n); err != nil {
 		return err
 	}
-	db := database.GetDB()
+	return database.GetDB().Transaction(func(tx *gorm.DB) error { return s.createTx(tx, n) })
+}
+
+func (s *NodeService) createTx(tx *gorm.DB, n *model.Node) error {
 	if !nodetoken.Enabled() {
-		return db.Create(n).Error
+		return tx.Create(n).Error
 	}
 	plaintext := n.ApiToken
-	return db.Transaction(func(tx *gorm.DB) error {
-		// The id-bound ciphertext can only be produced after insertion. Never put
-		// plaintext in the initial tuple: PostgreSQL WAL would retain it.
-		n.ApiToken = ""
-		defer func() { n.ApiToken = plaintext }()
-		if err := tx.Create(n).Error; err != nil {
-			return err
-		}
-		enc, err := nodetoken.Encrypt(n.Id, plaintext)
-		if err != nil {
-			return err
-		}
-		if enc == plaintext {
-			return nil // off-mode / empty token: nothing to rewrite
-		}
-		// DB column gets ciphertext; the in-memory struct keeps plaintext so the
-		// create response echoes the same usable value GetById would return.
-		return tx.Model(model.Node{}).Where("id = ?", n.Id).Update("api_token", enc).Error
-	})
+	// The id-bound ciphertext can only be produced after insertion. Never put
+	// plaintext in the initial tuple: PostgreSQL WAL would retain it.
+	n.ApiToken = ""
+	defer func() { n.ApiToken = plaintext }()
+	if err := tx.Create(n).Error; err != nil {
+		return err
+	}
+	enc, err := nodetoken.Encrypt(n.Id, plaintext)
+	if err != nil {
+		return err
+	}
+	if enc == plaintext {
+		return nil // off-mode / empty token: nothing to rewrite
+	}
+	// DB column gets ciphertext; the in-memory struct keeps plaintext so the
+	// create response echoes the same usable value GetById would return.
+	return tx.Model(model.Node{}).Where("id = ?", n.Id).Update("api_token", enc).Error
 }
 
 func (s *NodeService) CreateFromRequest(req *NodeMutationRequest) (*NodeView, error) {
@@ -519,6 +520,12 @@ func (s *NodeService) Update(id int, in *model.Node) error {
 	existing := &model.Node{}
 	if err := db.Where("id = ?", id).First(existing).Error; err != nil {
 		return err
+	}
+	if existing.ControlConnection {
+		in.PinnedCertSha256 = existing.PinnedCertSha256
+	}
+	if existing.ControlRecoveryRequired && in.Enable {
+		return pairingError(409, "control_recovery_required")
 	}
 	// Blank means keep the hidden stored token; non-blank values are encrypted.
 	apiToken := existing.ApiToken
@@ -579,7 +586,13 @@ func (s *NodeService) UpdateFromRequest(id int, req *NodeMutationRequest) error 
 	if err := db.Where("id = ?", id).First(existing).Error; err != nil {
 		return err
 	}
+	if existing.ControlConnection {
+		in.PinnedCertSha256 = existing.PinnedCertSha256
+	}
 	apiToken := existing.ApiToken
+	if existing.ControlRecoveryRequired && in.Enable {
+		return pairingError(409, "control_recovery_required")
+	}
 	switch {
 	case req.ClearApiToken:
 		apiToken = ""
@@ -641,6 +654,15 @@ func (s *NodeService) RuntimeNodeFromRequest(id int, req *NodeMutationRequest) (
 	}
 	overlay := req.toNode()
 	overlay.Id = id
+	// Control identity is read-only metadata. Keep it when previewing edited
+	// connection fields, so paired nodes still use their bound private CA.
+	overlay.ControlConnection = n.ControlConnection
+	overlay.ControlRecoveryRequired = n.ControlRecoveryRequired
+	overlay.ControlRecoveryEnable = n.ControlRecoveryEnable
+	overlay.Guid = n.Guid
+	if n.ControlConnection {
+		overlay.PinnedCertSha256 = n.PinnedCertSha256
+	}
 	if req.ApiToken == nil {
 		overlay.ApiToken = n.ApiToken
 	}
@@ -890,8 +912,22 @@ func (s *NodeService) Delete(id int) error {
 
 func (s *NodeService) SetEnable(id int, enable bool) error {
 	db := database.GetDB()
-	if err := db.Model(model.Node{}).Where("id = ?", id).Update("enable", enable).Error; err != nil {
-		return err
+	query := db.Model(model.Node{}).Where("id = ?", id)
+	if enable {
+		query = query.Where("control_recovery_required = ?", false)
+	}
+	result := query.Update("enable", enable)
+	if result.Error != nil {
+		return result.Error
+	}
+	if enable && result.RowsAffected == 0 {
+		var node model.Node
+		if err := db.First(&node, id).Error; err != nil {
+			return err
+		}
+		if node.ControlRecoveryRequired {
+			return pairingError(409, "control_recovery_required")
+		}
 	}
 	if mgr := runtime.GetManager(); mgr != nil {
 		mgr.InvalidateNode(id)
@@ -1380,6 +1416,10 @@ func (s *NodeService) probe(ctx context.Context, n *model.Node, proxyURL string)
 		return patch, errors.New(patch.LastError)
 	}
 	o := envelope.Obj
+	if n.ControlConnection && o.PanelGuid != n.Guid {
+		patch.LastError = "paired node reported a different GUID"
+		return patch, errors.New(patch.LastError)
+	}
 	patch.CpuPct = o.CpuPct
 	patch.UnavailableMetrics = o.UnavailableMetrics
 	if o.Mem.Total > 0 {

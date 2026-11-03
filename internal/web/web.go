@@ -115,8 +115,15 @@ func EmbeddedDist() embed.FS {
 
 // Server represents the main web server for the 3x-ui panel with controllers, services, and scheduled jobs.
 type Server struct {
-	httpServer *http.Server
-	listener   net.Listener
+	httpServer      *http.Server
+	listener        net.Listener
+	controlServer   *http.Server
+	controlListener net.Listener
+	pairingDone     <-chan struct{}
+	accessLogDone   <-chan struct{}
+	nodeDNSDone     <-chan struct{}
+	certificateDone <-chan struct{}
+	controlPKIDone  <-chan struct{}
 
 	index *controller.IndexController
 	panel *controller.XUIController
@@ -193,7 +200,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 	}
 
 	if webDomain != "" {
-		engine.Use(middleware.DomainValidatorMiddleware(webDomain))
+		engine.Use(controlDomainValidator(webDomain))
 	}
 
 	secret, err := s.settingService.GetSecret()
@@ -205,6 +212,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 	if err != nil {
 		return nil, err
 	}
+	engine.Use(s.panelRoleMiddleware(basePath))
 	engine.Use(gzip.Gzip(gzip.DefaultCompression))
 	assetsBasePath := basePath + "assets/"
 
@@ -268,6 +276,8 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 
 	// Initialize WebSocket hub
 	s.wsHub = websocket.NewHub()
+	role, roleErr := s.settingService.GetPanelRole()
+	s.wsHub.SetClientsDisabled(roleErr != nil || role == service.PanelRoleSlave)
 	go s.wsHub.Run()
 
 	// Initialize WebSocket controller — service owns per-connection pumps,
@@ -562,6 +572,7 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 	})
 	runtime.SetManager(mgr)
 	mgr.SetNodeEgressResolver(&s.settingService)
+	runtime.SetControlClientTLSProvider(s.settingService.ControlTLSForNode)
 	// Supply the master client certificate for nodes in mtls mode. Issued lazily
 	// from the node CA on first use; runtime stays free of a service import.
 	runtime.SetMasterClientCertProvider(func() (tls.Certificate, error) {
@@ -606,6 +617,7 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 	if err != nil {
 		return err
 	}
+	var panelTLS *tls.Config
 	if certFile != "" || keyFile != "" {
 		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 		if err == nil {
@@ -626,8 +638,7 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 				applyNodeMtls(c, pool)
 				logger.Info("Node mTLS enabled: verifying client certificates for the node API")
 			}
-			listener = network.NewAutoHttpsListener(listener)
-			listener = tls.NewListener(listener, c)
+			panelTLS = c
 			logger.Info("Web server running HTTPS on", listener.Addr())
 		} else {
 			logger.Error("Error loading certificates:", err)
@@ -636,7 +647,34 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 	} else {
 		logger.Info("Web server running HTTP on", listener.Addr())
 	}
-	s.listener = listener
+	reloadable := network.NewReloadableListener(listener, panelTLS)
+	s.listener = reloadable
+	listener = reloadable
+	service.SetPanelCertificateReloader(func(certFile, keyFile string) error {
+		var next *tls.Config
+		if certFile != "" || keyFile != "" {
+			cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+			if err != nil {
+				return err
+			}
+			next = &tls.Config{MinVersion: tls.VersionTLS12, Certificates: []tls.Certificate{cert}}
+			pool, err := s.settingService.NodeMtlsClientCAPool()
+			if err != nil && !errors.Is(err, service.ErrNodeMtlsTrustBundleInvalid) {
+				return err
+			}
+			if pool != nil {
+				applyNodeMtls(next, pool)
+			}
+		}
+		reloadable.SetTLS(next)
+		return nil
+	}, func() func() error {
+		previous := reloadable.TLSConfig()
+		return func() error { reloadable.SetTLS(previous); return nil }
+	})
+	if err := service.RecoverPanelCertificateStartup(); err != nil {
+		return err
+	}
 
 	s.httpServer = &http.Server{
 		Handler:           engine,
@@ -646,6 +684,14 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 		IdleTimeout:       120 * time.Second,
 	}
 
+	if err := s.startControl(engine); err != nil {
+		return err
+	}
+	s.pairingDone = service.RunPairingWorker(s.ctx)
+	s.accessLogDone = service.RunAccessLogWorker(s.ctx)
+	s.nodeDNSDone = service.RunNodeDNSWorker(s.ctx)
+	s.certificateDone = service.RunCertificateWorker(s.ctx)
+	s.controlPKIDone = service.RunControlPKIWorker(s.ctx)
 	go network.ServeHTTP(s.httpServer, listener, "Web server")
 
 	// Create event bus before startTask so jobs can use it
@@ -786,11 +832,28 @@ func (s *Server) StopPanelOnly() error {
 
 func (s *Server) stop(stopXray bool, stopTgBot bool) error {
 	s.cancel()
+	if s.certificateDone != nil {
+		<-s.certificateDone
+	}
+	if s.controlPKIDone != nil {
+		<-s.controlPKIDone
+	}
+	service.SetPanelCertificateReloader(nil)
+	if s.nodeDNSDone != nil {
+		<-s.nodeDNSDone
+	}
+	if s.accessLogDone != nil {
+		<-s.accessLogDone
+	}
+	if s.pairingDone != nil {
+		<-s.pairingDone
+	}
 	var err1 error
 	var err2 error
+	err1 = s.stopControl()
 	if s.httpServer != nil {
 		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
-		err1 = s.httpServer.Shutdown(shutdownCtx)
+		err1 = common.Combine(err1, s.httpServer.Shutdown(shutdownCtx))
 		shutdownCancel()
 	}
 	if s.cron != nil {

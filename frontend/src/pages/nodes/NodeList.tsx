@@ -9,6 +9,7 @@ import {
   CloudDownloadOutlined,
   DeleteOutlined,
   EditOutlined,
+  GlobalOutlined,
   ExclamationCircleOutlined,
   EyeInvisibleOutlined,
   EyeOutlined,
@@ -36,6 +37,10 @@ interface NodeListProps {
   onSelectionChange: (ids: number[]) => void;
   onAdd: () => void;
   onMtls: () => void;
+  onAutoAdd?: () => void;
+  onNewInstall?: () => void;
+  onDNS?: (node: NodeRecord) => void;
+  onMigrate?: (node: NodeRecord) => void;
   onEdit: (node: NodeRecord) => void;
   onDelete: (node: NodeRecord) => void;
   onProbe: (node: NodeRecord) => void;
@@ -174,6 +179,10 @@ export default function NodeList({
   onSelectionChange,
   onAdd,
   onMtls,
+  onAutoAdd,
+  onNewInstall,
+  onDNS,
+  onMigrate,
   onEdit,
   onDelete,
   onProbe,
@@ -246,7 +255,7 @@ export default function NodeList({
       {
         title: t('pages.nodes.actions'),
         align: 'center',
-        width: 190,
+        width: 230,
         render: (_value, record) =>
           record.transitive ? (
             <Tooltip
@@ -279,6 +288,40 @@ export default function NodeList({
                     icon={<CloudDownloadOutlined aria-hidden />}
                     aria-label={t('pages.nodes.updatePanel')}
                     onClick={() => onUpdateNode(record)}
+                  />
+                </Tooltip>
+              )}
+              {onMigrate && (!record.controlConnection || record.controlRecoveryRequired) && (
+                <Tooltip
+                  title={t(
+                    record.controlRecoveryRequired
+                      ? 'controlPki.recover'
+                      : 'pages.nodes.autoAdd.migrate',
+                  )}
+                >
+                  <Button
+                    type="text"
+                    size="small"
+                    style={{ fontSize: 16 }}
+                    icon={<SafetyCertificateOutlined aria-hidden />}
+                    aria-label={t(
+                      record.controlRecoveryRequired
+                        ? 'controlPki.recover'
+                        : 'pages.nodes.autoAdd.migrate',
+                    )}
+                    onClick={() => onMigrate(record)}
+                  />
+                </Tooltip>
+              )}
+              {onDNS && (
+                <Tooltip title={t('nodeDNS.title')}>
+                  <Button
+                    type="text"
+                    size="small"
+                    style={{ fontSize: 16 }}
+                    icon={<GlobalOutlined aria-hidden />}
+                    aria-label={t('nodeDNS.title')}
+                    onClick={() => onDNS(record)}
                   />
                 </Tooltip>
               )}
@@ -534,6 +577,8 @@ export default function NodeList({
       onToggleEnable,
       onProbe,
       onEdit,
+      onDNS,
+      onMigrate,
       onDelete,
       onUpdateNode,
       nameByGuid,
@@ -587,6 +632,21 @@ export default function NodeList({
         <Button type="primary" icon={<PlusOutlined aria-hidden />} onClick={onAdd}>
           {t('pages.nodes.addNode')}
         </Button>
+        <Dropdown
+          trigger={['click']}
+          menu={{
+            items: [
+              { key: 'new', label: t('pages.nodes.autoAdd.newInstall') },
+              { key: 'slave', label: t('pages.nodes.autoAdd.addSlave') },
+            ],
+            onClick: ({ key }) => {
+              if (key === 'new') onNewInstall?.();
+              else onAutoAdd?.();
+            },
+          }}
+        >
+          <Button icon={<ClusterOutlined aria-hidden />}>{t('pages.nodes.autoAdd.title')}</Button>
+        </Dropdown>
         <Button icon={<SafetyCertificateOutlined aria-hidden />} onClick={onMtls}>
           {t('pages.nodes.mtls.title')}
         </Button>
@@ -666,6 +726,33 @@ export default function NodeList({
                           placement="bottomRight"
                           menu={{
                             items: [
+                              ...(onMigrate &&
+                              (!record.controlConnection || record.controlRecoveryRequired)
+                                ? [
+                                    {
+                                      key: 'migrate',
+                                      label: t(
+                                        record.controlRecoveryRequired
+                                          ? 'controlPki.recover'
+                                          : 'pages.nodes.autoAdd.migrate',
+                                      ),
+                                      onClick: () => onMigrate(record),
+                                    },
+                                  ]
+                                : []),
+                              ...(onDNS
+                                ? [
+                                    {
+                                      key: 'dns',
+                                      label: (
+                                        <>
+                                          <GlobalOutlined aria-hidden /> {t('nodeDNS.title')}
+                                        </>
+                                      ),
+                                      onClick: () => onDNS(record),
+                                    },
+                                  ]
+                                : []),
                               {
                                 key: 'probe',
                                 label: (

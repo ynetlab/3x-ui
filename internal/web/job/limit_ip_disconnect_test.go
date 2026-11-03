@@ -53,7 +53,7 @@ func TestDisconnectClientTemporarilyAllowsHysteria(t *testing.T) {
 		Tag:      "hy2-limit-probe-tag",
 		Settings: `{"clients":[]}`,
 	}
-	clients := []model.Client{{Email: email, Auth: "secret"}}
+	clients := []model.Client{{Email: email, ID: "secret"}}
 
 	(&CheckClientIpJob{}).disconnectClientTemporarily(inbound, email, clients)
 

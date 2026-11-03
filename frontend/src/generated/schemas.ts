@@ -2,6 +2,12 @@
 export const SCHEMAS: Record<string, unknown> = {
   "AllSetting": {
     "properties": {
+      "cloudflareApiToken": {
+        "type": "string"
+      },
+      "cloudflareZoneId": {
+        "type": "string"
+      },
       "datepicker": {
         "type": "string"
       },
@@ -584,6 +590,8 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "cloudflareApiToken",
+      "cloudflareZoneId",
       "datepicker",
       "discordAdminIds",
       "discordBotBackup",
@@ -769,6 +777,12 @@ export const SCHEMAS: Record<string, unknown> = {
   },
   "AllSettingView": {
     "properties": {
+      "cloudflareApiToken": {
+        "type": "string"
+      },
+      "cloudflareZoneId": {
+        "type": "string"
+      },
       "datepicker": {
         "type": "string"
       },
@@ -823,6 +837,9 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "boolean"
       },
       "hasApiToken": {
+        "type": "boolean"
+      },
+      "hasCloudflareApiToken": {
         "type": "boolean"
       },
       "hasDiscordBotToken": {
@@ -1375,6 +1392,8 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "cloudflareApiToken",
+      "cloudflareZoneId",
       "datepicker",
       "discordAdminIds",
       "discordBotBackup",
@@ -1392,6 +1411,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "externalTrafficInformURI",
       "happLinkEnable",
       "hasApiToken",
+      "hasCloudflareApiToken",
       "hasDiscordBotToken",
       "hasLdapPassword",
       "hasNordSecret",
@@ -3616,6 +3636,13 @@ export const SCHEMAS: Record<string, unknown> = {
         "format": "int64",
         "type": "integer"
       },
+      "controlConnection": {
+        "description": "ControlConnection selects the private-CA transport for paired nodes only.",
+        "type": "boolean"
+      },
+      "controlRecoveryRequired": {
+        "type": "boolean"
+      },
       "cpuPct": {
         "example": 23.5,
         "type": "number"
@@ -3782,6 +3809,8 @@ export const SCHEMAS: Record<string, unknown> = {
       "clientCount",
       "configDirty",
       "configDirtyAt",
+      "controlConnection",
+      "controlRecoveryRequired",
       "cpuPct",
       "createdAt",
       "depletedCount",
@@ -3937,6 +3966,14 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": 0,
         "format": "int64",
         "type": "integer"
+      },
+      "controlConnection": {
+        "example": false,
+        "type": "boolean"
+      },
+      "controlRecoveryRequired": {
+        "example": false,
+        "type": "boolean"
       },
       "cpuPct": {
         "example": 12.5,
@@ -4096,6 +4133,8 @@ export const SCHEMAS: Record<string, unknown> = {
       "clientCount",
       "configDirty",
       "configDirtyAt",
+      "controlConnection",
+      "controlRecoveryRequired",
       "cpuPct",
       "createdAt",
       "depletedCount",

@@ -1,0 +1,85 @@
+.access-logs-page {
+  --bg-page: #e6e8ec;
+  --bg-card: #fff;
+  min-height: 100vh;
+  background: var(--bg-page);
+}
+
+.access-logs-page.is-dark {
+  --bg-page: #1a1b1f;
+  --bg-card: #23252b;
+}
+
+.access-logs-page.is-dark.is-ultra {
+  --bg-page: #000;
+  --bg-card: #101013;
+}
+
+.access-logs-page .content-shell,
+.access-logs-page .content-area {
+  min-width: 0;
+  background: transparent;
+}
+
+.access-logs-page .content-area {
+  padding: 24px;
+}
+
+.access-logs-page .ant-card {
+  border-radius: 12px;
+}
+
+.access-log-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0 16px;
+}
+
+.access-log-time-range {
+  grid-column: span 2;
+}
+
+.access-log-filters .ant-picker {
+  width: 100%;
+}
+
+.access-log-actions {
+  margin-bottom: 20px;
+}
+
+.access-log-error {
+  margin-bottom: 16px;
+}
+
+.access-log-time-popup .ant-picker-panel-container {
+  max-width: calc(100vw - 16px);
+  overflow-x: auto;
+}
+
+@media (max-width: 1200px) {
+  .access-log-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 575px) {
+  .access-log-time-popup {
+    left: 8px !important;
+  }
+
+  .access-logs-page .content-area {
+    padding: 56px 8px 8px;
+  }
+
+  .access-logs-page .ant-card-body {
+    padding: 16px;
+  }
+
+  .access-log-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .access-log-time-range {
+    grid-column: span 1;
+  }
+}

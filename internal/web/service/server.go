@@ -1744,7 +1744,10 @@ func (s *ServerService) GetMigration() ([]byte, string, error) {
 var hostBoundSettingKeys = []string{
 	"webListen", "webDomain", "webPort", "webCertFile", "webKeyFile", "webBasePath",
 	"subListen", "subDomain", "subPort", "subCertFile", "subKeyFile", "subURI", "subJsonURI",
-	"secret", "panelGuid",
+	"secret", "panelGuid", settingPanelRole,
+	settingControlConfig, settingControlCA, settingControlCredentials, settingControlPeers,
+	settingControlRotation, settingControlCAStage, settingAccessLogMaster,
+	settingACMEAccount, settingPanelCertificateInstall,
 	"nodeMtlsCaCertPem", "nodeMtlsCaKeyPem", "nodeMtlsClientCertPem",
 	"nodeMtlsClientKeyPem", "nodeMtlsClientCertSha256", "nodeMtlsClientCAPem",
 }

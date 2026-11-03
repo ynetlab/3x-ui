@@ -16,8 +16,10 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	gormlogger "gorm.io/gorm/logger"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/config"
+	"github.com/mhsanaei/3x-ui/v3/internal/crypto/nodetoken"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
@@ -53,15 +55,26 @@ const (
 )
 
 var defaultValueMap = map[string]string{
-	"xrayTemplateConfig": xrayTemplateConfig,
-	"webListen":          "",
-	"webDomain":          "",
-	"webPort":            "2053",
-	"webCertFile":        "",
-	"webKeyFile":         "",
-	"secret":             random.Seq(32),
-	"panelGuid":          uuid.NewString(),
-	"apiToken":           "",
+	"cloudflareZoneId":           "",
+	cloudflareTokenKey:           "",
+	settingACMEConfig:            `{}`,
+	settingACMEAccount:           "",
+	"xrayTemplateConfig":         xrayTemplateConfig,
+	"webListen":                  "",
+	"webDomain":                  "",
+	"webPort":                    "2053",
+	"webCertFile":                "",
+	"webKeyFile":                 "",
+	"secret":                     random.Seq(32),
+	"panelGuid":                  uuid.NewString(),
+	settingPanelRole:             PanelRoleMaster,
+	settingSlaveInstallPairingID: "",
+	settingAccessLogMaster:       "",
+	settingControlConfig:         `{"enabled":true,"listen":"","port":2054}`,
+	settingControlCA:             "",
+	settingControlCredentials:    "",
+	settingControlPeers:          "[]",
+	"apiToken":                   "",
 	// Node mTLS material (opt-in). All default empty: the CA + master client
 	// cert are minted lazily on first use, and the node-side trust CA is pasted
 	// in by the operator. Kept out of entity.AllSetting so private keys never
@@ -289,6 +302,12 @@ func (s *SettingService) GetAllSetting() (*entity.AllSetting, error) {
 			}
 		}()
 
+		if key == cloudflareTokenKey {
+			value, err = decodeCloudflareToken(value)
+			if err != nil {
+				return err
+			}
+		}
 		var found bool
 		var field reflect.StructField
 		for _, f := range fields {
@@ -355,6 +374,8 @@ func (s *SettingService) GetAllSettingView() (*entity.AllSettingView, error) {
 		return nil, err
 	}
 	view := &entity.AllSettingView{AllSetting: *allSetting}
+	view.HasCloudflareAPIToken = secretConfigured(allSetting.CloudflareAPIToken)
+	view.CloudflareAPIToken = ""
 	view.HasTgBotToken = secretConfigured(allSetting.TgBotToken)
 	view.HasTwoFactorToken = secretConfigured(allSetting.TwoFactorToken)
 	view.HasLdapPassword = secretConfigured(allSetting.LdapPassword)
@@ -397,7 +418,8 @@ func getEnv(key, fallback string) string {
 func (s *SettingService) ResetSettings() error {
 	db := database.GetDB()
 	return db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("1 = 1").Delete(model.Setting{}).Error; err != nil {
+		// General settings resets must not change this machine's role or trust.
+		if err := tx.Where("key NOT IN ?", []string{settingPanelRole, "panelGuid", settingControlConfig, settingControlCA, settingControlCredentials, settingControlPeers, settingControlRotation, settingControlCAStage, settingAccessLogMaster}).Delete(model.Setting{}).Error; err != nil {
 			return err
 		}
 		paths := []model.Setting{
@@ -1660,13 +1682,17 @@ func (s *SettingService) SetNodeDownThreshold(value int) error {
 // flag, a blank submitted secret means "unchanged" (the field is always served
 // blank to the browser) and the stored value is preserved.
 type SecretClears struct {
-	TgBotToken      bool
-	LdapPassword    bool
-	SmtpPassword    bool
-	DiscordBotToken bool
+	CloudflareAPIToken bool
+	TgBotToken         bool
+	LdapPassword       bool
+	SmtpPassword       bool
+	DiscordBotToken    bool
 }
 
 func (s *SettingService) UpdateAllSetting(allSetting *entity.AllSetting, clears SecretClears) error {
+	if err := s.prepareCloudflareSettings(allSetting, clears); err != nil {
+		return err
+	}
 	switch allSetting.SubHostSortMode {
 	case "":
 		allSetting.SubHostSortMode = "inbound-first"
@@ -1703,7 +1729,7 @@ func (s *SettingService) UpdateAllSetting(allSetting *entity.AllSetting, clears 
 	t := reflect.TypeFor[entity.AllSetting]()
 	fields := reflect_util.GetFields(t)
 
-	db := database.GetDB()
+	db := database.GetDB().Session(&gorm.Session{Logger: gormlogger.Discard})
 	return db.Transaction(func(tx *gorm.DB) error {
 		var existing []*model.Setting
 		if err := tx.Find(&existing).Error; err != nil {
@@ -1717,6 +1743,13 @@ func (s *SettingService) UpdateAllSetting(allSetting *entity.AllSetting, clears 
 			key := field.Tag.Get("json")
 			fieldV := v.FieldByName(field.Name)
 			value := fmt.Sprint(fieldV.Interface())
+			if key == cloudflareTokenKey {
+				var err error
+				value, err = nodetoken.EncryptBound([]byte("settings/"+cloudflareTokenKey), value)
+				if err != nil {
+					return errors.New("cloudflare_token_unavailable")
+				}
+			}
 			if st, ok := byKey[key]; ok {
 				if st.Value == value {
 					continue
@@ -2024,11 +2057,12 @@ func (s *SettingService) GetDefaultSettings(host string) (any, error) {
 }
 
 var factoryDefaultSecretKeys = map[string]bool{
-	"tgBotToken":      true,
-	"twoFactorToken":  true,
-	"ldapPassword":    true,
-	"smtpPassword":    true,
-	"discordBotToken": true,
+	cloudflareTokenKey: true,
+	"tgBotToken":       true,
+	"twoFactorToken":   true,
+	"ldapPassword":     true,
+	"smtpPassword":     true,
+	"discordBotToken":  true,
 }
 
 /*

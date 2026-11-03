@@ -45,3 +45,19 @@ func TestSessionUserIDSupportsLegacyUserPayload(t *testing.T) {
 		t.Fatalf("legacy pointer session payload resolved to (%d, %v), want (12, true)", id, ok)
 	}
 }
+
+func TestDisabledSessionLoginRetainsAPIUser(t *testing.T) {
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	DisableSessionLogin(c)
+	user := &model.User{Id: 7}
+	if err := SetLoginUser(c, user); err == nil {
+		t.Fatal("disabled session login created a cookie")
+	}
+	if IsLogin(c) {
+		t.Fatal("disabled session login returned a browser user")
+	}
+	SetAPIAuthUser(c, user)
+	if GetLoginUser(c) != user {
+		t.Fatal("disabling cookie login also disabled the authenticated API user")
+	}
+}

@@ -10,48 +10,50 @@ import (
 // NodeView is the browser/API read contract for nodes. Credentials are
 // write-only: responses expose only whether a node has a token configured.
 type NodeView struct {
-	Id                  int      `json:"id" example:"1"`
-	Name                string   `json:"name" example:"edge-1"`
-	Remark              string   `json:"remark" example:"Primary edge"`
-	Scheme              string   `json:"scheme" example:"https"`
-	Address             string   `json:"address" example:"node.example.com"`
-	Port                int      `json:"port" example:"2053"`
-	BasePath            string   `json:"basePath" example:"/"`
-	HasApiToken         bool     `json:"hasApiToken" example:"true"`
-	Enable              bool     `json:"enable" example:"true"`
-	AllowPrivateAddress bool     `json:"allowPrivateAddress" example:"false"`
-	TlsVerifyMode       string   `json:"tlsVerifyMode" example:"verify"`
-	PinnedCertSha256    string   `json:"pinnedCertSha256" example:""`
-	InboundSyncMode     string   `json:"inboundSyncMode" example:"all"`
-	InboundTags         []string `json:"inboundTags" example:"[\"in-443-tcp\"]"`
-	OutboundTag         string   `json:"outboundTag" example:"direct"`
-	Guid                string   `json:"guid" example:"node-guid"`
-	Status              string   `json:"status" example:"online"`
-	LastHeartbeat       int64    `json:"lastHeartbeat" example:"1700000000"`
-	LatencyMs           int      `json:"latencyMs" example:"42"`
-	XrayVersion         string   `json:"xrayVersion" example:"25.10.31"`
-	PanelVersion        string   `json:"panelVersion" example:"v3.x.x"`
-	CpuPct              float64  `json:"cpuPct" example:"12.5"`
-	MemPct              float64  `json:"memPct" example:"45.2"`
-	UptimeSecs          uint64   `json:"uptimeSecs" example:"86400"`
-	UnavailableMetrics  []string `json:"unavailableMetrics,omitempty"`
-	NetUp               uint64   `json:"netUp" example:"2097152"`
-	NetDown             uint64   `json:"netDown" example:"1048576"`
-	LastError           string   `json:"lastError" example:""`
-	XrayState           string   `json:"xrayState" example:"running"`
-	XrayError           string   `json:"xrayError" example:""`
-	ConfigDirty         bool     `json:"configDirty" example:"false"`
-	ConfigDirtyAt       int64    `json:"configDirtyAt" example:"0"`
-	InboundCount        int      `json:"inboundCount" example:"3"`
-	ClientCount         int      `json:"clientCount" example:"25"`
-	OnlineCount         int      `json:"onlineCount" example:"5"`
-	ActiveCount         int      `json:"activeCount" example:"20"`
-	DisabledCount       int      `json:"disabledCount" example:"2"`
-	DepletedCount       int      `json:"depletedCount" example:"1"`
-	ParentGuid          string   `json:"parentGuid,omitempty" example:""`
-	Transitive          bool     `json:"transitive,omitempty" example:"false"`
-	CreatedAt           int64    `json:"createdAt" example:"1700000000"`
-	UpdatedAt           int64    `json:"updatedAt" example:"1700003600"`
+	Id                      int      `json:"id" example:"1"`
+	Name                    string   `json:"name" example:"edge-1"`
+	Remark                  string   `json:"remark" example:"Primary edge"`
+	Scheme                  string   `json:"scheme" example:"https"`
+	Address                 string   `json:"address" example:"node.example.com"`
+	Port                    int      `json:"port" example:"2053"`
+	BasePath                string   `json:"basePath" example:"/"`
+	HasApiToken             bool     `json:"hasApiToken" example:"true"`
+	Enable                  bool     `json:"enable" example:"true"`
+	AllowPrivateAddress     bool     `json:"allowPrivateAddress" example:"false"`
+	ControlConnection       bool     `json:"controlConnection" example:"false"`
+	ControlRecoveryRequired bool     `json:"controlRecoveryRequired" example:"false"`
+	TlsVerifyMode           string   `json:"tlsVerifyMode" example:"verify"`
+	PinnedCertSha256        string   `json:"pinnedCertSha256" example:""`
+	InboundSyncMode         string   `json:"inboundSyncMode" example:"all"`
+	InboundTags             []string `json:"inboundTags" example:"[\"in-443-tcp\"]"`
+	OutboundTag             string   `json:"outboundTag" example:"direct"`
+	Guid                    string   `json:"guid" example:"node-guid"`
+	Status                  string   `json:"status" example:"online"`
+	LastHeartbeat           int64    `json:"lastHeartbeat" example:"1700000000"`
+	LatencyMs               int      `json:"latencyMs" example:"42"`
+	XrayVersion             string   `json:"xrayVersion" example:"25.10.31"`
+	PanelVersion            string   `json:"panelVersion" example:"v3.x.x"`
+	CpuPct                  float64  `json:"cpuPct" example:"12.5"`
+	MemPct                  float64  `json:"memPct" example:"45.2"`
+	UptimeSecs              uint64   `json:"uptimeSecs" example:"86400"`
+	UnavailableMetrics      []string `json:"unavailableMetrics,omitempty"`
+	NetUp                   uint64   `json:"netUp" example:"2097152"`
+	NetDown                 uint64   `json:"netDown" example:"1048576"`
+	LastError               string   `json:"lastError" example:""`
+	XrayState               string   `json:"xrayState" example:"running"`
+	XrayError               string   `json:"xrayError" example:""`
+	ConfigDirty             bool     `json:"configDirty" example:"false"`
+	ConfigDirtyAt           int64    `json:"configDirtyAt" example:"0"`
+	InboundCount            int      `json:"inboundCount" example:"3"`
+	ClientCount             int      `json:"clientCount" example:"25"`
+	OnlineCount             int      `json:"onlineCount" example:"5"`
+	ActiveCount             int      `json:"activeCount" example:"20"`
+	DisabledCount           int      `json:"disabledCount" example:"2"`
+	DepletedCount           int      `json:"depletedCount" example:"1"`
+	ParentGuid              string   `json:"parentGuid,omitempty" example:""`
+	Transitive              bool     `json:"transitive,omitempty" example:"false"`
+	CreatedAt               int64    `json:"createdAt" example:"1700000000"`
+	UpdatedAt               int64    `json:"updatedAt" example:"1700003600"`
 }
 
 func toNodeView(n *model.Node) *NodeView {
@@ -59,48 +61,50 @@ func toNodeView(n *model.Node) *NodeView {
 		return nil
 	}
 	return &NodeView{
-		Id:                  n.Id,
-		Name:                n.Name,
-		Remark:              n.Remark,
-		Scheme:              n.Scheme,
-		Address:             n.Address,
-		Port:                n.Port,
-		BasePath:            n.BasePath,
-		HasApiToken:         n.ApiToken != "",
-		Enable:              n.Enable,
-		AllowPrivateAddress: n.AllowPrivateAddress,
-		TlsVerifyMode:       n.TlsVerifyMode,
-		PinnedCertSha256:    n.PinnedCertSha256,
-		InboundSyncMode:     n.InboundSyncMode,
-		InboundTags:         n.InboundTags,
-		OutboundTag:         n.OutboundTag,
-		Guid:                n.Guid,
-		Status:              n.Status,
-		LastHeartbeat:       n.LastHeartbeat,
-		LatencyMs:           n.LatencyMs,
-		XrayVersion:         n.XrayVersion,
-		PanelVersion:        n.PanelVersion,
-		CpuPct:              n.CpuPct,
-		MemPct:              n.MemPct,
-		UptimeSecs:          n.UptimeSecs,
-		UnavailableMetrics:  n.UnavailableMetrics,
-		NetUp:               n.NetUp,
-		NetDown:             n.NetDown,
-		LastError:           n.LastError,
-		XrayState:           n.XrayState,
-		XrayError:           n.XrayError,
-		ConfigDirty:         n.ConfigDirty,
-		ConfigDirtyAt:       n.ConfigDirtyAt,
-		InboundCount:        n.InboundCount,
-		ClientCount:         n.ClientCount,
-		OnlineCount:         n.OnlineCount,
-		ActiveCount:         n.ActiveCount,
-		DisabledCount:       n.DisabledCount,
-		DepletedCount:       n.DepletedCount,
-		ParentGuid:          n.ParentGuid,
-		Transitive:          n.Transitive,
-		CreatedAt:           n.CreatedAt,
-		UpdatedAt:           n.UpdatedAt,
+		Id:                      n.Id,
+		Name:                    n.Name,
+		Remark:                  n.Remark,
+		Scheme:                  n.Scheme,
+		Address:                 n.Address,
+		Port:                    n.Port,
+		BasePath:                n.BasePath,
+		HasApiToken:             n.ApiToken != "",
+		Enable:                  n.Enable,
+		AllowPrivateAddress:     n.AllowPrivateAddress,
+		ControlConnection:       n.ControlConnection,
+		ControlRecoveryRequired: n.ControlRecoveryRequired,
+		TlsVerifyMode:           n.TlsVerifyMode,
+		PinnedCertSha256:        n.PinnedCertSha256,
+		InboundSyncMode:         n.InboundSyncMode,
+		InboundTags:             n.InboundTags,
+		OutboundTag:             n.OutboundTag,
+		Guid:                    n.Guid,
+		Status:                  n.Status,
+		LastHeartbeat:           n.LastHeartbeat,
+		LatencyMs:               n.LatencyMs,
+		XrayVersion:             n.XrayVersion,
+		PanelVersion:            n.PanelVersion,
+		CpuPct:                  n.CpuPct,
+		MemPct:                  n.MemPct,
+		UptimeSecs:              n.UptimeSecs,
+		UnavailableMetrics:      n.UnavailableMetrics,
+		NetUp:                   n.NetUp,
+		NetDown:                 n.NetDown,
+		LastError:               n.LastError,
+		XrayState:               n.XrayState,
+		XrayError:               n.XrayError,
+		ConfigDirty:             n.ConfigDirty,
+		ConfigDirtyAt:           n.ConfigDirtyAt,
+		InboundCount:            n.InboundCount,
+		ClientCount:             n.ClientCount,
+		OnlineCount:             n.OnlineCount,
+		ActiveCount:             n.ActiveCount,
+		DisabledCount:           n.DisabledCount,
+		DepletedCount:           n.DepletedCount,
+		ParentGuid:              n.ParentGuid,
+		Transitive:              n.Transitive,
+		CreatedAt:               n.CreatedAt,
+		UpdatedAt:               n.UpdatedAt,
 	}
 }
 

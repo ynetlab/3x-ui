@@ -65,11 +65,11 @@ describe('i18n keys', () => {
 
   const prefixes: string[] = [];
   for (const match of blob.matchAll(
-    /['"`]([A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)+\.?)['"`]\s*\+/g,
+    /['"`]([A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*\.[A-Za-z0-9_]*)['"`]\s*\+/g,
   )) {
     prefixes.push(match[1]);
   }
-  for (const match of blob.matchAll(/[`']([A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)+\.?)\$\{/g)) {
+  for (const match of blob.matchAll(/[`']([A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*\.[A-Za-z0-9_]*)\$\{/g)) {
     prefixes.push(match[1]);
   }
 

@@ -45,6 +45,14 @@ func TestCopyAllModelsIntoSQLite(t *testing.T) {
 	if err := src.Create(&xray.ClientTraffic{InboundId: 1, Email: "a@b.c", Enable: true, Up: 10, Down: 20}).Error; err != nil {
 		t.Fatalf("seed traffic: %v", err)
 	}
+	certificate := model.NodeCertificateJob{ID: "certificate-job", NodeID: 1, NodeGUID: "certificate-node", Domains: `["node.example.com"]`, PrimaryDomain: "node.example.com", Status: "retrying", Payload: "sealed-certificate", ACMEState: "sealed-order", ExpiresAt: 2000000000000, NextAttemptAt: 1900000000000}
+	if err := src.Create(&certificate).Error; err != nil {
+		t.Fatalf("seed certificate job: %v", err)
+	}
+	challenge := model.ACMEChallenge{ID: "challenge", JobID: certificate.ID, ZoneID: "zone", RecordID: "record", Name: "_acme-challenge.node.example.com", Value: "owned-proof"}
+	if err := src.Create(&challenge).Error; err != nil {
+		t.Fatalf("seed ACME challenge: %v", err)
+	}
 
 	dst, err := gorm.Open(sqlite.Open(dstPath), &gorm.Config{Logger: logger.Discard})
 	if err != nil {
@@ -62,6 +70,8 @@ func TestCopyAllModelsIntoSQLite(t *testing.T) {
 		{&model.User{}, 1},
 		{&model.Inbound{}, 1},
 		{&xray.ClientTraffic{}, 1},
+		{&model.NodeCertificateJob{}, 1},
+		{&model.ACMEChallenge{}, 1},
 	} {
 		var got int64
 		if err := dst.Model(tc.model).Count(&got).Error; err != nil {
@@ -79,6 +89,20 @@ func TestCopyAllModelsIntoSQLite(t *testing.T) {
 	}
 	if ct.Up != 10 || ct.Down != 20 || !ct.Enable {
 		t.Errorf("traffic mismatch: %+v", ct)
+	}
+	var copiedCertificate model.NodeCertificateJob
+	if err := dst.First(&copiedCertificate, "id = ?", certificate.ID).Error; err != nil {
+		t.Fatalf("read back certificate job: %v", err)
+	}
+	if copiedCertificate != certificate {
+		t.Error("certificate job state changed during migration")
+	}
+	var copiedChallenge model.ACMEChallenge
+	if err := dst.First(&copiedChallenge, "id = ?", challenge.ID).Error; err != nil {
+		t.Fatalf("read back ACME challenge: %v", err)
+	}
+	if copiedChallenge != challenge {
+		t.Error("ACME cleanup state changed during migration")
 	}
 }
 

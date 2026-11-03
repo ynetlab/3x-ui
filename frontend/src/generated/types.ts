@@ -10,6 +10,8 @@ export type trafficLocalApplyAction = number;
 export type transportBits = number;
 
 export interface AllSetting {
+  cloudflareApiToken: string;
+  cloudflareZoneId: string;
   datepicker: string;
   discordAdminIds: string;
   discordBotBackup: boolean;
@@ -193,6 +195,8 @@ export interface AllSetting {
 }
 
 export interface AllSettingView {
+  cloudflareApiToken: string;
+  cloudflareZoneId: string;
   datepicker: string;
   discordAdminIds: string;
   discordBotBackup: boolean;
@@ -210,6 +214,7 @@ export interface AllSettingView {
   externalTrafficInformURI: string;
   happLinkEnable: boolean;
   hasApiToken: boolean;
+  hasCloudflareApiToken: boolean;
   hasDiscordBotToken: boolean;
   hasLdapPassword: boolean;
   hasNordSecret: boolean;
@@ -835,6 +840,8 @@ export interface Node {
   clientCount: number;
   configDirty: boolean;
   configDirtyAt: number;
+  controlConnection: boolean;
+  controlRecoveryRequired: boolean;
   cpuPct: number;
   createdAt: number;
   depletedCount: number;
@@ -898,6 +905,8 @@ export interface NodeView {
   clientCount: number;
   configDirty: boolean;
   configDirtyAt: number;
+  controlConnection: boolean;
+  controlRecoveryRequired: boolean;
   cpuPct: number;
   createdAt: number;
   depletedCount: number;

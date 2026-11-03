@@ -2,6 +2,7 @@ package session
 
 import (
 	"encoding/gob"
+	"errors"
 	"net/http"
 	"time"
 
@@ -14,10 +15,11 @@ import (
 )
 
 const (
-	loginUserKey      = "LOGIN_USER"
-	loginEpochKey     = "LOGIN_EPOCH"
-	apiAuthUserKey    = "api_auth_user"
-	sessionCookieName = "3x-ui"
+	loginUserKey            = "LOGIN_USER"
+	loginEpochKey           = "LOGIN_EPOCH"
+	apiAuthUserKey          = "api_auth_user"
+	sessionLoginDisabledKey = "session_login_disabled"
+	sessionCookieName       = "3x-ui"
 )
 
 func init() {
@@ -25,6 +27,9 @@ func init() {
 }
 
 func SetLoginUser(c *gin.Context, user *model.User) error {
+	if c.GetBool(sessionLoginDisabledKey) {
+		return errors.New("session login is disabled")
+	}
 	if user == nil {
 		return nil
 	}
@@ -41,11 +46,20 @@ func SetAPIAuthUser(c *gin.Context, user *model.User) {
 	c.Set(apiAuthUserKey, user)
 }
 
+// DisableSessionLogin rejects browser-cookie authentication for this request.
+// Bearer and verified mTLS callers still receive their API-authenticated user.
+func DisableSessionLogin(c *gin.Context) {
+	c.Set(sessionLoginDisabledKey, true)
+}
+
 func GetLoginUser(c *gin.Context) *model.User {
 	if v, ok := c.Get(apiAuthUserKey); ok {
 		if u, ok2 := v.(*model.User); ok2 {
 			return u
 		}
+	}
+	if c.GetBool(sessionLoginDisabledKey) {
+		return nil
 	}
 	s := sessions.Default(c)
 	obj := s.Get(loginUserKey)

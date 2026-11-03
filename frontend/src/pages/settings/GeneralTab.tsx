@@ -19,6 +19,9 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { catTabLabel } from './catTabLabel';
 import { sanitizePath } from './uriPath';
 import SecretInput from './SecretInput';
+import CloudflareSettings from './CloudflareSettings';
+import ACMESettings from './ACMESettings';
+import ControlCertificates from './ControlCertificates';
 
 interface ApiMsg<T = unknown> {
   success?: boolean;
@@ -189,6 +192,12 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
           ),
           children: (
             <>
+              {target.nodeId === undefined && (
+                <>
+                  <CloudflareSettings allSetting={allSetting} updateSetting={updateSetting} />
+                  <ACMESettings />
+                </>
+              )}
               <SettingListItem
                 paddings="small"
                 title={t('pages.settings.panelListeningIP')}
@@ -423,6 +432,7 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
                   onChange={(e) => updateSetting({ webKeyFile: e.target.value })}
                 />
               </SettingListItem>
+              {target.nodeId === undefined && <ControlCertificates />}
             </>
           ),
         },

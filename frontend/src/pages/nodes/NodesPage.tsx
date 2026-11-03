@@ -33,6 +33,8 @@ import { useNodeMutations } from '@/api/queries/useNodeMutations';
 import AppSidebar from '@/layouts/AppSidebar';
 import NodeList from './NodeList';
 import NodeFormModal from './NodeFormModal';
+import NodeAutoAddModal from './NodeAutoAddModal';
+import NodeDNSModal from './NodeDNSModal';
 import { setMessageInstance } from '@/utils/messageBus';
 import { HttpUtil } from '@/utils';
 import type { PanelUpdateInfo } from '../index/PanelUpdateModal';
@@ -104,6 +106,16 @@ export default function NodesPage() {
   const [formNode, setFormNode] = useState<NodeRecord | null>(null);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [mtlsOpen, setMtlsOpen] = useState(false);
+  const [autoAddOpen, setAutoAddOpen] = useState(false);
+  const [newInstallOpen, setNewInstallOpen] = useState(false);
+  const [dnsNode, setDNSNode] = useState<NodeRecord | null>(null);
+  const [migrationNode, setMigrationNode] = useState<NodeRecord | null>(null);
+  const [migrationOpen, setMigrationOpen] = useState(false);
+  const onDNS = useCallback((node: NodeRecord) => setDNSNode(node), []);
+  const onMigrate = useCallback((node: NodeRecord) => {
+    setMigrationNode(node);
+    setMigrationOpen(true);
+  }, []);
   const [trustCa, setTrustCa] = useState('');
   const [copyingCa, setCopyingCa] = useState(false);
   const [savingTrustCa, setSavingTrustCa] = useState(false);
@@ -361,6 +373,10 @@ export default function NodesPage() {
                       onSelectionChange={setSelectedIds}
                       onAdd={onAdd}
                       onMtls={() => setMtlsOpen(true)}
+                      onAutoAdd={() => setAutoAddOpen(true)}
+                      onNewInstall={() => setNewInstallOpen(true)}
+                      onDNS={onDNS}
+                      onMigrate={onMigrate}
                       onEdit={onEdit}
                       onDelete={onDelete}
                       onProbe={onProbe}
@@ -375,6 +391,33 @@ export default function NodesPage() {
           </Layout.Content>
         </Layout>
 
+        {dnsNode && <NodeDNSModal node={dnsNode} nodes={nodes} onClose={() => setDNSNode(null)} />}
+        {migrationNode && (
+          <NodeAutoAddModal
+            key={`${migrationNode.id}:${migrationNode.controlRecoveryRequired ? 'recovery' : 'migration'}:${migrationNode.pinnedCertSha256 ?? ''}`}
+            open={migrationOpen}
+            existingNode={migrationNode}
+            onOpenChange={setMigrationOpen}
+            onCompleted={() => {
+              void refetch();
+            }}
+          />
+        )}
+        <NodeAutoAddModal
+          mode="new"
+          open={newInstallOpen}
+          onOpenChange={setNewInstallOpen}
+          onCompleted={() => {
+            void refetch();
+          }}
+        />
+        <NodeAutoAddModal
+          open={autoAddOpen}
+          onOpenChange={setAutoAddOpen}
+          onCompleted={() => {
+            void refetch();
+          }}
+        />
         <NodeFormModal
           open={formOpen}
           mode={formMode}

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/crypto"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
@@ -35,11 +36,12 @@ type updateUserForm struct {
 // "unchanged", so clearing needs its own signal — see #5724).
 type updateSettingForm struct {
 	entity.AllSetting
-	TwoFactorCode        string `json:"twoFactorCode" form:"twoFactorCode"`
-	ClearTgBotToken      bool   `json:"clearTgBotToken" form:"clearTgBotToken"`
-	ClearLdapPassword    bool   `json:"clearLdapPassword" form:"clearLdapPassword"`
-	ClearSmtpPassword    bool   `json:"clearSmtpPassword" form:"clearSmtpPassword"`
-	ClearDiscordBotToken bool   `json:"clearDiscordBotToken" form:"clearDiscordBotToken"`
+	TwoFactorCode           string `json:"twoFactorCode" form:"twoFactorCode"`
+	ClearTgBotToken         bool   `json:"clearTgBotToken" form:"clearTgBotToken"`
+	ClearLdapPassword       bool   `json:"clearLdapPassword" form:"clearLdapPassword"`
+	ClearSmtpPassword       bool   `json:"clearSmtpPassword" form:"clearSmtpPassword"`
+	ClearDiscordBotToken    bool   `json:"clearDiscordBotToken" form:"clearDiscordBotToken"`
+	ClearCloudflareAPIToken bool   `json:"clearCloudflareApiToken" form:"clearCloudflareApiToken"`
 }
 
 type validateRegexForm struct {
@@ -129,6 +131,17 @@ func (a *SettingController) updateSetting(c *gin.Context) {
 		return
 	}
 	allSetting := &form.AllSetting
+	if scope, exists := c.Get("api_token_scope"); exists && scope != model.ApiScopeAdmin {
+		previous, err := a.settingService.GetAllSettingView()
+		if err != nil {
+			jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), err)
+			return
+		}
+		if strings.TrimSpace(form.CloudflareAPIToken) != "" || form.ClearCloudflareAPIToken || !strings.EqualFold(strings.TrimSpace(form.CloudflareZoneID), previous.CloudflareZoneID) {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"success": false, "msg": "cloudflare_settings_require_admin"})
+			return
+		}
+	}
 	oldTwoFactor, twoFactorErr := a.settingService.GetTwoFactorEnable()
 	oldPanelOutbound, _ := a.settingService.GetPanelOutbound()
 	oldTgEnable, _ := a.settingService.GetTgbotEnabled()
@@ -152,10 +165,11 @@ func (a *SettingController) updateSetting(c *gin.Context) {
 		}
 	}
 	err := a.settingService.UpdateAllSetting(allSetting, service.SecretClears{
-		TgBotToken:      form.ClearTgBotToken,
-		LdapPassword:    form.ClearLdapPassword,
-		SmtpPassword:    form.ClearSmtpPassword,
-		DiscordBotToken: form.ClearDiscordBotToken,
+		CloudflareAPIToken: form.ClearCloudflareAPIToken,
+		TgBotToken:         form.ClearTgBotToken,
+		LdapPassword:       form.ClearLdapPassword,
+		SmtpPassword:       form.ClearSmtpPassword,
+		DiscordBotToken:    form.ClearDiscordBotToken,
 	})
 	if err == nil && twoFactorErr == nil && !oldTwoFactor && allSetting.TwoFactorEnable {
 		if bumpErr := a.userService.BumpLoginEpoch(); bumpErr != nil {

@@ -20,6 +20,8 @@ type Msg struct {
 }
 
 type AllSetting struct {
+	CloudflareZoneID   string `json:"cloudflareZoneId" form:"cloudflareZoneId"`
+	CloudflareAPIToken string `json:"cloudflareApiToken" form:"cloudflareApiToken"`
 	WebListen             string `json:"webListen" form:"webListen"`
 	WebDomain             string `json:"webDomain" form:"webDomain"`
 	WebPort               int    `json:"webPort" form:"webPort" validate:"gte=1,lte=65535"`
@@ -218,6 +220,7 @@ type AllSetting struct {
 
 type AllSettingView struct {
 	AllSetting
+	HasCloudflareAPIToken bool `json:"hasCloudflareApiToken"`
 
 	HasTgBotToken      bool `json:"hasTgBotToken"`
 	HasTwoFactorToken  bool `json:"hasTwoFactorToken"`

@@ -1078,6 +1078,15 @@ prompt_and_setup_ssl() {
 }
 
 config_after_install() {
+    if [[ "${XUI_SLAVE_INSTALL:-0}" == "1" ]]; then
+        if ! printf '%s' "${slave_pairing_payload}" | "${xui_folder}/x-ui" pairing install --stdin-base64; then
+            echo "Failed to prepare the pending slave. The service has not been started." >&2
+            exit 1
+        fi
+        unset slave_pairing_payload
+        echo "Pending slave initialized. Login and UI are disabled; the service will pair automatically."
+        return
+    fi
     local existing_hasDefaultCredential=$(${xui_folder}/x-ui setting -show true | grep -Eo 'hasDefaultCredential: .+' | awk '{print $2}')
     local existing_webBasePath=$(${xui_folder}/x-ui setting -show true | grep -Eo 'webBasePath: .+' | awk '{print $2}' | sed 's#^/##')
     local existing_port=$(${xui_folder}/x-ui setting -show true | grep -Eo 'port: .+' | awk '{print $2}')
@@ -1671,7 +1680,7 @@ verify_release_checksum() {
     local url="$1" file="$2" sums="$2.sha256" code expected actual
     rm -f "${sums}"
     code=$(curl -sL --retry 3 --retry-delay 3 --connect-timeout 15 --max-time 60 -o "${sums}" -w '%{http_code}' "${url}.sha256")
-    if [[ "${code}" == "404" ]]; then
+    if [[ "${code}" == "404" && "${XUI_SLAVE_INSTALL:-0}" != "1" ]]; then
         rm -f "${sums}"
         echo -e "${yellow}No checksum published for this release, skipping verification${plain}"
         return 0
@@ -1690,6 +1699,64 @@ verify_release_checksum() {
         exit 1
     fi
     echo -e "${green}Checksum verified: ${actual}${plain}"
+}
+
+# Check support before placing files or starting any service. Older stable
+# releases do not understand the install command and must never boot as master.
+verify_slave_install_capability() {
+    local archive="$1" member="$2" candidate capability
+    # Use the installation filesystem; hardened servers may mount /tmp noexec.
+    candidate=$(mktemp "${xui_folder%/x-ui}/.x-ui-pairing-check.XXXXXXXX") || return 1
+    if ! tar -xOzf "${archive}" "${member}" > "${candidate}" || ! chmod 700 "${candidate}"; then
+        rm -f "${candidate}"
+        return 1
+    fi
+    capability=$("${candidate}" pairing capabilities 2>/dev/null)
+    rm -f "${candidate}"
+    if [[ "${capability}" != "3x-ui-pairing-install-v1" ]]; then
+        echo "This release does not support automatic slave installation. Choose a release containing this feature; no service has been started." >&2
+        return 1
+    fi
+}
+
+# Runs before package installation/downloads. A repeated command may resume only
+# its own installer-created task; unrelated installations are never replaced.
+prepare_slave_install_input() {
+    [[ "${XUI_SLAVE_INSTALL:-0}" == "1" ]] || return 0
+    NONINTERACTIVE=1
+    slave_pairing_payload=$(head -c 65537)
+    if [[ -z "${slave_pairing_payload}" || ${#slave_pairing_payload} -gt 65536 ]]; then
+        echo "Invalid slave pairing input." >&2
+        exit 1
+    fi
+    if [[ -e "${xui_folder}" || -e "${XUI_DB_FOLDER:-/etc/x-ui}/x-ui.db" || -e "${xui_service}/x-ui.service" || -e /etc/init.d/x-ui ]]; then
+        local capability=""
+        [[ -x "${xui_folder}/x-ui" ]] && capability=$("${xui_folder}/x-ui" pairing capabilities 2>/dev/null)
+        if [[ "${capability}" != "3x-ui-pairing-install-v1" ]]; then
+            echo "An existing installation was found. Use Add slave for an installed panel; nothing has been reinstalled." >&2
+            exit 1
+        fi
+        if ! printf '%s' "${slave_pairing_payload}" | "${xui_folder}/x-ui" pairing install --stdin-base64 --resume; then
+            echo "Cannot resume this installation. Retry only the original command; expired or failed pairing requires manual recovery. No installation has been replaced." >&2
+            exit 1
+        fi
+        if [[ "${release}" == "alpine" && -e /etc/init.d/x-ui ]]; then
+            if rc-service x-ui start; then
+                unset slave_pairing_payload
+                echo "Existing slave installation task resumed."
+                exit 0
+            fi
+        elif [[ -e "${xui_service}/x-ui.service" ]]; then
+            if systemctl start x-ui; then
+                unset slave_pairing_payload
+                echo "Existing slave installation task resumed."
+                exit 0
+            fi
+        fi
+        # The exact task was validated above. An interrupted unit installation
+        # can safely finish through the normal installer using its own files.
+        echo "Finishing the interrupted slave service installation."
+    fi
 }
 
 # Older tags predate some of these files (x-ui.rc arrived in v2.8.4). Serving
@@ -1772,6 +1839,11 @@ install_x-ui() {
     if ! printf '%s\n' "${archive_files}" | grep -qxE '(\./)?x-ui/x-ui'; then
         echo -e "${red}Release archive is missing the x-ui binary. The current installation is untouched.${plain}" >&2
         exit 1
+    fi
+    if [[ "${XUI_SLAVE_INSTALL:-0}" == "1" ]]; then
+        local binary_member
+        binary_member=$(printf '%s\n' "${archive_files}" | grep -xE '(\./)?x-ui/x-ui' | head -n1)
+        verify_slave_install_capability "${xui_folder}-linux-$(arch).tar.gz" "${binary_member}" || exit 1
     fi
 
     # x-ui.sh, x-ui.rc and the unit files must come from the same release as
@@ -1962,6 +2034,10 @@ install_x-ui() {
         chmod +x /etc/init.d/x-ui
         rc-update add x-ui
         rc-service x-ui start
+        if [[ $? -ne 0 && "${XUI_SLAVE_INSTALL:-0}" == "1" ]]; then
+            echo "Slave service startup failed. Pairing is saved; rerun the same installation command to recover." >&2
+            exit 1
+        fi
     else
         # Install systemd service file
         service_installed=false
@@ -2031,6 +2107,10 @@ install_x-ui() {
             systemctl daemon-reload
             systemctl enable x-ui
             systemctl start x-ui
+            if [[ $? -ne 0 && "${XUI_SLAVE_INSTALL:-0}" == "1" ]]; then
+                echo "Slave service startup failed. Pairing is saved; rerun the same installation command to recover." >&2
+                exit 1
+            fi
         else
             echo -e "${red}Failed to install x-ui.service file${plain}"
             exit 1
@@ -2064,5 +2144,10 @@ install_x-ui() {
 }
 
 echo -e "${green}Running...${plain}"
+prepare_slave_install_input
 install_base
-install_x-ui $1
+if [[ "${XUI_SLAVE_INSTALL:-0}" == "1" && "${1:-latest}" == "latest" ]]; then
+    install_x-ui
+else
+    install_x-ui $1
+fi

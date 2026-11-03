@@ -28,6 +28,8 @@ export const transportBitsSchema = z.number().int();
 export type transportBits = z.infer<typeof transportBitsSchema>;
 
 export const AllSettingSchema = z.object({
+  cloudflareApiToken: z.string(),
+  cloudflareZoneId: z.string(),
   datepicker: z.string(),
   discordAdminIds: z.string(),
   discordBotBackup: z.boolean(),
@@ -212,6 +214,8 @@ export const AllSettingSchema = z.object({
 export type AllSetting = z.infer<typeof AllSettingSchema>;
 
 export const AllSettingViewSchema = z.object({
+  cloudflareApiToken: z.string(),
+  cloudflareZoneId: z.string(),
   datepicker: z.string(),
   discordAdminIds: z.string(),
   discordBotBackup: z.boolean(),
@@ -229,6 +233,7 @@ export const AllSettingViewSchema = z.object({
   externalTrafficInformURI: z.string(),
   happLinkEnable: z.boolean(),
   hasApiToken: z.boolean(),
+  hasCloudflareApiToken: z.boolean(),
   hasDiscordBotToken: z.boolean(),
   hasLdapPassword: z.boolean(),
   hasNordSecret: z.boolean(),
@@ -891,6 +896,8 @@ export const NodeSchema = z.object({
   clientCount: z.number().int(),
   configDirty: z.boolean(),
   configDirtyAt: z.number().int(),
+  controlConnection: z.boolean(),
+  controlRecoveryRequired: z.boolean(),
   cpuPct: z.number(),
   createdAt: z.number().int(),
   depletedCount: z.number().int(),
@@ -956,6 +963,8 @@ export const NodeViewSchema = z.object({
   clientCount: z.number().int(),
   configDirty: z.boolean(),
   configDirtyAt: z.number().int(),
+  controlConnection: z.boolean(),
+  controlRecoveryRequired: z.boolean(),
   cpuPct: z.number(),
   createdAt: z.number().int(),
   depletedCount: z.number().int(),

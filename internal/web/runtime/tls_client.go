@@ -169,7 +169,7 @@ var (
 // nodeClientIdentity covers everything that decides how the node is trusted; the
 // proxy URL is a variant of it, so it stays out of the identity itself.
 func nodeClientIdentity(n *model.Node, mode string) string {
-	return fmt.Sprintf("%d|%s|%s|%s|%d|%s", n.Id, mode, n.Scheme, n.Address, n.Port, n.PinnedCertSha256)
+	return fmt.Sprintf("%d|%s|%s|%s|%d|%s|%t|%s", n.Id, mode, n.Scheme, n.Address, n.Port, n.PinnedCertSha256, n.ControlConnection, n.Guid)
 }
 
 // dropNodeClients discards every cached client of one node except keep, so a
@@ -191,7 +191,7 @@ func HTTPClientForNode(n *model.Node, proxyURL string) (*http.Client, error) {
 	if mode == "" {
 		mode = "verify"
 	}
-	if mode == "verify" || n.Scheme == "http" {
+	if !n.ControlConnection && (mode == "verify" || n.Scheme == "http") {
 		// Shared across nodes and not node-specific: nothing to key on.
 		if proxyURL == "" {
 			nodeClientsMu.Lock()
@@ -231,6 +231,9 @@ func HTTPClientForNode(n *model.Node, proxyURL string) (*http.Client, error) {
 }
 
 func buildNodeHTTPClient(n *model.Node, mode, proxyURL string) (*http.Client, error) {
+	if n.ControlConnection {
+		return controlNodeHTTPClient(n, proxyURL)
+	}
 	if proxyURL != "" {
 		if mode == "mtls" && n.Scheme != "http" {
 			timeout := remoteHTTPTimeout

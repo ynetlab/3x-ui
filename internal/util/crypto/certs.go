@@ -42,6 +42,19 @@ func marshalCertKey(certDER []byte, key *ecdsa.PrivateKey) (CertKeyPEM, error) {
 // GenerateNodeCA mints a self-signed ECDSA P-256 CA used to authenticate node
 // API traffic. It can sign leaf certificates only (path length 0).
 func GenerateNodeCA(commonName string) (CertKeyPEM, error) {
+	return generateNodeCA(commonName, time.Now().Add(nodeCertValidity))
+}
+
+// GenerateNodeCAForYears is used by the independent control transport. Legacy
+// panel mTLS keeps the original GenerateNodeCA lifetime.
+func GenerateNodeCAForYears(commonName string, years int) (CertKeyPEM, error) {
+	if years < 1 || years > 100 {
+		return CertKeyPEM{}, errors.New("invalid CA validity")
+	}
+	return generateNodeCA(commonName, time.Now().AddDate(years, 0, 0))
+}
+
+func generateNodeCA(commonName string, expires time.Time) (CertKeyPEM, error) {
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return CertKeyPEM{}, err
@@ -55,7 +68,7 @@ func GenerateNodeCA(commonName string) (CertKeyPEM, error) {
 		SerialNumber:          serial,
 		Subject:               pkix.Name{CommonName: commonName},
 		NotBefore:             now.Add(-time.Hour),
-		NotAfter:              now.Add(nodeCertValidity),
+		NotAfter:              expires,
 		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
 		BasicConstraintsValid: true,
 		IsCA:                  true,

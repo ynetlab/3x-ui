@@ -3,10 +3,15 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	_ "embed"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
@@ -21,6 +26,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/config"
 	"github.com/mhsanaei/3x-ui/v3/internal/crypto/nodetoken"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/sub"
 	"github.com/mhsanaei/3x-ui/v3/internal/tunnelmonitor"
@@ -550,6 +556,88 @@ func GetApiToken(getApiToken bool, tokenName, tokenScope string) {
 	fmt.Println("apiToken:", created.Token)
 }
 
+// Credentials travel on stdin, never through command-line flags or temporary files.
+func decodePairingInput(input io.Reader) (service.JoinPairingRequest, error) {
+	var req service.JoinPairingRequest
+	data, err := io.ReadAll(io.LimitReader(input, 65537))
+	if err != nil || len(data) > 65536 {
+		return req, errors.New("invalid_pairing_input")
+	}
+	decoded, err := base64.StdEncoding.Strict().DecodeString(strings.TrimSpace(string(data)))
+	if err != nil {
+		return req, errors.New("invalid_pairing_input")
+	}
+	decoder := json.NewDecoder(bytes.NewReader(decoded))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&req); err != nil {
+		return req, errors.New("invalid_pairing_input")
+	}
+	if err := decoder.Decode(new(any)); err != io.EOF {
+		return req, errors.New("invalid_pairing_input")
+	}
+	return req, nil
+}
+
+func runPairingCLI(args []string, input io.Reader, output io.Writer) error {
+	if len(args) == 1 && args[0] == "capabilities" {
+		_, err := io.WriteString(output, "3x-ui-pairing-install-v1\n")
+		return err
+	}
+	resumeInstall := len(args) == 3 && args[0] == "install" && args[1] == "--stdin-base64" && args[2] == "--resume"
+	if !resumeInstall && (len(args) != 2 || (args[0] != "join" && args[0] != "install" && args[0] != "recover") || args[1] != "--stdin-base64") {
+		return errors.New("usage: x-ui pairing {join|install|recover} --stdin-base64")
+	}
+	if runtime.GOOS != "windows" && os.Geteuid() != 0 {
+		return errors.New("pairing_requires_root")
+	}
+	req, err := decodePairingInput(input)
+	if err != nil {
+		return err
+	}
+	newInstall := args[0] == "install"
+	if (!newInstall || resumeInstall) && config.GetDBKind() == "sqlite" {
+		if info, err := os.Stat(config.GetDBPath()); err != nil || !info.Mode().IsRegular() {
+			return errors.New("existing_panel_database_required")
+		}
+	}
+	if err := initNodeTokenCrypto(); err != nil {
+		return errors.New("pairing_encryption_configuration_error")
+	}
+	if err := database.InitDB(config.GetDBPath()); err != nil {
+		return errors.New("pairing_database_unavailable")
+	}
+	defer database.CloseDB()
+	if !newInstall {
+		var users int64
+		if err := database.GetDB().Model(&model.User{}).Count(&users).Error; err != nil || users == 0 {
+			return errors.New("existing_panel_installation_required")
+		}
+	}
+	var view service.PairingView
+	if resumeInstall {
+		view, err = (&service.PairingService{}).ResumeSlaveInstall(req)
+	} else if newInstall {
+		view, err = (&service.PairingService{}).PrepareSlaveInstall(req)
+	} else if args[0] == "recover" {
+		view, err = (&service.PairingService{}).StartRecovery(req)
+	} else {
+		view, err = (&service.PairingService{}).StartJoin(req)
+	}
+	if err != nil {
+		var pe *service.PairingError
+		if errors.As(err, &pe) {
+			return errors.New(pe.Code)
+		}
+		return errors.New("pairing_storage_error")
+	}
+	if newInstall {
+		if _, _, err := database.EnsureFirstUser(); err != nil {
+			return errors.New("pairing_user_initialization_failed")
+		}
+	}
+	return json.NewEncoder(output).Encode(view)
+}
+
 // migrateDb performs database migration operations for the 3x-ui panel.
 func migrateDb() {
 	inboundService := service.InboundService{}
@@ -660,6 +748,11 @@ func main() {
 	}
 
 	switch os.Args[1] {
+	case "pairing":
+		if err := runPairingCLI(os.Args[2:], os.Stdin, os.Stdout); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 	case "run":
 		err := runCmd.Parse(os.Args[2:])
 		if err != nil {
@@ -775,6 +868,8 @@ Commands:
     migrate        migrate from other/old x-ui
     migrate-db     SQLite <-> .dump (--dump/--restore) or copy into PostgreSQL (--dsn)
     encrypt-tokens encrypt node bearer tokens with the configured active key
+    pairing {join|install} --stdin-base64
+                   queue a slave pairing; install initializes a fresh pending slave
     setting        set settings
     install-awg-kernel
                    build and install the AmneziaWG kernel module (required for
