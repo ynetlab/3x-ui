@@ -3034,7 +3034,7 @@
   },
   "accessLogs": {
     "title": "アクセスログ",
-    "subtitle": "Xray 接続を30日間保持。文字列は部分一致、時刻はブラウザーのタイムゾーン。",
+    "subtitle": "Xray 接続ログを 30 日間保持します。時刻の表示と絞り込みには選択したタイムゾーンを使用します。",
     "localNode": "マスター（このパネル）",
     "node": "ノード",
     "time": "接続時刻",
@@ -3052,7 +3052,12 @@
     "total": "{count} 件のレコード",
     "empty": "条件に一致するアクセスログはありません",
     "loadError": "ログを取得できません。再読み込みしてください。",
-    "invalidTimeRange": "開始時刻は終了時刻以前にしてください"
+    "invalidTimeRange": "開始時刻は終了時刻以前にしてください",
+    "timeZone": "タイムゾーン",
+    "systemTimeZone": "システム設定（{zone}）",
+    "selectUser": "ユーザーを選択",
+    "userLoadError": "ユーザー一覧を読み込めません。更新してください。",
+    "invalidLocalTime": "選択したタイムゾーンにこの時刻は存在しません。"
   },
   "nodeStatus": {
     "title": "システム状態",

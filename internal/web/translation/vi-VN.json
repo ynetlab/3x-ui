@@ -3034,7 +3034,7 @@
   },
   "accessLogs": {
     "title": "Nhật ký truy cập",
-    "subtitle": "Giữ kết nối Xray trong 30 ngày. Lọc văn bản theo khớp một phần; dùng múi giờ trình duyệt.",
+    "subtitle": "Lưu nhật ký kết nối Xray trong 30 ngày. Hiển thị và lọc thời gian sử dụng múi giờ đã chọn.",
     "localNode": "Máy chủ (bảng này)",
     "node": "Nút",
     "time": "Thời gian kết nối",
@@ -3052,7 +3052,12 @@
     "total": "{count} bản ghi",
     "empty": "Không có nhật ký khớp bộ lọc",
     "loadError": "Không tải được nhật ký. Hãy làm mới.",
-    "invalidTimeRange": "Thời gian bắt đầu không được sau thời gian kết thúc"
+    "invalidTimeRange": "Thời gian bắt đầu không được sau thời gian kết thúc",
+    "timeZone": "Múi giờ",
+    "systemTimeZone": "Hệ thống ({zone})",
+    "selectUser": "Chọn người dùng",
+    "userLoadError": "Không tải được người dùng. Hãy làm mới để thử lại.",
+    "invalidLocalTime": "Thời gian này không tồn tại trong múi giờ đã chọn."
   },
   "nodeStatus": {
     "title": "Trạng thái hệ thống",

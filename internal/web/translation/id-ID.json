@@ -3034,7 +3034,7 @@
   },
   "accessLogs": {
     "title": "Log akses",
-    "subtitle": "Koneksi Xray disimpan 30 hari. Filter teks memakai pencocokan sebagian; waktu mengikuti zona browser.",
+    "subtitle": "Koneksi Xray disimpan selama 30 hari. Tampilan dan filter waktu menggunakan zona waktu yang dipilih.",
     "localNode": "Master (panel ini)",
     "node": "Node",
     "time": "Waktu koneksi",
@@ -3052,7 +3052,12 @@
     "total": "{count} rekaman",
     "empty": "Tidak ada log yang sesuai filter",
     "loadError": "Log tidak tersedia. Muat ulang.",
-    "invalidTimeRange": "Waktu mulai tidak boleh melewati waktu selesai"
+    "invalidTimeRange": "Waktu mulai tidak boleh melewati waktu selesai",
+    "timeZone": "Zona waktu",
+    "systemTimeZone": "Sistem ({zone})",
+    "selectUser": "Pilih pengguna",
+    "userLoadError": "Daftar pengguna gagal dimuat. Segarkan untuk mencoba lagi.",
+    "invalidLocalTime": "Waktu ini tidak ada dalam zona waktu yang dipilih."
   },
   "nodeStatus": {
     "title": "Status sistem",

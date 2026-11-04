@@ -3034,7 +3034,7 @@
   },
   "accessLogs": {
     "title": "存取記錄",
-    "subtitle": "保留最近 30 天的 Xray 連線記錄。文字模糊比對，時間使用瀏覽器時區。",
+    "subtitle": "保留最近 30 天的 Xray 連線日誌，時間顯示與篩選使用所選時區。",
     "localNode": "主面板（本機）",
     "node": "節點",
     "time": "連線時間",
@@ -3052,7 +3052,12 @@
     "total": "共 {count} 筆記錄",
     "empty": "沒有符合篩選條件的存取記錄",
     "loadError": "記錄載入失敗，請重新整理。",
-    "invalidTimeRange": "開始時間不能晚於結束時間"
+    "invalidTimeRange": "開始時間不能晚於結束時間",
+    "timeZone": "時區",
+    "systemTimeZone": "跟隨系統（{zone}）",
+    "selectUser": "選擇使用者",
+    "userLoadError": "使用者清單載入失敗，請重新整理。",
+    "invalidLocalTime": "此時間在所選時區中不存在。"
   },
   "nodeStatus": {
     "title": "系統狀態",

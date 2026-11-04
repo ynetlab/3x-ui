@@ -3108,7 +3108,7 @@ export const sections: readonly Section[] = [
         method: 'GET',
         path: '/panel/api/access-logs',
         summary:
-          'Filter and paginate retained access logs, newest connection first (ID breaks timestamp ties).',
+          'Filter and paginate retained access logs, newest connection first (ID breaks timestamp ties). userComments maps emails on this page to their current user remarks; remarks are display metadata and do not affect filtering.',
         params: [
           {
             name: 'page',
@@ -3155,6 +3155,14 @@ export const sections: readonly Section[] = [
             desc: 'Email substring, up to 512 characters. Text filters are case insensitive for ASCII, and % and _ are literal.',
           },
           {
+            name: 'userExact',
+            in: 'query',
+            type: 'boolean',
+            optional: true,
+            defaultValue: false,
+            desc: 'Match user as one complete email instead of a substring. User remarks are never searched.',
+          },
+          {
             name: 'source',
             in: 'query',
             type: 'string',
@@ -3191,7 +3199,8 @@ export const sections: readonly Section[] = [
             desc: 'Exact classification.',
           },
         ],
-        response: '{"success":true,"obj":{"items":[],"total":0,"page":1,"pageSize":50}}',
+        response:
+          '{"success":true,"obj":{"items":[],"total":0,"page":1,"pageSize":50,"userComments":{}}}',
         errorStatus: 400,
         errorResponse: '{"success":false,"msg":"invalid_access_log_query"}',
       },

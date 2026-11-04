@@ -125,7 +125,7 @@
   },
   "accessLogs": {
     "title": "Access Logs",
-    "subtitle": "Xray connections, retained for 30 days. Text filters use partial matches; times use the browser time zone.",
+    "subtitle": "Xray connections, retained for 30 days. Display and time filters use the selected time zone.",
     "localNode": "Master (this panel)",
     "node": "Node",
     "time": "Connection time",
@@ -143,7 +143,12 @@
     "total": "{count} records",
     "empty": "No access logs match these filters",
     "loadError": "Logs unavailable. Refresh to retry.",
-    "invalidTimeRange": "Start time must not exceed end time"
+    "invalidTimeRange": "Start time must not exceed end time",
+    "timeZone": "Time zone",
+    "systemTimeZone": "System ({zone})",
+    "selectUser": "Select a user",
+    "userLoadError": "Users unavailable. Refresh to retry.",
+    "invalidLocalTime": "This time does not exist in the selected time zone."
   },
   "nodeStatus": {
     "title": "System status",

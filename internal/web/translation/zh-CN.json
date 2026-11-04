@@ -125,7 +125,7 @@
   },
   "accessLogs": {
     "title": "访问日志",
-    "subtitle": "保留最近 30 天的 Xray 连接日志。文本模糊匹配，时间使用浏览器时区。",
+    "subtitle": "保留最近 30 天的 Xray 连接日志，时间显示与筛选使用所选时区。",
     "localNode": "Master（当前面板）",
     "node": "节点",
     "time": "连接时间",
@@ -143,7 +143,12 @@
     "total": "共 {count} 条解析",
     "empty": "没有符合筛选条件的访问日志",
     "loadError": "日志加载失败，请刷新。",
-    "invalidTimeRange": "开始时间不能晚于结束时间"
+    "invalidTimeRange": "开始时间不能晚于结束时间",
+    "timeZone": "时区",
+    "systemTimeZone": "跟随系统（{zone}）",
+    "selectUser": "选择用户",
+    "userLoadError": "用户列表加载失败，请刷新。",
+    "invalidLocalTime": "该时间在所选时区中不存在。"
   },
   "nodeStatus": {
     "title": "系统状态",

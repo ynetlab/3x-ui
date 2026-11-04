@@ -1,6 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
 import { HttpUtil } from '@/utils';
+import { ClientPageResponseSchema } from '@/schemas/client';
 import {
   AccessLogNodesSchema,
   AccessLogPageSchema,
@@ -32,6 +33,34 @@ export function useAccessLogNodes() {
       if (!msg.success) throw new Error(msg.msg);
       return AccessLogNodesSchema.parse(msg.obj);
     },
+    refetchOnWindowFocus: false,
+  });
+}
+
+// Reuse the existing slim, paginated user list; no full credentials are loaded.
+export function useAccessLogUsers(search: string, enabled: boolean) {
+  return useInfiniteQuery({
+    queryKey: ['access-logs', 'users', search],
+    initialPageParam: 1,
+    enabled,
+    queryFn: async ({ pageParam, signal }) => {
+      const msg = await HttpUtil.get(
+        '/panel/api/clients/list/paged',
+        {
+          page: pageParam,
+          pageSize: 50,
+          search: search || undefined,
+          sort: 'email',
+          order: 'ascend',
+        },
+        { silent: true, signal },
+      );
+      if (!msg.success) throw new Error(msg.msg);
+      return ClientPageResponseSchema.parse(msg.obj);
+    },
+    getNextPageParam: (last) =>
+      last.page * last.pageSize < last.filtered ? last.page + 1 : undefined,
+    staleTime: 30_000,
     refetchOnWindowFocus: false,
   });
 }

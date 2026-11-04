@@ -3034,7 +3034,7 @@
   },
   "accessLogs": {
     "title": "Registros de acceso",
-    "subtitle": "Conexiones Xray de los últimos 30 días. Filtros por coincidencia parcial; hora del navegador.",
+    "subtitle": "Las conexiones de Xray se conservan durante 30 días. La visualización y los filtros de tiempo usan la zona horaria seleccionada.",
     "localNode": "Maestro (este panel)",
     "node": "Nodo",
     "time": "Hora de conexión",
@@ -3052,7 +3052,12 @@
     "total": "{count} registros",
     "empty": "Ningún registro coincide con los filtros",
     "loadError": "Registros no disponibles. Actualice para reintentar.",
-    "invalidTimeRange": "El inicio no puede ser posterior al final"
+    "invalidTimeRange": "El inicio no puede ser posterior al final",
+    "timeZone": "Zona horaria",
+    "systemTimeZone": "Sistema ({zone})",
+    "selectUser": "Seleccionar usuario",
+    "userLoadError": "No se pudieron cargar los usuarios. Actualiza para reintentar.",
+    "invalidLocalTime": "Esta hora no existe en la zona horaria seleccionada."
   },
   "nodeStatus": {
     "title": "Estado del sistema",

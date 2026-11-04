@@ -3034,7 +3034,7 @@
   },
   "accessLogs": {
     "title": "Logs de acesso",
-    "subtitle": "Conexões Xray retidas por 30 dias. Filtros por correspondência parcial; horário do navegador.",
+    "subtitle": "As conexões Xray são mantidas por 30 dias. A exibição e os filtros de horário usam o fuso selecionado.",
     "localNode": "Master (este painel)",
     "node": "Nó",
     "time": "Horário da conexão",
@@ -3052,7 +3052,12 @@
     "total": "{count} registros",
     "empty": "Nenhum log corresponde aos filtros",
     "loadError": "Logs indisponíveis. Atualize para tentar novamente.",
-    "invalidTimeRange": "O início não pode ser posterior ao fim"
+    "invalidTimeRange": "O início não pode ser posterior ao fim",
+    "timeZone": "Fuso horário",
+    "systemTimeZone": "Sistema ({zone})",
+    "selectUser": "Selecionar usuário",
+    "userLoadError": "Não foi possível carregar os usuários. Atualize para tentar novamente.",
+    "invalidLocalTime": "Este horário não existe no fuso horário selecionado."
   },
   "nodeStatus": {
     "title": "Status do sistema",

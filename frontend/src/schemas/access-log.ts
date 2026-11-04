@@ -18,6 +18,7 @@ export const AccessLogPageSchema = z.object({
   total: z.number().int().nonnegative(),
   page: z.number().int().positive(),
   pageSize: z.number().int().positive(),
+  userComments: z.record(z.string(), z.string()).default({}),
 });
 
 export const AccessLogNodesSchema = z.array(
@@ -32,6 +33,7 @@ export interface AccessLogQuery {
   from?: number;
   to?: number;
   user?: string;
+  userExact?: boolean;
   source?: string;
   target?: string;
   inbound?: string;

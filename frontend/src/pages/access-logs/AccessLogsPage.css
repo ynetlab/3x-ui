@@ -41,6 +41,7 @@
 
 .access-log-filters .ant-picker {
   width: 100%;
+  overflow: hidden;
 }
 
 .access-log-actions {
@@ -49,6 +50,43 @@
 
 .access-log-error {
   margin-bottom: 16px;
+}
+
+.access-log-user {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+.access-log-user-email {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.access-log-user-comment {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.access-log-user-popup .ant-select-item-option-content {
+  white-space: normal;
+}
+
+.access-log-user-select .ant-select-content-value {
+  white-space: normal;
+}
+
+.access-log-user-select .ant-select-content {
+  height: auto;
+  min-height: 30px;
 }
 
 .access-log-time-popup .ant-picker-panel-container {

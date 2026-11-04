@@ -3034,7 +3034,7 @@
   },
   "accessLogs": {
     "title": "Záznamy prístupov",
-    "subtitle": "Spojenia Xray sa uchovávajú 30 dní. Textové filtre používajú čiastočnú zhodu; časové pásmo prehliadača.",
+    "subtitle": "Pripojenia Xray sa uchovávajú 30 dní. Zobrazenie a časové filtre používajú vybrané časové pásmo.",
     "localNode": "Hlavný panel (tento panel)",
     "node": "Uzol",
     "time": "Čas spojenia",
@@ -3052,7 +3052,12 @@
     "total": "Počet záznamov: {count}",
     "empty": "Žiadne záznamy nezodpovedajú filtrom",
     "loadError": "Záznamy nie sú dostupné. Obnovte údaje.",
-    "invalidTimeRange": "Začiatok nesmie byť neskôr než koniec"
+    "invalidTimeRange": "Začiatok nesmie byť neskôr než koniec",
+    "timeZone": "Časové pásmo",
+    "systemTimeZone": "Systémové ({zone})",
+    "selectUser": "Vybrať používateľa",
+    "userLoadError": "Používateľov sa nepodarilo načítať. Obnovte stránku.",
+    "invalidLocalTime": "Tento čas vo vybranom časovom pásme neexistuje."
   },
   "nodeStatus": {
     "title": "Stav systému",

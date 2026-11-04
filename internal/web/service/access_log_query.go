@@ -16,24 +16,26 @@ import (
 var ErrInvalidAccessLogQuery = errors.New("invalid_access_log_query")
 
 type AccessLogQuery struct {
-	Page     int    `form:"page"`
-	PageSize int    `form:"pageSize"`
-	NodeGUID string `form:"nodeGuid"`
-	From     int64  `form:"from"`
-	To       int64  `form:"to"`
-	User     string `form:"user"`
-	Source   string `form:"source"`
-	Target   string `form:"target"`
-	Inbound  string `form:"inbound"`
-	Outbound string `form:"outbound"`
-	Category string `form:"category"`
+	Page      int    `form:"page"`
+	PageSize  int    `form:"pageSize"`
+	NodeGUID  string `form:"nodeGuid"`
+	From      int64  `form:"from"`
+	To        int64  `form:"to"`
+	User      string `form:"user"`
+	UserExact bool   `form:"userExact"`
+	Source    string `form:"source"`
+	Target    string `form:"target"`
+	Inbound   string `form:"inbound"`
+	Outbound  string `form:"outbound"`
+	Category  string `form:"category"`
 }
 
 type AccessLogPage struct {
-	Items    []model.AccessLog `json:"items"`
-	Total    int64             `json:"total"`
-	Page     int               `json:"page"`
-	PageSize int               `json:"pageSize"`
+	Items        []model.AccessLog `json:"items"`
+	Total        int64             `json:"total"`
+	Page         int               `json:"page"`
+	PageSize     int               `json:"pageSize"`
+	UserComments map[string]string `json:"userComments"`
 }
 
 type AccessLogNodeOption struct {
@@ -73,7 +75,7 @@ func (q *AccessLogQuery) normalize() error {
 // Query reads only this master's archive. Parameters never select a remote
 // panel or form SQL identifiers. Text searches treat SQL wildcards literally.
 func (s *AccessLogService) Query(ctx context.Context, q AccessLogQuery, now time.Time) (AccessLogPage, error) {
-	result := AccessLogPage{Items: []model.AccessLog{}}
+	result := AccessLogPage{Items: []model.AccessLog{}, UserComments: map[string]string{}}
 	if err := q.normalize(); err != nil {
 		return result, err
 	}
@@ -91,8 +93,13 @@ func (s *AccessLogService) Query(ctx context.Context, q AccessLogQuery, now time
 	if q.Category != "" {
 		db = db.Where("category = ?", q.Category)
 	}
+	user := q.User
+	if q.UserExact && user != "" {
+		db = db.Where("email = ?", user)
+		user = ""
+	}
 	for _, filter := range []struct{ column, value string }{
-		{"email", q.User}, {"source", q.Source}, {"target", q.Target}, {"inbound", q.Inbound}, {"outbound", q.Outbound},
+		{"email", user}, {"source", q.Source}, {"target", q.Target}, {"inbound", q.Inbound}, {"outbound", q.Outbound},
 	} {
 		if filter.value != "" {
 			literal := strings.NewReplacer("!", "!!", "%", "!%", "_", "!_").Replace(strings.ToLower(filter.value))
@@ -104,8 +111,30 @@ func (s *AccessLogService) Query(ctx context.Context, q AccessLogQuery, now time
 	}
 	last := max(int((result.Total+int64(q.PageSize)-1)/int64(q.PageSize)), 1)
 	result.Page, result.PageSize = min(q.Page, last), q.PageSize
-	err := db.Order("occurred_at DESC").Order("id DESC").Limit(q.PageSize).Offset((result.Page - 1) * q.PageSize).Find(&result.Items).Error
-	return result, err
+	if err := db.Order("occurred_at DESC").Order("id DESC").Limit(q.PageSize).Offset((result.Page - 1) * q.PageSize).Find(&result.Items).Error; err != nil {
+		return result, err
+	}
+	if len(result.Items) == 0 {
+		return result, nil
+	}
+	emails := make([]string, 0, len(result.Items))
+	for _, row := range result.Items {
+		if row.Email != "" {
+			emails = append(emails, row.Email)
+		}
+	}
+	// Remarks describe the current user. They do not affect filtering or the
+	// archived event, and only the displayed page's public labels are loaded.
+	var labels []struct{ Email, Comment string }
+	if len(emails) > 0 {
+		if err := accessDB().WithContext(ctx).Model(&model.ClientRecord{}).Select("email", "comment").Where("email IN ?", emails).Find(&labels).Error; err != nil {
+			return result, err
+		}
+	}
+	for _, label := range labels {
+		result.UserComments[label.Email] = label.Comment
+	}
+	return result, nil
 }
 
 // QueryNodes includes historical identities so removing a Node does not make

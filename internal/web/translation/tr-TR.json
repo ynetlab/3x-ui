@@ -3034,7 +3034,7 @@
   },
   "accessLogs": {
     "title": "Erişim günlükleri",
-    "subtitle": "Xray bağlantıları 30 gün saklanır. Metin filtreleri kısmi eşleşir; tarayıcı saat dilimi kullanılır.",
+    "subtitle": "Xray bağlantıları 30 gün saklanır. Saat gösterimi ve zaman filtreleri seçilen saat dilimini kullanır.",
     "localNode": "Master (bu panel)",
     "node": "Düğüm",
     "time": "Bağlantı zamanı",
@@ -3052,7 +3052,12 @@
     "total": "{count} kayıt",
     "empty": "Filtrelerle eşleşen erişim günlüğü yok",
     "loadError": "Günlükler alınamıyor. Yenileyin.",
-    "invalidTimeRange": "Başlangıç zamanı bitişten sonra olamaz"
+    "invalidTimeRange": "Başlangıç zamanı bitişten sonra olamaz",
+    "timeZone": "Saat dilimi",
+    "systemTimeZone": "Sistem ({zone})",
+    "selectUser": "Kullanıcı seçin",
+    "userLoadError": "Kullanıcılar yüklenemedi. Yeniden denemek için yenileyin.",
+    "invalidLocalTime": "Bu saat, seçilen saat diliminde mevcut değil."
   },
   "nodeStatus": {
     "title": "Sistem durumu",

@@ -17222,7 +17222,7 @@
         "tags": [
           "Access Logs"
         ],
-        "summary": "Filter and paginate retained access logs, newest connection first (ID breaks timestamp ties).",
+        "summary": "Filter and paginate retained access logs, newest connection first (ID breaks timestamp ties). userComments maps emails on this page to their current user remarks; remarks are display metadata and do not affect filtering.",
         "operationId": "get_panel_api_access_logs",
         "parameters": [
           {
@@ -17279,6 +17279,16 @@
             "description": "Email substring, up to 512 characters. Text filters are case insensitive for ASCII, and % and _ are literal.",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "userExact",
+            "in": "query",
+            "required": false,
+            "description": "Match user as one complete email instead of a substring. User remarks are never searched.",
+            "schema": {
+              "type": "boolean",
+              "default": false
             }
           },
           {
@@ -17355,7 +17365,8 @@
                     "items": [],
                     "total": 0,
                     "page": 1,
-                    "pageSize": 50
+                    "pageSize": 50,
+                    "userComments": {}
                   }
                 }
               }
