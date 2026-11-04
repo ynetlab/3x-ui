@@ -17,7 +17,11 @@
     "recover": "Recover pairing",
     "recoveryIntro": "Verify the original slave and restore control trust.",
     "recoveryHint": "Run as root on the original slave. Verify the master fingerprint through a trusted panel. Node ID, domains, certificates and data are kept.",
-    "status": { "migrating": "Migrating online nodes", "completed": "CA rotation completed", "recovery_required": "CA rotated; recovery needed" },
+    "status": {
+      "migrating": "Migrating online nodes",
+      "completed": "CA rotation completed",
+      "recovery_required": "CA rotated; recovery needed"
+    },
     "errors": {
       "ca_rotation_in_progress": "CA rotation in progress.",
       "control_ca_rotation_required": "CA validity insufficient. Rotate the CA.",
@@ -125,7 +129,6 @@
   },
   "accessLogs": {
     "title": "Access Logs",
-    "subtitle": "Xray connections, retained for 30 days. Display and time filters use the selected time zone.",
     "localNode": "Master (this panel)",
     "node": "Node",
     "time": "Connection time",
@@ -3183,5 +3186,39 @@
     },
     "bootstrapAddress": "Callback address (optional)",
     "bootstrapAddressHint": "Default: detected public IP. For private connections, enter an address and allow private access. DNS uses reported public IPs."
+  },
+  "accessAnalysis": {
+    "title": "Access Analytics",
+    "overview": "Overview",
+    "details": "Access Details",
+    "users": "User Statistics",
+    "sourceMap": "Source Locations",
+    "recentIPs": "Recent Source IPs",
+    "topApps": "Top Applications",
+    "topDomains": "Top Domains",
+    "recentBlocked": "Recent Blocked Connections",
+    "topUsers": "Top Users",
+    "apps": "Applications",
+    "domains": "Domains",
+    "sourceIPs": "Source IPs",
+    "count": "Visits",
+    "lastSeen": "Last seen",
+    "unknownApp": "Unidentified app",
+    "unknownUser": "Unidentified user",
+    "unknownIP": "Unknown IP",
+    "unknownRegion": "Unknown region",
+    "today": "Today",
+    "last7Days": "Last 7 days",
+    "last30Days": "Last 30 days",
+    "periodUsers": "User visits",
+    "blockedDomains": "Blocked domains",
+    "events": "Visits: {count}",
+    "processing": "Processing logs",
+    "processingHint": "Statistics update in the background. Results may be incomplete until processing finishes.",
+    "locationPending": "Location database unavailable. Download retries automatically; a City MMDB file can also be imported.",
+    "importMMDB": "Import City MMDB",
+    "imported": "Imported. Statistics will rebuild automatically.",
+    "importFailed": "Import failed. Select a valid City MMDB file up to 512 MB.",
+    "mapLoadError": "Map could not load."
   }
 }

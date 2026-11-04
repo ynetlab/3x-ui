@@ -77,6 +77,7 @@ export const PALETTE_KEYWORDS: Record<string, string[]> = {
   '/clients': ['clients', 'users', 'sub', 'traffic', 'quota'],
   '/groups': ['groups', 'tags', 'batch'],
   '/nodes': ['nodes', 'servers', 'cluster', 'remote nodes'],
+  '/access-analysis': ['analytics', 'applications', 'users', 'map', 'sources', 'domains'],
   '/access-logs': ['access logs', 'connections', 'traffic', 'source', 'destination', 'xray'],
   '/hosts': ['hosts', 'sni', 'domains'],
   '/outbound': ['outbounds', 'freedom', 'blackhole', 'socks', 'http', 'warp', 'nord', 'pia'],

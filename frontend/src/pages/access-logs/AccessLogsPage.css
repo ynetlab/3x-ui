@@ -29,23 +29,64 @@
   border-radius: 12px;
 }
 
-.access-log-filters {
+.access-logs-page .ant-card-body {
+  padding: 14px 16px;
+}
+
+.access-logs-page .ant-card-head {
+  min-height: 44px;
+  padding-inline: 16px;
+}
+
+.access-logs-page .ant-tabs-nav {
+  margin-bottom: 8px;
+}
+
+.access-log-filters,
+.access-analysis-filters {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0 16px;
+  grid-template-columns: minmax(100px, 0.85fr) minmax(140px, 1.2fr) minmax(140px, 1.15fr) minmax(
+      310px,
+      2.4fr
+    ) minmax(170px, 1.25fr);
+  gap: 10px;
+  align-items: end;
 }
 
-.access-log-time-range {
-  grid-column: span 2;
+:is(.access-log-filters, .access-analysis-filters) .ant-form-item {
+  margin-bottom: 0;
+  min-width: 0;
 }
 
-.access-log-filters .ant-picker {
+:is(.access-log-filters, .access-analysis-filters) .ant-form-item-label {
+  padding-bottom: 4px;
+}
+
+:is(.access-log-filters, .access-analysis-filters) .ant-form-item-label > label {
+  height: auto;
+  font-size: 12px;
+}
+
+:is(.access-log-filters, .access-analysis-filters) .access-log-time-range {
+  grid-column: auto;
+}
+
+:is(.access-log-filters, .access-analysis-filters) :is(.ant-picker, .ant-select) {
   width: 100%;
+}
+
+:is(.access-log-filters, .access-analysis-filters) .ant-picker {
   overflow: hidden;
 }
 
 .access-log-actions {
-  margin-bottom: 20px;
+  align-self: end;
+}
+
+.access-log-filters + .ant-alert,
+.access-log-filters + .ant-table-wrapper,
+.access-logs-page .ant-form + .ant-table-wrapper {
+  margin-top: 14px;
 }
 
 .access-log-error {
@@ -80,13 +121,27 @@
   white-space: normal;
 }
 
-.access-log-user-select .ant-select-content-value {
-  white-space: normal;
+.access-log-user-select.ant-select {
+  height: var(--ant-control-height, 32px);
 }
 
 .access-log-user-select .ant-select-content {
-  height: auto;
-  min-height: 30px;
+  height: 22px;
+  min-height: 22px;
+}
+
+.access-log-user-select .access-log-user {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.access-log-user-select .access-log-user-comment {
+  margin-inline-start: 6px;
+  white-space: nowrap;
 }
 
 .access-log-time-popup .ant-picker-panel-container {
@@ -94,9 +149,27 @@
   overflow-x: auto;
 }
 
-@media (max-width: 1200px) {
-  .access-log-filters {
+@media (max-width: 1100px) {
+  .access-log-filters,
+  .access-analysis-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  :is(.access-log-filters, .access-analysis-filters) .access-log-time-range {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 600px) {
+  .access-log-filters,
+  .access-analysis-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  :is(.access-log-filters, .access-analysis-filters) > .ant-form-item:nth-child(3),
+  .access-log-actions {
+    grid-column: span 2;
   }
 }
 
@@ -111,13 +184,5 @@
 
   .access-logs-page .ant-card-body {
     padding: 16px;
-  }
-
-  .access-log-filters {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .access-log-time-range {
-    grid-column: span 1;
   }
 }

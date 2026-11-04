@@ -20,6 +20,7 @@ const InboundsPage = lazy(() => import('@/pages/inbounds/InboundsPage'));
 const ClientsPage = lazy(() => import('@/pages/clients/ClientsPage'));
 const GroupsPage = lazy(() => import('@/pages/groups/GroupsPage'));
 const NodesPage = lazy(() => import('@/pages/nodes/NodesPage'));
+const AccessAnalysisPage = lazy(() => import('@/pages/access-analysis/AccessAnalysisPage'));
 const AccessLogsPage = lazy(() => import('@/pages/access-logs/AccessLogsPage'));
 const HostsPage = lazy(() => import('@/pages/hosts/HostsPage'));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
@@ -31,6 +32,7 @@ export interface PanelRoute {
   titleKey: string;
   icon: ComponentType;
   component: ComponentType;
+  navigation?: boolean;
 }
 
 // The router, the sidebar, the page titles and the command palette all read this list, so a
@@ -42,7 +44,14 @@ export const PANEL_ROUTES: PanelRoute[] = [
   { path: '/groups', titleKey: 'menu.groups', icon: TagsOutlined, component: GroupsPage },
   { path: '/nodes', titleKey: 'menu.nodes', icon: ClusterOutlined, component: NodesPage },
   {
+    path: '/access-analysis',
+    titleKey: 'accessAnalysis.title',
+    icon: FileSearchOutlined,
+    component: AccessAnalysisPage,
+  },
+  {
     path: '/access-logs',
+    navigation: false,
     titleKey: 'accessLogs.title',
     icon: FileSearchOutlined,
     component: AccessLogsPage,

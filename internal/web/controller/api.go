@@ -212,6 +212,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	api.GET("/openapi.json", ServeOpenAPISpec)
 	NewPairingController(api)
 	NewAccessLogController(api)
+	NewAccessAnalysisController(api)
 	NewCloudflareController(api)
 	NewNodeCertificateController(api)
 	NewControlPKIController(api)

@@ -17,7 +17,11 @@
     "recover": "恢复配对",
     "recoveryIntro": "验证原从机身份，恢复控制信任。",
     "recoveryHint": "在原从机以 root 执行，通过可信主面板核对指纹。节点 ID、域名、证书和数据保留。",
-    "status": { "migrating": "正在迁移在线节点", "completed": "CA 轮换已完成", "recovery_required": "CA 已轮换，部分节点待恢复" },
+    "status": {
+      "migrating": "正在迁移在线节点",
+      "completed": "CA 轮换已完成",
+      "recovery_required": "CA 已轮换，部分节点待恢复"
+    },
     "errors": {
       "ca_rotation_in_progress": "CA 正在轮换。",
       "control_ca_rotation_required": "CA 剩余有效期不足，请轮换 CA。",
@@ -125,7 +129,6 @@
   },
   "accessLogs": {
     "title": "访问日志",
-    "subtitle": "保留最近 30 天的 Xray 连接日志，时间显示与筛选使用所选时区。",
     "localNode": "Master（当前面板）",
     "node": "节点",
     "time": "连接时间",
@@ -3183,5 +3186,39 @@
     },
     "bootstrapAddress": "回连地址（可选）",
     "bootstrapAddressHint": "默认使用检测到的公网 IP。内网连接需填写地址并允许内网访问；解析仍使用上报的公网 IP。"
+  },
+  "accessAnalysis": {
+    "title": "访问分析",
+    "overview": "概览",
+    "details": "访问明细",
+    "users": "用户统计",
+    "sourceMap": "来源地区",
+    "recentIPs": "最近来源 IP",
+    "topApps": "热门应用",
+    "topDomains": "热门域名",
+    "recentBlocked": "最近拦截",
+    "topUsers": "活跃用户",
+    "apps": "应用",
+    "domains": "域名",
+    "sourceIPs": "来源 IP",
+    "count": "访问次数",
+    "lastSeen": "最近访问",
+    "unknownApp": "未识别应用",
+    "unknownUser": "未识别用户",
+    "unknownIP": "未知 IP",
+    "unknownRegion": "未知地区",
+    "today": "今天",
+    "last7Days": "最近 7 天",
+    "last30Days": "最近 30 天",
+    "periodUsers": "用户访问",
+    "blockedDomains": "拦截域名",
+    "events": "{count} 次访问",
+    "processing": "正在处理日志",
+    "processingHint": "统计在后台更新，处理完成前数据可能不完整。",
+    "locationPending": "地区数据库不可用，将自动重试下载，也可导入 City MMDB。",
+    "importMMDB": "导入 City MMDB",
+    "imported": "已导入，将自动重算统计。",
+    "importFailed": "导入失败，请选择不超过 512 MB 的有效 City MMDB 文件。",
+    "mapLoadError": "地图加载失败。"
   }
 }

@@ -88,6 +88,14 @@ type wrapAssetsFile struct {
 	fs.File
 }
 
+func (f *wrapAssetsFile) Seek(offset int64, whence int) (int64, error) {
+	seeker, ok := f.File.(io.Seeker)
+	if !ok {
+		return 0, fs.ErrInvalid
+	}
+	return seeker.Seek(offset, whence)
+}
+
 func (f *wrapAssetsFile) Stat() (fs.FileInfo, error) {
 	info, err := f.File.Stat()
 	if err != nil {
@@ -115,15 +123,16 @@ func EmbeddedDist() embed.FS {
 
 // Server represents the main web server for the 3x-ui panel with controllers, services, and scheduled jobs.
 type Server struct {
-	httpServer      *http.Server
-	listener        net.Listener
-	controlServer   *http.Server
-	controlListener net.Listener
-	pairingDone     <-chan struct{}
-	accessLogDone   <-chan struct{}
-	nodeDNSDone     <-chan struct{}
-	certificateDone <-chan struct{}
-	controlPKIDone  <-chan struct{}
+	httpServer         *http.Server
+	listener           net.Listener
+	controlServer      *http.Server
+	controlListener    net.Listener
+	pairingDone        <-chan struct{}
+	accessLogDone      <-chan struct{}
+	accessAnalysisDone <-chan struct{}
+	nodeDNSDone        <-chan struct{}
+	certificateDone    <-chan struct{}
+	controlPKIDone     <-chan struct{}
 
 	index *controller.IndexController
 	panel *controller.XUIController
@@ -689,6 +698,7 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 	}
 	s.pairingDone = service.RunPairingWorker(s.ctx)
 	s.accessLogDone = service.RunAccessLogWorker(s.ctx)
+	s.accessAnalysisDone = service.RunAccessAnalysisWorker(s.ctx)
 	s.nodeDNSDone = service.RunNodeDNSWorker(s.ctx)
 	s.certificateDone = service.RunCertificateWorker(s.ctx)
 	s.controlPKIDone = service.RunControlPKIWorker(s.ctx)
@@ -841,6 +851,9 @@ func (s *Server) stop(stopXray bool, stopTgBot bool) error {
 	service.SetPanelCertificateReloader(nil)
 	if s.nodeDNSDone != nil {
 		<-s.nodeDNSDone
+	}
+	if s.accessAnalysisDone != nil {
+		<-s.accessAnalysisDone
 	}
 	if s.accessLogDone != nil {
 		<-s.accessLogDone

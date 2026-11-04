@@ -192,7 +192,7 @@ export default function AppSidebar() {
 
   const tabs = useMemo<{ key: string; icon: ComponentType; title: string }[]>(
     () => [
-      ...PANEL_ROUTES.map((route) => ({
+      ...PANEL_ROUTES.filter((route) => route.navigation !== false).map((route) => ({
         key: route.path,
         icon: route.icon,
         title: t(route.titleKey),
@@ -285,7 +285,9 @@ export default function AppSidebar() {
       ? `/xray${hash || '#basic'}`
       : pathname === ''
         ? '/'
-        : pathname;
+        : pathname === '/access-logs'
+          ? '/access-analysis'
+          : pathname;
 
   const openSubmenu = settingsActive ? '/settings' : xrayActive ? '/xray' : null;
   const [openKeys, setOpenKeys] = useState<string[]>(() => (openSubmenu ? [openSubmenu] : []));

@@ -1,0 +1,208 @@
+.access-analysis-page .access-analysis-section {
+  margin-top: 12px;
+}
+.access-analysis-filter-actions {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  min-width: 0;
+}
+.access-analysis-filter-actions > .ant-form-item:first-child {
+  flex: 1;
+}
+.access-analysis-filter-actions > .ant-form-item:last-child {
+  flex-shrink: 0;
+}
+.access-analysis-geography {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 12px;
+}
+.access-analysis-geography > *,
+.access-analysis-bottom > * {
+  min-width: 0;
+}
+.access-source-map {
+  width: 100%;
+  height: 380px;
+}
+.access-analysis-attribution {
+  font-size: 11px;
+  margin: 12px 0 0 !important;
+}
+.access-analysis-secondary {
+  color: var(--ant-color-text-secondary);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.access-analysis-target {
+  overflow-wrap: anywhere;
+}
+.access-analysis-app-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+.access-analysis-app {
+  box-sizing: border-box;
+  height: 64px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--ant-color-border-secondary, #e8edf3);
+  border-radius: 8px;
+}
+.access-analysis-app-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+.access-analysis-app-label > .ant-avatar {
+  flex-shrink: 0;
+}
+.access-analysis-app-name {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.access-analysis-app-meter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.access-analysis-app-meter .access-analysis-track {
+  flex: 1;
+  min-width: 0;
+  margin-top: 0;
+}
+.access-analysis-app-meter strong {
+  flex-shrink: 0;
+  font-size: 12px;
+  line-height: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.access-analysis-track {
+  height: 4px;
+  border-radius: 4px;
+  background: #1677ff12;
+  margin-top: 10px;
+  overflow: hidden;
+}
+.access-analysis-track > div {
+  height: 100%;
+  background: #4096ff;
+  border-radius: inherit;
+}
+.access-analysis-bottom {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.access-analysis-bottom > .ant-card > .ant-card-body {
+  height: 320px;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+}
+.access-analysis-ranking,
+.access-analysis-blocked {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.access-analysis-ranking li,
+.access-analysis-blocked li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--ant-color-border-secondary, #e8edf3);
+}
+.access-analysis-ranked-line {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.access-analysis-rank {
+  opacity: 0.55;
+  font-size: 12px;
+  width: 18px;
+  flex-shrink: 0;
+}
+.access-analysis-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.access-analysis-ranked-line strong {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.access-analysis-pagination {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+.access-analysis-user-cards .ant-collapse-header-text {
+  min-width: 0;
+}
+.access-analysis-user-cards .ant-collapse-item {
+  margin-bottom: 12px;
+  border: 1px solid var(--ant-color-border-secondary, #e8edf3) !important;
+  border-radius: 10px !important;
+  overflow: hidden;
+}
+.access-analysis-user-cards.ant-collapse {
+  background: transparent;
+  border: 0;
+}
+.access-analysis-page .ant-alert {
+  margin-top: 12px;
+}
+@media (max-width: 1100px) {
+  .access-analysis-geography {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .access-analysis-bottom {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .access-source-map {
+    height: 340px;
+  }
+}
+@media (max-width: 600px) {
+  .access-analysis-filter-actions {
+    grid-column: span 2;
+  }
+  .access-analysis-page .ant-card-head-title {
+    flex-basis: 100%;
+    white-space: normal;
+    overflow: visible;
+  }
+  .access-analysis-page .ant-card-extra {
+    margin-inline-start: 0;
+  }
+  .access-source-map {
+    height: 300px;
+  }
+  .access-analysis-app-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .access-analysis-app {
+    padding: 8px;
+  }
+  .access-analysis-page .ant-card-head {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  .access-analysis-page .ant-card-head-wrapper {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .access-analysis-geography,
+  .access-analysis-bottom {
+    gap: 14px;
+  }
+}

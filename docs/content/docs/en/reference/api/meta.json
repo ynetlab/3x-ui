@@ -16,6 +16,7 @@
     "nodes",
     "node-panel-certificates",
     "cloudflare-dns",
+    "access-analytics",
     "access-logs",
     "backup",
     "websocket"

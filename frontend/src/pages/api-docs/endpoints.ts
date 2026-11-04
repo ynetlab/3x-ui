@@ -196,6 +196,45 @@ const hwidStatusErrorResponses = {
   '500': { description: 'Database lookup failed. Empty body.' },
 };
 
+const accessAnalysisParams: EndpointParam[] = [
+  {
+    name: 'from',
+    in: 'query',
+    type: 'integer',
+    optional: true,
+    desc: 'Inclusive Unix milliseconds. Defaults to the start of the 30-day retention window.',
+  },
+  {
+    name: 'to',
+    in: 'query',
+    type: 'integer',
+    optional: true,
+    desc: 'Inclusive Unix milliseconds. Defaults to now.',
+  },
+  { name: 'nodeGuid', in: 'query', type: 'string', optional: true, desc: 'Canonical node UUID.' },
+  {
+    name: 'user',
+    in: 'query',
+    type: 'string',
+    optional: true,
+    desc: 'Exact archived email. Remarks never filter statistics.',
+  },
+  {
+    name: 'userSet',
+    in: 'query',
+    type: 'boolean',
+    optional: true,
+    desc: 'Set true with an empty user to select unidentified users.',
+  },
+  {
+    name: 'category',
+    in: 'query',
+    type: 'string',
+    enum: ['direct', 'blocked', 'proxy'],
+    optional: true,
+  },
+];
+
 export const sections: readonly Section[] = [
   {
     id: 'authentication',
@@ -3095,6 +3134,68 @@ export const sections: readonly Section[] = [
         summary:
           'Request an immediate retry of the pending job, reusing any already issued valid bundle.',
         params: [{ name: 'id', in: 'path', type: 'integer' }],
+      },
+    ],
+  },
+  {
+    id: 'access-analysis',
+    title: 'Access Analytics',
+    description:
+      'Master-only, full-admin queries over derived Xray connection-event counts. Complete UTC minute rollups are combined with exact raw edge records. Counts do not represent HTTP requests or traffic bytes. Processing is asynchronous; the overview includes processing and geolocation availability status. Application and geolocation enrichment can be approximate or unknown. Original access-log endpoints remain unchanged.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/access-analysis/overview',
+        summary:
+          'Overview: source regions, recent source IPs, applications, domains, blocked records and users.',
+        params: accessAnalysisParams,
+        response:
+          '{"success":true,"obj":{"status":{"ready":true,"rebuilding":false,"processedId":100,"latestId":100,"locationReady":true,"generation":"catalog-and-location-version"},"total":100,"apps":[{"name":"youtube","count":100,"lastSeen":1793718000000,"country":"","subdivision":"","latitude":0,"longitude":0}],"domains":[],"sources":[],"regions":[],"users":[],"blocked":[],"userComments":{},"catalog":[{"id":"youtube","name":"YouTube","color":"#e62117"}]}}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/access-analysis/stats',
+        summary:
+          'Server-paginated user, application, domain or source-IP counts, sorted by count. The catalog contains metadata only for applications on the returned page.',
+        params: [
+          ...accessAnalysisParams,
+          {
+            name: 'kind',
+            in: 'query',
+            type: 'string',
+            enum: ['users', 'apps', 'domains', 'sources'],
+            optional: true,
+            defaultValue: 'users',
+          },
+          {
+            name: 'page',
+            in: 'query',
+            type: 'integer',
+            optional: true,
+            defaultValue: 1,
+            desc: '1–1000000; clamped to the last page.',
+          },
+          {
+            name: 'pageSize',
+            in: 'query',
+            type: 'integer',
+            optional: true,
+            defaultValue: 50,
+            desc: '1–200.',
+          },
+        ],
+        response:
+          '{"success":true,"obj":{"items":[],"total":0,"page":1,"pageSize":50,"userComments":{},"catalog":[]}}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/access-analysis/mmdb',
+        summary:
+          'Import a City MMDB (up to 512 MB), validate and atomically replace the custom database. Retained logs rebuild automatically. A custom import takes precedence over the monthly DB-IP default.',
+        params: [{ name: 'file', in: 'body (multipart)', type: 'file' }],
+        response: '{"success":true,"obj":null}',
+        errorStatus: 400,
+        errorResponse: '{"success":false,"msg":"invalid_access_city_database"}',
       },
     ],
   },

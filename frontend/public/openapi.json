@@ -5023,6 +5023,10 @@
       "description": "Master-only DNS-01 issuance through Let's Encrypt and Cloudflare. Full admin scope or login session required. The private control CA is unchanged. Jobs persist across restarts; only a successful public TLS callback commits the new panel certificate. Renewals are checked every 12 hours, starting 30 days before expiry."
     },
     {
+      "name": "Access Analytics",
+      "description": "Master-only, full-admin queries over derived Xray connection-event counts. Complete UTC minute rollups are combined with exact raw edge records. Counts do not represent HTTP requests or traffic bytes. Processing is asynchronous; the overview includes processing and geolocation availability status. Application and geolocation enrichment can be approximate or unknown. Original access-log endpoints remain unchanged."
+    },
+    {
       "name": "Access Logs",
       "description": "Query the master archive of collected Xray connection logs. Requires a master panel and an admin session or full admin token. Restricted monitor, node-sync and node-admin tokens cannot read these logs."
     },
@@ -17210,6 +17214,349 @@
                     },
                     "obj": {}
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access-analysis/overview": {
+      "get": {
+        "tags": [
+          "Access Analytics"
+        ],
+        "summary": "Overview: source regions, recent source IPs, applications, domains, blocked records and users.",
+        "operationId": "get_panel_api_access_analysis_overview",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "Inclusive Unix milliseconds. Defaults to the start of the 30-day retention window.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "Inclusive Unix milliseconds. Defaults to now.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "nodeGuid",
+            "in": "query",
+            "required": false,
+            "description": "Canonical node UUID.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "user",
+            "in": "query",
+            "required": false,
+            "description": "Exact archived email. Remarks never filter statistics.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userSet",
+            "in": "query",
+            "required": false,
+            "description": "Set true with an empty user to select unidentified users.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "description": "",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "direct",
+                "blocked",
+                "proxy"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "status": {
+                      "ready": true,
+                      "rebuilding": false,
+                      "processedId": 100,
+                      "latestId": 100,
+                      "locationReady": true,
+                      "generation": "catalog-and-location-version"
+                    },
+                    "total": 100,
+                    "apps": [
+                      {
+                        "name": "youtube",
+                        "count": 100,
+                        "lastSeen": 1793718000000,
+                        "country": "",
+                        "subdivision": "",
+                        "latitude": 0,
+                        "longitude": 0
+                      }
+                    ],
+                    "domains": [],
+                    "sources": [],
+                    "regions": [],
+                    "users": [],
+                    "blocked": [],
+                    "userComments": {},
+                    "catalog": [
+                      {
+                        "id": "youtube",
+                        "name": "YouTube",
+                        "color": "#e62117"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access-analysis/stats": {
+      "get": {
+        "tags": [
+          "Access Analytics"
+        ],
+        "summary": "Server-paginated user, application, domain or source-IP counts, sorted by count. The catalog contains metadata only for applications on the returned page.",
+        "operationId": "get_panel_api_access_analysis_stats",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "Inclusive Unix milliseconds. Defaults to the start of the 30-day retention window.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "Inclusive Unix milliseconds. Defaults to now.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "nodeGuid",
+            "in": "query",
+            "required": false,
+            "description": "Canonical node UUID.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "user",
+            "in": "query",
+            "required": false,
+            "description": "Exact archived email. Remarks never filter statistics.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userSet",
+            "in": "query",
+            "required": false,
+            "description": "Set true with an empty user to select unidentified users.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "description": "",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "direct",
+                "blocked",
+                "proxy"
+              ]
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "description": "",
+            "schema": {
+              "type": "string",
+              "default": "users",
+              "enum": [
+                "users",
+                "apps",
+                "domains",
+                "sources"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "1–1000000; clamped to the last page.",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "description": "1–200.",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "items": [],
+                    "total": 0,
+                    "page": 1,
+                    "pageSize": 50,
+                    "userComments": {},
+                    "catalog": []
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/access-analysis/mmdb": {
+      "post": {
+        "tags": [
+          "Access Analytics"
+        ],
+        "summary": "Import a City MMDB (up to 512 MB), validate and atomically replace the custom database. Retained logs rebuild automatically. A custom import takes precedence over the monthly DB-IP default.",
+        "operationId": "post_panel_api_access_analysis_mmdb",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": ""
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "success": false,
+                  "msg": "invalid_access_city_database"
                 }
               }
             }

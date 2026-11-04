@@ -1,4 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router';
+import AnalysisNavigation from '../access-analysis/AnalysisNavigation';
+import {
+  readSharedFilters,
+  writeSharedFilters,
+  validTimeZone,
+} from '../access-analysis/sharedFilters';
 import { useTranslation } from 'react-i18next';
 import {
   Button,
@@ -13,7 +20,6 @@ import {
   Table,
   Tag,
   Tooltip,
-  Typography,
   Alert,
 } from 'antd';
 import type { TableColumnsType } from 'antd';
@@ -49,15 +55,22 @@ interface FilterValues {
 export default function AccessLogsPage() {
   const { t } = useTranslation();
   const { isDark, isUltra, antdThemeConfig } = useTheme();
+  const [search, setSearch] = useSearchParams();
+  const shared = readSharedFilters(search);
   const [form] = Form.useForm<FilterValues>();
-  const [params, setParams] = useState<AccessLogQuery>({ page: 1, pageSize: 50 });
+  const [params, setParams] = useState<AccessLogQuery>(() => ({
+    page: 1,
+    pageSize: 50,
+    ...shared,
+    userExact: shared.user ? true : undefined,
+  }));
   const logs = useAccessLogs(params);
   const nodes = useAccessLogNodes();
   const userComments = useMemo(
     () => new Map(Object.entries(logs.data?.userComments ?? {})),
     [logs.data?.userComments],
   );
-  const [selectedTimeZone, setSelectedTimeZone] = useState('system');
+  const [selectedTimeZone, setSelectedTimeZone] = useState(() => validTimeZone(search.get('zone')));
   const localZone = systemTimeZone();
   const timeZone = selectedTimeZone === 'system' ? localZone : selectedTimeZone;
   const timeZoneOptions = useMemo(
@@ -174,6 +187,7 @@ export default function AccessLogsPage() {
       form.setFields([{ name: 'timeRange', errors: [] }]);
     }
     setSelectedTimeZone(value);
+    setSearch(writeSharedFilters(search, params, value), { replace: true });
   }
 
   function apply(values: FilterValues) {
@@ -198,6 +212,7 @@ export default function AccessLogsPage() {
     // A repeated search still refreshes an unchanged query.
     if (JSON.stringify(next) === JSON.stringify(params)) void logs.refetch();
     setParams(next);
+    setSearch(writeSharedFilters(search, next, selectedTimeZone), { replace: true });
   }
 
   const error = logs.isError || nodes.isError;
@@ -225,10 +240,19 @@ export default function AccessLogsPage() {
                 </Button>
               }
             >
-              <Typography.Paragraph type="secondary">
-                {t('accessLogs.subtitle')}
-              </Typography.Paragraph>
-              <Form form={form} layout="vertical" onFinish={apply}>
+              <AnalysisNavigation />
+              <Form
+                form={form}
+                layout="vertical"
+                initialValues={{
+                  ...shared,
+                  timeRange: [
+                    shared.from ? dayjs(shared.from).tz(timeZone) : null,
+                    shared.to ? dayjs(shared.to).tz(timeZone) : null,
+                  ],
+                }}
+                onFinish={apply}
+              >
                 <div className="access-log-filters">
                   <Form.Item name="nodeGuid" label={t('accessLogs.node')}>
                     <Select
@@ -237,6 +261,46 @@ export default function AccessLogsPage() {
                       placeholder={t('all')}
                       options={nodeOptions}
                       loading={nodes.isFetching}
+                    />
+                  </Form.Item>
+                  <Form.Item name="user" label={t('accessLogs.user')}>
+                    <Select
+                      className="access-log-user-select"
+                      allowClear
+                      virtual={false}
+                      classNames={{ popup: { root: 'access-log-user-popup' } }}
+                      options={userOptions}
+                      placeholder={t('accessLogs.selectUser')}
+                      loading={users.isFetching}
+                      showSearch={{
+                        searchValue: userSearch,
+                        onSearch: setUserSearch,
+                        filterOption: false,
+                      }}
+                      onOpenChange={setUserOpen}
+                      onChange={(value) => {
+                        setSelectedUser(
+                          value ? { email: value, comment: userLabels.get(value) ?? '' } : null,
+                        );
+                        setUserSearch('');
+                      }}
+                      optionRender={(option) => (
+                        <UserLabel email={option.data.value} comment={option.data.comment} />
+                      )}
+                      labelRender={({ value }) => (
+                        <UserLabel email={String(value)} comment={userLabels.get(String(value))} />
+                      )}
+                      notFoundContent={users.isError ? t('accessLogs.userLoadError') : undefined}
+                      onPopupScroll={(event) => {
+                        const element = event.currentTarget;
+                        if (
+                          element.scrollTop + element.clientHeight >= element.scrollHeight - 40 &&
+                          users.hasNextPage &&
+                          !users.isFetching
+                        ) {
+                          void users.fetchNextPage();
+                        }
+                      }}
                     />
                   </Form.Item>
                   <Form.Item label={t('accessLogs.timeZone')}>
@@ -289,67 +353,39 @@ export default function AccessLogsPage() {
                       }))}
                     />
                   </Form.Item>
-                  <Form.Item name="user" label={t('accessLogs.user')}>
-                    <Select
-                      className="access-log-user-select"
-                      allowClear
-                      virtual={false}
-                      classNames={{ popup: { root: 'access-log-user-popup' } }}
-                      options={userOptions}
-                      placeholder={t('accessLogs.selectUser')}
-                      loading={users.isFetching}
-                      showSearch={{
-                        searchValue: userSearch,
-                        onSearch: setUserSearch,
-                        filterOption: false,
-                      }}
-                      onOpenChange={setUserOpen}
-                      onChange={(value) => {
-                        setSelectedUser(
-                          value ? { email: value, comment: userLabels.get(value) ?? '' } : null,
-                        );
-                        setUserSearch('');
-                      }}
-                      optionRender={(option) => (
-                        <UserLabel email={option.data.value} comment={option.data.comment} />
-                      )}
-                      labelRender={({ value }) => (
-                        <UserLabel email={String(value)} comment={userLabels.get(String(value))} />
-                      )}
-                      notFoundContent={users.isError ? t('accessLogs.userLoadError') : undefined}
-                      onPopupScroll={(event) => {
-                        const element = event.currentTarget;
-                        if (
-                          element.scrollTop + element.clientHeight >= element.scrollHeight - 40 &&
-                          users.hasNextPage &&
-                          !users.isFetching
-                        ) {
-                          void users.fetchNextPage();
-                        }
-                      }}
-                    />
-                  </Form.Item>
                   {(['source', 'target', 'inbound', 'outbound'] as const).map((key) => (
                     <Form.Item key={key} name={key} label={t(`accessLogs.${key}`)}>
                       <Input allowClear maxLength={512} placeholder={t('accessLogs.contains')} />
                     </Form.Item>
                   ))}
+                  <Space wrap className="access-log-actions">
+                    <Button type="primary" htmlType="submit" icon={<SearchOutlined aria-hidden />}>
+                      {t('search')}
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        form.setFieldsValue({
+                          nodeGuid: undefined,
+                          user: undefined,
+                          category: undefined,
+                          timeRange: undefined,
+                          source: undefined,
+                          target: undefined,
+                          inbound: undefined,
+                          outbound: undefined,
+                        });
+                        setSearch(writeSharedFilters(search, {}, selectedTimeZone), {
+                          replace: true,
+                        });
+                        setSelectedUser(null);
+                        setUserSearch('');
+                        setParams({ page: 1, pageSize: params.pageSize });
+                      }}
+                    >
+                      {t('reset')}
+                    </Button>
+                  </Space>
                 </div>
-                <Space wrap className="access-log-actions">
-                  <Button type="primary" htmlType="submit" icon={<SearchOutlined aria-hidden />}>
-                    {t('search')}
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      form.resetFields();
-                      setSelectedUser(null);
-                      setUserSearch('');
-                      setParams({ page: 1, pageSize: params.pageSize });
-                    }}
-                  >
-                    {t('reset')}
-                  </Button>
-                </Space>
               </Form>
               {error && (
                 <Alert

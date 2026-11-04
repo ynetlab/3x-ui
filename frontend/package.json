@@ -45,6 +45,7 @@
     "antd": "^6.6.7",
     "codemirror": "^6.0.2",
     "dayjs": "^1.11.23",
+    "echarts": "6.0.0",
     "i18next": "^26.5.6",
     "otpauth": "^9.5.2",
     "persian-calendar-suite": "^1.5.6",
