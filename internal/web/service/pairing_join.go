@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/cluster"
 	"github.com/mhsanaei/3x-ui/v3/internal/config"
 	"github.com/mhsanaei/3x-ui/v3/internal/crypto/nodetoken"
@@ -17,7 +19,6 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/util/netsafe"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/runtime"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/websocket"
-	"gorm.io/gorm"
 )
 
 type JoinPairingRequest struct {
@@ -65,6 +66,7 @@ func (s *PairingService) StartJoin(req JoinPairingRequest) (PairingView, error) 
 func (s *PairingService) startJoin(req JoinPairingRequest, newInstall bool) (PairingView, error) {
 	return s.startJoinMode(req, newInstall, false)
 }
+
 func (s *PairingService) startJoinMode(req JoinPairingRequest, newInstall, recovery bool) (PairingView, error) {
 	controlPKIMu.Lock()
 	defer controlPKIMu.Unlock()
@@ -177,8 +179,10 @@ func (s *PairingService) startJoinMode(req JoinPairingRequest, newInstall, recov
 		return PairingView{}, err
 	}
 	slot := "local"
-	row := model.NodeJoinJob{ID: id, ActiveSlot: &slot, EnrollmentID: req.Profile.EnrollmentID, MasterGUID: req.Profile.Master.GUID,
-		RequestHash: hash, Status: PairingPending, Payload: payload, Deadline: req.Profile.ExpiresAt, Recovery: recovery}
+	row := model.NodeJoinJob{
+		ID: id, ActiveSlot: &slot, EnrollmentID: req.Profile.EnrollmentID, MasterGUID: req.Profile.Master.GUID,
+		RequestHash: hash, Status: PairingPending, Payload: payload, Deadline: req.Profile.ExpiresAt, Recovery: recovery,
+	}
 	err = pairingDB().Transaction(func(tx *gorm.DB) error {
 		if recovery {
 			if e := tx.Model(&model.NodeJoinJob{}).Where("active_slot IS NOT NULL AND master_guid = ? AND (recovery = ? OR status = ?)", req.Profile.Master.GUID, true, PairingConfirming).Updates(map[string]any{"active_slot": nil, "status": PairingFailed, "payload": "", "last_error": "control_recovery_superseded"}).Error; e != nil {
@@ -310,8 +314,10 @@ func (s *PairingService) StepJoin(ctx context.Context, id string) error {
 			if err != nil {
 				return err
 			}
-			return tx.Model(row).Updates(map[string]any{"status": PairingIssued, "payload": payload, "admin_token_id": apiToken.Id, "deadline": response.ResumeUntil,
-				"next_attempt_at": 0, "failures": 0, "attempts": row.Attempts + 1, "last_error": ""}).Error
+			return tx.Model(row).Updates(map[string]any{
+				"status": PairingIssued, "payload": payload, "admin_token_id": apiToken.Id, "deadline": response.ResumeUntil,
+				"next_attempt_at": 0, "failures": 0, "attempts": row.Attempts + 1, "last_error": "",
+			}).Error
 		})
 	case PairingIssued:
 		if secrets.PublicIP == nil {
@@ -400,8 +406,10 @@ func (s *PairingService) StepJoin(ctx context.Context, id string) error {
 			if err := putPairingSetting(tx, settingAccessLogMaster, string(endpoint)); err != nil {
 				return err
 			}
-			return tx.Model(row).Updates(map[string]any{"status": PairingConfirming, "node_id": response.NodeID, "next_attempt_at": 0,
-				"failures": 0, "attempts": row.Attempts + 1, "last_error": ""}).Error
+			return tx.Model(row).Updates(map[string]any{
+				"status": PairingConfirming, "node_id": response.NodeID, "next_attempt_at": 0,
+				"failures": 0, "attempts": row.Attempts + 1, "last_error": "",
+			}).Error
 		})
 		panelRoleMu.Unlock()
 		controlSettingsMu.Unlock()
@@ -426,8 +434,10 @@ func (s *PairingService) StepJoin(ctx context.Context, id string) error {
 		if response.NodeID != row.NodeID || response.Status != PairingCompleted {
 			return s.failJoin(row, pairingError(502, "invalid_pairing_receipt"))
 		}
-		return pairingDB().Model(row).Updates(map[string]any{"status": PairingCompleted, "active_slot": nil, "payload": "", "next_attempt_at": 0,
-			"failures": 0, "attempts": row.Attempts + 1, "last_error": ""}).Error
+		return pairingDB().Model(row).Updates(map[string]any{
+			"status": PairingCompleted, "active_slot": nil, "payload": "", "next_attempt_at": 0,
+			"failures": 0, "attempts": row.Attempts + 1, "last_error": "",
+		}).Error
 	}
 	return pairingError(409, "invalid_join_state")
 }
@@ -447,8 +457,10 @@ func (s *PairingService) failJoin(row *model.NodeJoinJob, failure error) error {
 	if delay > time.Minute {
 		delay = time.Minute
 	}
-	updates := map[string]any{"status": status, "last_error": pairingFailureCode(failure), "attempts": row.Attempts + 1,
-		"failures": failures, "next_attempt_at": time.Now().Add(delay).UnixMilli()}
+	updates := map[string]any{
+		"status": status, "last_error": pairingFailureCode(failure), "attempts": row.Attempts + 1,
+		"failures": failures, "next_attempt_at": time.Now().Add(delay).UnixMilli(),
+	}
 	if err := pairingDB().Model(row).Where("active_slot IS NOT NULL").Updates(updates).Error; err != nil {
 		return err
 	}

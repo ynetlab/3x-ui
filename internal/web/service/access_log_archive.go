@@ -10,17 +10,20 @@ import (
 	"strings"
 	"time"
 
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	"gorm.io/gorm/logger"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/accesslog"
 	"github.com/mhsanaei/3x-ui/v3/internal/cluster"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
-	"gorm.io/gorm/logger"
 )
 
-var accessArchiveGate = make(chan struct{}, 1)
-var accessReceiveGate = make(chan struct{}, 2)
+var (
+	accessArchiveGate = make(chan struct{}, 1)
+	accessReceiveGate = make(chan struct{}, 2)
+)
 
 func lockAccessArchive(ctx context.Context) error {
 	select {
@@ -150,11 +153,11 @@ func (s *AccessLogService) RegisterControlRoutes(router *cluster.Router) {
 		}
 		var count int64
 		if err := accessDB().Model(&model.Node{}).Where("guid = ? AND control_connection = ?", identity.GUID, true).Count(&count).Error; err != nil {
-			http.Error(w, "access_log_storage_unavailable", 503)
+			http.Error(w, "access_log_storage_unavailable", http.StatusServiceUnavailable)
 			return
 		}
 		if count != 1 {
-			http.Error(w, "access_log_node_not_registered", 403)
+			http.Error(w, "access_log_node_not_registered", http.StatusForbidden)
 			return
 		}
 		body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, accesslog.MaxBatchBytes))

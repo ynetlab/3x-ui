@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	panelcrypto "github.com/mhsanaei/3x-ui/v3/internal/util/crypto"
 )
 
@@ -298,8 +299,10 @@ func ServerTLS(credentials Credentials) (*tls.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &tls.Config{MinVersion: tls.VersionTLS13, Certificates: []tls.Certificate{cert},
-		ClientCAs: roots, ClientAuth: tls.VerifyClientCertIfGiven, NextProtos: []string{"http/1.1"}}, nil
+	return &tls.Config{
+		MinVersion: tls.VersionTLS13, Certificates: []tls.Certificate{cert},
+		ClientCAs: roots, ClientAuth: tls.VerifyClientCertIfGiven, NextProtos: []string{"http/1.1"},
+	}, nil
 }
 
 func matchPeer(cert *x509.Certificate, peer Peer) error {
@@ -339,14 +342,16 @@ func ClientTLS(credentials Credentials, peer Peer) (*tls.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &tls.Config{MinVersion: tls.VersionTLS13, Certificates: []tls.Certificate{cert}, RootCAs: roots,
+	return &tls.Config{
+		MinVersion: tls.VersionTLS13, Certificates: []tls.Certificate{cert}, RootCAs: roots,
 		NextProtos: []string{ControlPinALPNPrefix + peer.Fingerprint, "http/1.1"},
-		ServerName: peer.Identity.serverName(), VerifyConnection: func(cs tls.ConnectionState) error {
+		ServerName: peer.serverName(), VerifyConnection: func(cs tls.ConnectionState) error {
 			if len(cs.VerifiedChains) == 0 || len(cs.PeerCertificates) == 0 {
 				return errors.New("unverified control server")
 			}
 			return matchPeer(cs.PeerCertificates[0], peer)
-		}}, nil
+		},
+	}, nil
 }
 
 // BootstrapTLS trusts only an out-of-band master certificate fingerprint.
@@ -359,7 +364,8 @@ func BootstrapTLS(master Peer) (*tls.Config, error) {
 	if master.Role != RoleMaster {
 		return nil, errors.New("bootstrap target must be a master")
 	}
-	return &tls.Config{MinVersion: tls.VersionTLS13, InsecureSkipVerify: true, NextProtos: []string{ControlPinALPNPrefix + master.Fingerprint, "http/1.1"},
+	return &tls.Config{
+		MinVersion: tls.VersionTLS13, InsecureSkipVerify: true, NextProtos: []string{ControlPinALPNPrefix + master.Fingerprint, "http/1.1"},
 		VerifyConnection: func(cs tls.ConnectionState) error {
 			if len(cs.PeerCertificates) == 0 {
 				return errors.New("bootstrap server presented no certificate")
@@ -369,5 +375,6 @@ func BootstrapTLS(master Peer) (*tls.Config, error) {
 				return errors.New("bootstrap certificate is not currently valid")
 			}
 			return matchPeer(leaf, master)
-		}}, nil
+		},
+	}, nil
 }

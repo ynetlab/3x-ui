@@ -18,17 +18,20 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"golang.org/x/crypto/acme"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/cloudflare"
 	"github.com/mhsanaei/3x-ui/v3/internal/crypto/nodetoken"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/panelcert"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/netsafe"
-	"golang.org/x/crypto/acme"
 )
 
-const settingACMEConfig = "acmeConfig"
-const settingACMEAccount = "acmeAccountKey"
+const (
+	settingACMEConfig  = "acmeConfig"
+	settingACMEAccount = "acmeAccountKey"
+)
 
 var acmeAccountMu sync.Mutex
 

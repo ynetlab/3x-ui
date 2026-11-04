@@ -117,7 +117,7 @@ func (source *accessLogSource) refresh() error {
 	if err != nil {
 		return err
 	}
-	if info.ModTime() == source.stamp && info.Size() == source.size {
+	if info.ModTime().Equal(source.stamp) && info.Size() == source.size {
 		return nil
 	}
 	path, err := xray.GetAccessLogPath()

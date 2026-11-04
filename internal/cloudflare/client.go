@@ -14,9 +14,11 @@ import (
 	"time"
 )
 
-const apiURL = "https://api.cloudflare.com/client/v4"
-const RequestTimeout = 10 * time.Second
-const maxResponseBytes = 2 << 20
+const (
+	apiURL           = "https://api.cloudflare.com/client/v4"
+	RequestTimeout   = 10 * time.Second
+	maxResponseBytes = 2 << 20
+)
 
 var identifier = regexp.MustCompile(`^[a-f0-9]{32}$`)
 
@@ -137,12 +139,12 @@ func (c *Client) do(ctx context.Context, method, path string, query url.Values, 
 			e.ProviderCodes = append(e.ProviderCodes, item.Code)
 		}
 		switch resp.StatusCode {
-		case 401, 403:
+		case http.StatusUnauthorized, http.StatusForbidden:
 			e.Code = "cloudflare_auth_failed"
-		case 404:
-			e.Code, e.Status = "cloudflare_record_not_found", 404
-		case 429:
-			e.Code, e.Status = "cloudflare_rate_limited", 429
+		case http.StatusNotFound:
+			e.Code, e.Status = "cloudflare_record_not_found", http.StatusNotFound
+		case http.StatusTooManyRequests:
+			e.Code, e.Status = "cloudflare_rate_limited", http.StatusTooManyRequests
 			if seconds, err := strconv.Atoi(resp.Header.Get("Retry-After")); err == nil && seconds > 0 && seconds <= 86400 {
 				e.RetryAfter = seconds
 			}

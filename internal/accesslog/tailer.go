@@ -3,6 +3,7 @@ package accesslog
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -220,7 +221,7 @@ func (t *Tailer) Poll(path string, now time.Time) error {
 		before := c
 		line, readErr := reader.ReadSlice('\n')
 		processed += len(line)
-		if readErr == bufio.ErrBufferFull {
+		if errors.Is(readErr, bufio.ErrBufferFull) {
 			if !c.Skipping {
 				stats.Oversized++
 			}

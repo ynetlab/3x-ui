@@ -9,6 +9,7 @@ exports[`inbound security forms > RealityForm field structure is stable 1`] = `
   "SNI",
   "Max Time Diff (ms)",
   "Min Client Ver",
+  "REALITY compatibility mode",
   "Max Client Ver",
   "Short IDs",
   "SpiderX",

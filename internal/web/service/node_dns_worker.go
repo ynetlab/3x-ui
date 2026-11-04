@@ -64,7 +64,7 @@ func reportNodeIP(ctx context.Context, probe func(context.Context) nodeip.Report
 	}
 	defer resp.Body.Close()
 	data, err := io.ReadAll(io.LimitReader(resp.Body, 1025))
-	if err != nil || len(data) > 1024 || resp.StatusCode != 200 {
+	if err != nil || len(data) > 1024 || resp.StatusCode != http.StatusOK {
 		return errors.New("node_ip_report_rejected")
 	}
 	var ack struct {

@@ -1,8 +1,9 @@
 package cluster
 
 import (
-	"github.com/mhsanaei/3x-ui/v3/internal/nodeip"
 	"time"
+
+	"github.com/mhsanaei/3x-ui/v3/internal/nodeip"
 )
 
 const (

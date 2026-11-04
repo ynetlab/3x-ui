@@ -8,14 +8,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/cloudflare"
 	"github.com/mhsanaei/3x-ui/v3/internal/cluster"
 	"github.com/mhsanaei/3x-ui/v3/internal/crypto/nodetoken"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/nodeip"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 func enrollmentRegistration(row *model.NodeEnrollment) (cluster.RegisterRequest, error) {

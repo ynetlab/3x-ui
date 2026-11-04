@@ -38,6 +38,7 @@ func SignRecoveryProof(credentials Credentials, message string) (string, error) 
 	}
 	return base64.RawStdEncoding.EncodeToString(signature), nil
 }
+
 func VerifyRecoveryProof(certPEM, pin string, expected Identity, message, signature string) error {
 	der, err := parsePEM([]byte(certPEM), "CERTIFICATE")
 	if err != nil {

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/cloudflare"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
@@ -89,6 +90,7 @@ func (a *CloudflareController) list(c *gin.Context) {
 	value, err := a.dns.List(c.Request.Context(), id)
 	a.result(c, value, err)
 }
+
 func (a *CloudflareController) ip(c *gin.Context) {
 	id, ok := a.node(c)
 	if !ok {
@@ -97,6 +99,7 @@ func (a *CloudflareController) ip(c *gin.Context) {
 	value, err := (&service.NodeIPService{}).Get(c.Request.Context(), id)
 	a.result(c, value, err)
 }
+
 func (a *CloudflareController) create(c *gin.Context) {
 	id, ok := a.node(c)
 	if !ok {
@@ -109,6 +112,7 @@ func (a *CloudflareController) create(c *gin.Context) {
 	value, err := a.dns.Create(c.Request.Context(), id, req)
 	a.result(c, value, err)
 }
+
 func (a *CloudflareController) bind(c *gin.Context) {
 	id, ok := a.node(c)
 	if !ok {
@@ -123,6 +127,7 @@ func (a *CloudflareController) bind(c *gin.Context) {
 	value, err := a.dns.Bind(c.Request.Context(), id, c.Param("recordId"), req.Content)
 	a.result(c, value, err)
 }
+
 func (a *CloudflareController) update(c *gin.Context) {
 	id, ok := a.node(c)
 	if !ok {
@@ -135,6 +140,7 @@ func (a *CloudflareController) update(c *gin.Context) {
 	value, err := a.dns.Update(c.Request.Context(), id, c.Param("recordId"), req)
 	a.result(c, value, err)
 }
+
 func (a *CloudflareController) proxied(c *gin.Context) {
 	id, ok := a.node(c)
 	if !ok {
@@ -153,6 +159,7 @@ func (a *CloudflareController) proxied(c *gin.Context) {
 	value, err := a.dns.SetProxied(c.Request.Context(), id, c.Param("recordId"), *req.Proxied)
 	a.result(c, value, err)
 }
+
 func (a *CloudflareController) delete(c *gin.Context) {
 	id, ok := a.node(c)
 	if !ok {

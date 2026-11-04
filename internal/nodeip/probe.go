@@ -15,8 +15,10 @@ import (
 	"time"
 )
 
-const Interval = time.Minute
-const ReportPath = "/cluster/v1/node-ips"
+const (
+	Interval   = time.Minute
+	ReportPath = "/cluster/v1/node-ips"
+)
 
 type Report struct {
 	IPv4       string `json:"ipv4"`
@@ -62,7 +64,7 @@ func Probe(ctx context.Context) Report {
 				return
 			}
 			defer resp.Body.Close()
-			if resp.StatusCode != 200 {
+			if resp.StatusCode != http.StatusOK {
 				return
 			}
 			data, err := io.ReadAll(io.LimitReader(resp.Body, 129))

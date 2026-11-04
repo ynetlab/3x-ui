@@ -21,6 +21,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
 
 const settleTimeout = 30 * time.Second
@@ -93,7 +94,7 @@ func (p *panel) mintToken(name, scope string) string {
 }
 
 // newPanel prepares a panel's database: credentials, a private port, its own
-// sub-server port (two panels on one host would race for 2096) and an admin token.
+// sub-server and control ports, and an admin token.
 func newPanel(t *testing.T, bin, name string) *panel {
 	t.Helper()
 	p := preparePanel(t, bin, name)
@@ -123,6 +124,9 @@ func preparePanel(t *testing.T, bin, name string) *panel {
 	db.Exec("DELETE FROM settings WHERE key = ?", "subPort")
 	if err := db.Exec("INSERT INTO settings(key, value) VALUES (?, ?)", "subPort", strconv.Itoa(freePort(t))).Error; err != nil {
 		t.Fatalf("%s: set subPort: %v", name, err)
+	}
+	if err := (&service.SettingService{}).SetControlConfig(service.ControlConfig{Enabled: true, Listen: "127.0.0.1", Port: freePort(t)}); err != nil {
+		t.Fatalf("%s: set control config: %v", name, err)
 	}
 	if err := database.CloseDB(); err != nil {
 		t.Fatalf("%s: close db: %v", name, err)

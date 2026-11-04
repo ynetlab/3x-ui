@@ -11,12 +11,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/cluster"
 	"github.com/mhsanaei/3x-ui/v3/internal/crypto/nodetoken"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	panelcrypto "github.com/mhsanaei/3x-ui/v3/internal/util/crypto"
-	"gorm.io/gorm"
 )
 
 type caStage struct {
@@ -198,6 +199,7 @@ func registerCAControlRoutes(router *cluster.Router, isAdmin func(string) bool) 
 		}))
 	}
 }
+
 func mustAuthenticatedGUID(r *http.Request) string {
 	identity, _ := cluster.AuthenticatedPeer(r.Context())
 	return identity.GUID
@@ -457,6 +459,7 @@ func stepCAChange(ctx context.Context) error {
 	}
 	return nil
 }
+
 func finishCAChange(job *model.ControlCAChange) error {
 	return pairingDB().Transaction(func(tx *gorm.DB) error {
 		if e := tx.Model(&model.ControlCARecipient{}).Where("change_id = ? AND status NOT IN ?", job.ID, []string{"completed", "manual"}).Update("status", "recovery").Error; e != nil {
@@ -473,6 +476,7 @@ func finishCAChange(job *model.ControlCAChange) error {
 		return tx.Model(job).Updates(map[string]any{"status": status, "active_slot": nil, "payload": ""}).Error
 	})
 }
+
 func migrateCARecipient(ctx context.Context, job *model.ControlCAChange, r *model.ControlCARecipient) error {
 	ctx, cancel := context.WithDeadline(ctx, time.UnixMilli(job.Deadline))
 	defer cancel()

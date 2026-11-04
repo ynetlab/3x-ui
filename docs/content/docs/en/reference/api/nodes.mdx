@@ -1,12 +1,59 @@
 ---
 title: Nodes
-description: Manage remote 3x-ui panels acting as nodes for a central panel. All
-  endpoints under /panel/api/nodes.
+description: Manage remote panels and installed-node pairing. Node management
+  uses /panel/api/nodes; pairing uses /panel/api/pairings.
 full: true
 _openapi:
   preload:
     - ./public/openapi.json
   toc:
+    - depth: 2
+      title: Read the configured control port and public identity fingerprint. No
+        private credentials are returned.
+      url: '#read-the-configured-control-port-and-public-identity-fingerprint-no-private-credentials-are-returned'
+    - depth: 2
+      title: Master-only control CA and identity expiry, public fingerprint and
+        emergency migration status. No private key material is returned.
+      url: '#master-only-control-ca-and-identity-expiry-public-fingerprint-and-emergency-migration-status-no-private-key-material-is-returned'
+    - depth: 2
+      title: Immediately revoke the old control CA and issue a new 30-year CA and
+        3-year master identity. Attempt pinned online-node migration for 15
+        minutes; offline nodes require explicit root recovery. Irreversible;
+        full admin required.
+      url: '#immediately-revoke-the-old-control-ca-and-issue-a-new-30-year-ca-and-3-year-master-identity-attempt-pinned-online-node-migration-for-15-minutes-offline-nodes-require-explicit-root-recovery-irreversible-full-admin-required'
+    - depth: 2
+      title: 'Create a one-time enrollment for an installed or newly installed node.
+        Optional existingNodeId migrates that original unpaired Node in place:
+        its verified GUID, Node ID, inbounds, users, traffic baselines, sync
+        selection and enabled state are preserved; configuration changes or a
+        different GUID are refused. Normal enrollment requires domains,
+        primaryDomain, configured Cloudflare/ACME, public IP reporting, DNS-only
+        A/AAAA provisioning, a DNS-01 SAN certificate, mTLS deployment and
+        callback verification. The resulting Node address is primaryDomain.
+        Explicit recovery=true instead restores an existing paired Node marked
+        controlRecoveryRequired, retains its address and public panel
+        certificate, and requires the root-only pairing recover command plus a
+        signed proof of the previously pinned key (or its exact recorded pending
+        successor); DNS/ACME are skipped. The profile token is returned once;
+        full admin or an authenticated admin session is required.'
+      url: '#create-a-one-time-enrollment-for-an-installed-or-newly-installed-node-optional-existingnodeid-migrates-that-original-unpaired-node-in-place-its-verified-guid-node-id-inbounds-users-traffic-baselines-sync-selection-and-enabled-state-are-preserved-configuration-changes-or-a-different-guid-are-refused-normal-enrollment-requires-domains-primarydomain-configured-cloudflareacme-public-ip-reporting-dns-only-aaaaa-provisioning-a-dns-01-san-certificate-mtls-deployment-and-callback-verification-the-resulting-node-address-is-primarydomain-explicit-recoverytrue-instead-restores-an-existing-paired-node-marked-controlrecoveryrequired-retains-its-address-and-public-panel-certificate-and-requires-the-root-only-pairing-recover-command-plus-a-signed-proof-of-the-previously-pinned-key-or-its-exact-recorded-pending-successor-dnsacme-are-skipped-the-profile-token-is-returned-once-full-admin-or-an-authenticated-admin-session-is-required'
+    - depth: 2
+      title: Read master-side pairing status without exposing the enrollment token,
+        CSR, certificate or admin key.
+      url: '#read-master-side-pairing-status-without-exposing-the-enrollment-token-csr-certificate-or-admin-key'
+    - depth: 2
+      title: Start or recover a durable installed-node join using a master profile and
+        an explicit callback address. Repeated identical requests reuse the same
+        job.
+      url: '#start-or-recover-a-durable-installed-node-join-using-a-master-profile-and-an-explicit-callback-address-repeated-identical-requests-reuse-the-same-job'
+    - depth: 2
+      title: Read local join progress, retry time and a sanitized failure code. No
+        stored pairing secrets are returned.
+      url: '#read-local-join-progress-retry-time-and-a-sanitized-failure-code-no-stored-pairing-secrets-are-returned'
+    - depth: 2
+      title: Retry an unfinished durable join immediately. Completed jobs are
+        idempotent; expired or rejected jobs require a new enrollment.
+      url: '#retry-an-unfinished-durable-join-immediately-completed-jobs-are-idempotent-expired-or-rejected-jobs-require-a-new-enrollment'
     - depth: 2
       title: List every configured node with its connection details, health, and last
         heartbeat patch.
@@ -82,6 +129,46 @@ _openapi:
       url: '#aggregated-metric-history-for-a-node--same-shape-as-serverhistory-scoped-to-one-node'
   structuredData:
     headings:
+      - content: Read the configured control port and public identity fingerprint. No
+          private credentials are returned.
+        id: read-the-configured-control-port-and-public-identity-fingerprint-no-private-credentials-are-returned
+      - content: Master-only control CA and identity expiry, public fingerprint and
+          emergency migration status. No private key material is returned.
+        id: master-only-control-ca-and-identity-expiry-public-fingerprint-and-emergency-migration-status-no-private-key-material-is-returned
+      - content: Immediately revoke the old control CA and issue a new 30-year CA and
+          3-year master identity. Attempt pinned online-node migration for 15
+          minutes; offline nodes require explicit root recovery. Irreversible;
+          full admin required.
+        id: immediately-revoke-the-old-control-ca-and-issue-a-new-30-year-ca-and-3-year-master-identity-attempt-pinned-online-node-migration-for-15-minutes-offline-nodes-require-explicit-root-recovery-irreversible-full-admin-required
+      - content: 'Create a one-time enrollment for an installed or newly installed node.
+          Optional existingNodeId migrates that original unpaired Node in place:
+          its verified GUID, Node ID, inbounds, users, traffic baselines, sync
+          selection and enabled state are preserved; configuration changes or a
+          different GUID are refused. Normal enrollment requires domains,
+          primaryDomain, configured Cloudflare/ACME, public IP reporting,
+          DNS-only A/AAAA provisioning, a DNS-01 SAN certificate, mTLS
+          deployment and callback verification. The resulting Node address is
+          primaryDomain. Explicit recovery=true instead restores an existing
+          paired Node marked controlRecoveryRequired, retains its address and
+          public panel certificate, and requires the root-only pairing recover
+          command plus a signed proof of the previously pinned key (or its exact
+          recorded pending successor); DNS/ACME are skipped. The profile token
+          is returned once; full admin or an authenticated admin session is
+          required.'
+        id: create-a-one-time-enrollment-for-an-installed-or-newly-installed-node-optional-existingnodeid-migrates-that-original-unpaired-node-in-place-its-verified-guid-node-id-inbounds-users-traffic-baselines-sync-selection-and-enabled-state-are-preserved-configuration-changes-or-a-different-guid-are-refused-normal-enrollment-requires-domains-primarydomain-configured-cloudflareacme-public-ip-reporting-dns-only-aaaaa-provisioning-a-dns-01-san-certificate-mtls-deployment-and-callback-verification-the-resulting-node-address-is-primarydomain-explicit-recoverytrue-instead-restores-an-existing-paired-node-marked-controlrecoveryrequired-retains-its-address-and-public-panel-certificate-and-requires-the-root-only-pairing-recover-command-plus-a-signed-proof-of-the-previously-pinned-key-or-its-exact-recorded-pending-successor-dnsacme-are-skipped-the-profile-token-is-returned-once-full-admin-or-an-authenticated-admin-session-is-required
+      - content: Read master-side pairing status without exposing the enrollment token,
+          CSR, certificate or admin key.
+        id: read-master-side-pairing-status-without-exposing-the-enrollment-token-csr-certificate-or-admin-key
+      - content: Start or recover a durable installed-node join using a master profile
+          and an explicit callback address. Repeated identical requests reuse
+          the same job.
+        id: start-or-recover-a-durable-installed-node-join-using-a-master-profile-and-an-explicit-callback-address-repeated-identical-requests-reuse-the-same-job
+      - content: Read local join progress, retry time and a sanitized failure code. No
+          stored pairing secrets are returned.
+        id: read-local-join-progress-retry-time-and-a-sanitized-failure-code-no-stored-pairing-secrets-are-returned
+      - content: Retry an unfinished durable join immediately. Completed jobs are
+          idempotent; expired or rejected jobs require a new enrollment.
+        id: retry-an-unfinished-durable-join-immediately-completed-jobs-are-idempotent-expired-or-rejected-jobs-require-a-new-enrollment
       - content: List every configured node with its connection details, health, and
           last heartbeat patch.
         id: list-every-configured-node-with-its-connection-details-health-and-last-heartbeat-patch
@@ -149,7 +236,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/nodes/list","method":"get"},{"path":"/panel/api/nodes/mtls/ca","method":"post"},{"path":"/panel/api/nodes/mtls/trustCA","method":"post"},{"path":"/panel/api/nodes/mtls/reloadClient","method":"post"},{"path":"/panel/api/nodes/get/{id}","method":"get"},{"path":"/panel/api/nodes/webCert/{id}","method":"get"},{"path":"/panel/api/nodes/add","method":"post"},{"path":"/panel/api/nodes/update/{id}","method":"post"},{"path":"/panel/api/nodes/del/{id}","method":"post"},{"path":"/panel/api/nodes/setEnable/{id}","method":"post"},{"path":"/panel/api/nodes/test","method":"post"},{"path":"/panel/api/nodes/certFingerprint","method":"post"},{"path":"/panel/api/nodes/inbounds","method":"post"},{"path":"/panel/api/nodes/probe/{id}","method":"post"},{"path":"/panel/api/nodes/updatePanel","method":"post"},{"path":"/panel/api/nodes/history/{id}/{metric}/{bucket}","method":"get"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/pairings/control","method":"get"},{"path":"/panel/api/control-pki/status","method":"get"},{"path":"/panel/api/control-pki/rotate-ca","method":"post"},{"path":"/panel/api/pairings/enrollments","method":"post"},{"path":"/panel/api/pairings/enrollments/{id}","method":"get"},{"path":"/panel/api/pairings/joins","method":"post"},{"path":"/panel/api/pairings/joins/{id}","method":"get"},{"path":"/panel/api/pairings/joins/{id}/resume","method":"post"},{"path":"/panel/api/nodes/list","method":"get"},{"path":"/panel/api/nodes/mtls/ca","method":"post"},{"path":"/panel/api/nodes/mtls/trustCA","method":"post"},{"path":"/panel/api/nodes/mtls/reloadClient","method":"post"},{"path":"/panel/api/nodes/get/{id}","method":"get"},{"path":"/panel/api/nodes/webCert/{id}","method":"get"},{"path":"/panel/api/nodes/add","method":"post"},{"path":"/panel/api/nodes/update/{id}","method":"post"},{"path":"/panel/api/nodes/del/{id}","method":"post"},{"path":"/panel/api/nodes/setEnable/{id}","method":"post"},{"path":"/panel/api/nodes/test","method":"post"},{"path":"/panel/api/nodes/certFingerprint","method":"post"},{"path":"/panel/api/nodes/inbounds","method":"post"},{"path":"/panel/api/nodes/probe/{id}","method":"post"},{"path":"/panel/api/nodes/updatePanel","method":"post"},{"path":"/panel/api/nodes/history/{id}/{metric}/{bucket}","method":"get"}]} showTitle />
     </>
   );
 }

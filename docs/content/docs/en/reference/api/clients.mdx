@@ -15,15 +15,15 @@ _openapi:
       url: '#list-every-client-with-its-attached-inbound-ids-and-traffic-record-the-reverse-field-if-set-is-returned-as-a-nested-json-object-legacy-json-encoded-string-form-is-still-accepted-on-write'
     - depth: 2
       title: 'Filter, sort, and paginate clients on the server. Each item is a slim
-        row (no uuid/password/auth/flow/security/reverse/tgId) so the clients
-        page can ship 25-ish rows in a few KB instead of the full table. The
-        response also includes a summary computed across the full DB row set so
-        dashboard counters stay stable as the user paginates or filters: the
-        *Count fields are exact, while the email arrays beside them stop at 200
-        entries so the payload does not grow with the panel. Page size capped at
-        200; fetch /get/:email to obtain the full per-client payload for an
-        edit/info modal.'
-      url: '#filter-sort-and-paginate-clients-on-the-server-each-item-is-a-slim-row-no-uuidpasswordauthflowsecurityreversetgid-so-the-clients-page-can-ship-25-ish-rows-in-a-few-kb-instead-of-the-full-table-the-response-also-includes-a-summary-computed-across-the-full-db-row-set-so-dashboard-counters-stay-stable-as-the-user-paginates-or-filters-the-count-fields-are-exact-while-the-email-arrays-beside-them-stop-at-200-entries-so-the-payload-does-not-grow-with-the-panel-page-size-capped-at-200-fetch-getemail-to-obtain-the-full-per-client-payload-for-an-editinfo-modal'
+        row (no uuid/password/flow/security/reverse/tgId) so the clients page
+        can ship 25-ish rows in a few KB instead of the full table. The response
+        also includes a summary computed across the full DB row set so dashboard
+        counters stay stable as the user paginates or filters: the *Count fields
+        are exact, while the email arrays beside them stop at 200 entries so the
+        payload does not grow with the panel. Page size capped at 200; fetch
+        /get/:email to obtain the full per-client payload for an edit/info
+        modal.'
+      url: '#filter-sort-and-paginate-clients-on-the-server-each-item-is-a-slim-row-no-uuidpasswordflowsecurityreversetgid-so-the-clients-page-can-ship-25-ish-rows-in-a-few-kb-instead-of-the-full-table-the-response-also-includes-a-summary-computed-across-the-full-db-row-set-so-dashboard-counters-stay-stable-as-the-user-paginates-or-filters-the-count-fields-are-exact-while-the-email-arrays-beside-them-stop-at-200-entries-so-the-payload-does-not-grow-with-the-panel-page-size-capped-at-200-fetch-getemail-to-obtain-the-full-per-client-payload-for-an-editinfo-modal'
     - depth: 2
       title: Fetch one client by email, including the inbound IDs and external config
         IDs it is attached to.
@@ -310,15 +310,15 @@ _openapi:
           JSON-encoded-string form is still accepted on write).
         id: list-every-client-with-its-attached-inbound-ids-and-traffic-record-the-reverse-field-if-set-is-returned-as-a-nested-json-object-legacy-json-encoded-string-form-is-still-accepted-on-write
       - content: 'Filter, sort, and paginate clients on the server. Each item is a slim
-          row (no uuid/password/auth/flow/security/reverse/tgId) so the clients
-          page can ship 25-ish rows in a few KB instead of the full table. The
+          row (no uuid/password/flow/security/reverse/tgId) so the clients page
+          can ship 25-ish rows in a few KB instead of the full table. The
           response also includes a summary computed across the full DB row set
           so dashboard counters stay stable as the user paginates or filters:
           the *Count fields are exact, while the email arrays beside them stop
           at 200 entries so the payload does not grow with the panel. Page size
           capped at 200; fetch /get/:email to obtain the full per-client payload
           for an edit/info modal.'
-        id: filter-sort-and-paginate-clients-on-the-server-each-item-is-a-slim-row-no-uuidpasswordauthflowsecurityreversetgid-so-the-clients-page-can-ship-25-ish-rows-in-a-few-kb-instead-of-the-full-table-the-response-also-includes-a-summary-computed-across-the-full-db-row-set-so-dashboard-counters-stay-stable-as-the-user-paginates-or-filters-the-count-fields-are-exact-while-the-email-arrays-beside-them-stop-at-200-entries-so-the-payload-does-not-grow-with-the-panel-page-size-capped-at-200-fetch-getemail-to-obtain-the-full-per-client-payload-for-an-editinfo-modal
+        id: filter-sort-and-paginate-clients-on-the-server-each-item-is-a-slim-row-no-uuidpasswordflowsecurityreversetgid-so-the-clients-page-can-ship-25-ish-rows-in-a-few-kb-instead-of-the-full-table-the-response-also-includes-a-summary-computed-across-the-full-db-row-set-so-dashboard-counters-stay-stable-as-the-user-paginates-or-filters-the-count-fields-are-exact-while-the-email-arrays-beside-them-stop-at-200-entries-so-the-payload-does-not-grow-with-the-panel-page-size-capped-at-200-fetch-getemail-to-obtain-the-full-per-client-payload-for-an-editinfo-modal
       - content: Fetch one client by email, including the inbound IDs and external
           config IDs it is attached to.
         id: fetch-one-client-by-email-including-the-inbound-ids-and-external-config-ids-it-is-attached-to
@@ -570,22 +570,19 @@ _openapi:
       - content: >-
           Fields the server fills in when they are omitted — a valid value sent
           by the caller is never overwritten. Re-adding an email that already
-          exists, with its stored `subId`, reuses the stored `id`, `password`,
-          `auth` and `secret` instead of minting new ones, so the identity stays
-          in sync across its inbounds.
+          exists, with its stored `subId`, reuses the stored `id`, `password`
+          and `secret` instead of minting new ones, so the identity stays in
+          sync across its inbounds.
 
 
-          - **VLESS / VMess** — `id`, a fresh UUID
-
-          - **Trojan** — `password`
+          - **VLESS / VMess / Trojan / AnyTLS / Hysteria** — `id`, a fresh UUID
+          shared across these protocols
 
           - **Shadowsocks** — `password`. On a `2022-blake3-*` inbound a
           supplied password that does not base64-decode to the key length of the
           cipher (16 or 32 bytes) is replaced by a generated key and the call
           still succeeds, so read the client back if you did not let the server
           pick. Legacy ciphers keep any non-empty password
-
-          - **Hysteria** — `auth`
 
           - **mtproto** — `secret`, a FakeTLS secret derived from the fronting
           domain of the inbound, or from `www.cloudflare.com` when it has none

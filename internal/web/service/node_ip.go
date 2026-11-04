@@ -8,12 +8,13 @@ import (
 	"net/http"
 	"time"
 
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/cluster"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/nodeip"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 var nodeIPWake = make(chan struct{}, 1)
@@ -92,14 +93,14 @@ func (s *NodeIPService) RegisterControlRoutes(router *cluster.Router) {
 	router.HandleSlave("POST "+nodeip.ReportPath, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		peer, ok := cluster.AuthenticatedPeer(r.Context())
 		if !ok {
-			http.Error(w, "unauthorized", 401)
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
 		var report nodeip.Report
 		decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024))
 		decoder.DisallowUnknownFields()
 		if decoder.Decode(&report) != nil || decoder.Decode(new(any)) != io.EOF {
-			http.Error(w, "invalid_node_ip_report", 400)
+			http.Error(w, "invalid_node_ip_report", http.StatusBadRequest)
 			return
 		}
 		if err := s.Store(r.Context(), peer.GUID, report, time.Now()); err != nil {
@@ -107,7 +108,7 @@ func (s *NodeIPService) RegisterControlRoutes(router *cluster.Router) {
 			if errors.As(err, &local) {
 				http.Error(w, local.Code, local.Status)
 			} else {
-				http.Error(w, "node_ip_storage_error", 503)
+				http.Error(w, "node_ip_storage_error", http.StatusServiceUnavailable)
 			}
 			return
 		}

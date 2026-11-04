@@ -78,8 +78,8 @@ func TestLdapCreateClients_AttachesToAllConfiguredInbounds(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListForInbound(trojan): %v", err)
 	}
-	if trojanClients[0].Password == "" {
-		t.Error("trojan inbound client must get a generated password")
+	if trojanClients[0].ID == "" {
+		t.Error("trojan inbound client must get a generated id")
 	}
 	vlessClients, err := clientSvc.ListForInbound(nil, inboundIds[0])
 	if err != nil {

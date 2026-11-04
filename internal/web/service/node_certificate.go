@@ -14,18 +14,21 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/cloudflare"
 	"github.com/mhsanaei/3x-ui/v3/internal/crypto/nodetoken"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/panelcert"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/netsafe"
-	"gorm.io/gorm"
 )
 
-var certificateJobMu sync.Mutex
-var certificateStepMu sync.Mutex
-var certificateWake = make(chan struct{}, 1)
+var (
+	certificateJobMu  sync.Mutex
+	certificateStepMu sync.Mutex
+	certificateWake   = make(chan struct{}, 1)
+)
 
 type NodeCertificateService struct {
 	dnsClient func(string) *cloudflare.Client

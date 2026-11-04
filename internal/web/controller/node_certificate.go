@@ -2,11 +2,13 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
 
@@ -19,7 +21,8 @@ func NewNodeCertificateController(api *gin.RouterGroup) {
 	result := func(c *gin.Context, value any, err error) {
 		if err != nil {
 			// Reuse stable provider/status handling without returning raw errors.
-			if pe, ok := err.(*service.PairingError); ok {
+			var pe *service.PairingError
+			if errors.As(err, &pe) {
 				pairingResult(c, nil, pe)
 				return
 			}

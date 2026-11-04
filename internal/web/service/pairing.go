@@ -20,13 +20,14 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/cluster"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/nodeip"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/netsafe"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 const (
@@ -41,8 +42,10 @@ const (
 	PairingFailed       = "failed"
 )
 
-var enrollmentMu sync.Mutex
-var joinStepMu sync.Mutex
+var (
+	enrollmentMu sync.Mutex
+	joinStepMu   sync.Mutex
+)
 
 type PairingService struct {
 	probeIP      func(context.Context) nodeip.Report
@@ -144,13 +147,17 @@ func enrollmentView(row *model.NodeEnrollment) PairingView {
 	if status == PairingPending && now >= row.ExpiresAt || (status == PairingIssued || status == PairingVerifying || status == PairingProvisioning) && now >= row.ResumeUntil {
 		status = PairingExpired
 	}
-	return PairingView{ID: row.ID, Name: row.Name, Status: status, GUID: row.SlaveGUID, NodeID: row.NodeID, ExistingNodeID: row.ExistingNodeID,
-		ExpiresAt: row.ExpiresAt, ResumeUntil: row.ResumeUntil, LastError: row.LastError, UpdatedAt: row.UpdatedAt, PrimaryDomain: row.PrimaryDomain}
+	return PairingView{
+		ID: row.ID, Name: row.Name, Status: status, GUID: row.SlaveGUID, NodeID: row.NodeID, ExistingNodeID: row.ExistingNodeID,
+		ExpiresAt: row.ExpiresAt, ResumeUntil: row.ResumeUntil, LastError: row.LastError, UpdatedAt: row.UpdatedAt, PrimaryDomain: row.PrimaryDomain,
+	}
 }
 
 func joinView(row *model.NodeJoinJob) PairingView {
-	return PairingView{ID: row.ID, Status: row.Status, GUID: row.MasterGUID, NodeID: row.NodeID, ExpiresAt: row.Deadline,
-		Attempts: row.Attempts, NextAttemptAt: row.NextAttemptAt, LastError: row.LastError, UpdatedAt: row.UpdatedAt}
+	return PairingView{
+		ID: row.ID, Status: row.Status, GUID: row.MasterGUID, NodeID: row.NodeID, ExpiresAt: row.Deadline,
+		Attempts: row.Attempts, NextAttemptAt: row.NextAttemptAt, LastError: row.LastError, UpdatedAt: row.UpdatedAt,
+	}
 }
 
 func (s *PairingService) EnrollmentStatus(id string) (PairingView, error) {
@@ -168,6 +175,7 @@ func (s *PairingService) EnrollmentStatus(id string) (PairingView, error) {
 	}
 	return view, nil
 }
+
 func (s *PairingService) JoinStatus(id string) (PairingView, error) {
 	row, err := s.join(id)
 	if err != nil {

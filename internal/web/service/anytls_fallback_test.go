@@ -5,10 +5,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/mhsanaei/3x-ui/v3/internal/database"
-	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/xtls/xray-core/infra/conf"
 	"github.com/xtls/xray-core/proxy/anytls"
+
+	"github.com/mhsanaei/3x-ui/v3/internal/database"
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 )
 
 func TestAnyTLSFallbackGeneratedConfigs(t *testing.T) {
@@ -103,8 +104,12 @@ func TestAnyTLSFallbackRejectsInvalidRowsAtomically(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, rows := range [][]FallbackInput{
-		{{Dest: "8081", Name: "example.com"}}, {{Dest: "8081", Path: "/path"}}, {{Dest: "8081", Xver: 1}},
-		{{Dest: "8081"}, {Dest: "8082"}}, {{Dest: "http://example.com:80"}}, {{ChildId: child.Id}},
+		{{Dest: "8081", Name: "example.com"}},
+		{{Dest: "8081", Path: "/path"}},
+		{{Dest: "8081", Xver: 1}},
+		{{Dest: "8081"}, {Dest: "8082"}},
+		{{Dest: "http://example.com:80"}},
+		{{ChildId: child.Id}},
 	} {
 		if err := svc.SetByMaster(master.Id, rows); err == nil {
 			t.Fatalf("invalid fallback accepted: %+v", rows)

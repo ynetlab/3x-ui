@@ -1,0 +1,83 @@
+---
+title: Cloudflare DNS
+description: Master-only node DNS management using the single zone and API token
+  in General Settings. Requires full admin scope or a login session. Supports
+  A/AAAA only. Bindings are scoped to zone and record ID. Bound records
+  automatically follow fresh public IP reports from paired nodes; unavailable
+  families preserve the existing DNS content.
+full: true
+_openapi:
+  preload:
+    - ./public/openapi.json
+  toc:
+    - depth: 2
+      title: Read persisted public IPv4/IPv6 and availability from the latest mTLS
+        report, even before Cloudflare is configured.
+      url: '#read-persisted-public-ipv4ipv6-and-availability-from-the-latest-mtls-report-even-before-cloudflare-is-configured'
+    - depth: 2
+      title: List DNS records matching known node IPs plus explicitly bound records,
+        including externally changed or deleted records. Reading does not create
+        bindings.
+      url: '#list-dns-records-matching-known-node-ips-plus-explicitly-bound-records-including-externally-changed-or-deleted-records-reading-does-not-create-bindings'
+    - depth: 2
+      title: Create an A/AAAA record and bind it to the node. An identical existing
+        record is reused to recover a lost create response.
+      url: '#create-an-aaaaa-record-and-bind-it-to-the-node-an-identical-existing-record-is-reused-to-recover-a-lost-create-response'
+    - depth: 2
+      title: Explicitly bind an existing record whose target matches the supplied/node
+        IP. Does not modify Cloudflare. A record owned by another existing node
+        cannot be taken over.
+      url: '#explicitly-bind-an-existing-record-whose-target-matches-the-suppliednode-ip-does-not-modify-cloudflare-a-record-owned-by-another-existing-node-cannot-be-taken-over'
+    - depth: 2
+      title: Update an explicitly bound record via Cloudflare PATCH. Omitted
+        name/type/content/ttl/proxied fields retain their values; comments, tags
+        and other metadata are preserved.
+      url: '#update-an-explicitly-bound-record-via-cloudflare-patch-omitted-nametypecontentttlproxied-fields-retain-their-values-comments-tags-and-other-metadata-are-preserved'
+    - depth: 2
+      title: Enable or disable the orange-cloud proxy for a bound record.
+      url: '#enable-or-disable-the-orange-cloud-proxy-for-a-bound-record'
+    - depth: 2
+      title: Delete a bound Cloudflare record, then its local binding. If the remote
+        record is already missing, remove the stale binding. Provider failure
+        retains the binding for retry.
+      url: '#delete-a-bound-cloudflare-record-then-its-local-binding-if-the-remote-record-is-already-missing-remove-the-stale-binding-provider-failure-retains-the-binding-for-retry'
+  structuredData:
+    headings:
+      - content: Read persisted public IPv4/IPv6 and availability from the latest mTLS
+          report, even before Cloudflare is configured.
+        id: read-persisted-public-ipv4ipv6-and-availability-from-the-latest-mtls-report-even-before-cloudflare-is-configured
+      - content: List DNS records matching known node IPs plus explicitly bound records,
+          including externally changed or deleted records. Reading does not
+          create bindings.
+        id: list-dns-records-matching-known-node-ips-plus-explicitly-bound-records-including-externally-changed-or-deleted-records-reading-does-not-create-bindings
+      - content: Create an A/AAAA record and bind it to the node. An identical existing
+          record is reused to recover a lost create response.
+        id: create-an-aaaaa-record-and-bind-it-to-the-node-an-identical-existing-record-is-reused-to-recover-a-lost-create-response
+      - content: Explicitly bind an existing record whose target matches the
+          supplied/node IP. Does not modify Cloudflare. A record owned by
+          another existing node cannot be taken over.
+        id: explicitly-bind-an-existing-record-whose-target-matches-the-suppliednode-ip-does-not-modify-cloudflare-a-record-owned-by-another-existing-node-cannot-be-taken-over
+      - content: Update an explicitly bound record via Cloudflare PATCH. Omitted
+          name/type/content/ttl/proxied fields retain their values; comments,
+          tags and other metadata are preserved.
+        id: update-an-explicitly-bound-record-via-cloudflare-patch-omitted-nametypecontentttlproxied-fields-retain-their-values-comments-tags-and-other-metadata-are-preserved
+      - content: Enable or disable the orange-cloud proxy for a bound record.
+        id: enable-or-disable-the-orange-cloud-proxy-for-a-bound-record
+      - content: Delete a bound Cloudflare record, then its local binding. If the remote
+          record is already missing, remove the stale binding. Provider failure
+          retains the binding for retry.
+        id: delete-a-bound-cloudflare-record-then-its-local-binding-if-the-remote-record-is-already-missing-remove-the-stale-binding-provider-failure-retains-the-binding-for-retry
+    contents: []
+---
+
+{/* This file was generated by Fumadocs. Do not edit this file directly. Any changes should be made by running the generation command again. */}
+
+export default function Layout(props) {
+  const { OpenAPIPage } = props.components ?? {};
+  return (
+    <>
+      {props.children}
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/cloudflare/nodes/{id}/ip","method":"get"},{"path":"/panel/api/cloudflare/nodes/{id}/records","method":"get"},{"path":"/panel/api/cloudflare/nodes/{id}/records","method":"post"},{"path":"/panel/api/cloudflare/nodes/{id}/records/{recordId}/bind","method":"post"},{"path":"/panel/api/cloudflare/nodes/{id}/records/{recordId}/update","method":"post"},{"path":"/panel/api/cloudflare/nodes/{id}/records/{recordId}/proxied","method":"post"},{"path":"/panel/api/cloudflare/nodes/{id}/records/{recordId}/delete","method":"post"}]} showTitle />
+    </>
+  );
+}

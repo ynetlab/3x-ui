@@ -5,20 +5,23 @@ import (
 	"encoding/json"
 	"time"
 
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/cluster"
 	"github.com/mhsanaei/3x-ui/v3/internal/crypto/nodetoken"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 // Only configuration enters the snapshot; heartbeat samples must not invalidate
 // an enrollment. Stored credentials are hashed with the other fields, not copied.
 func migrationSnapshot(n *model.Node) string {
-	data, _ := json.Marshal([]any{n.Id, n.Name, n.Remark, n.Guid, n.Scheme, n.Address, n.Port, n.BasePath,
+	data, _ := json.Marshal([]any{
+		n.Id, n.Name, n.Remark, n.Guid, n.Scheme, n.Address, n.Port, n.BasePath,
 		n.ApiToken, n.Enable, n.AllowPrivateAddress, n.TlsVerifyMode, n.PinnedCertSha256,
-		n.InboundSyncMode, n.InboundTags, n.OutboundTag, n.ControlConnection, n.ControlRecoveryRequired, n.ControlRecoveryEnable})
+		n.InboundSyncMode, n.InboundTags, n.OutboundTag, n.ControlConnection, n.ControlRecoveryRequired, n.ControlRecoveryEnable,
+	})
 	return pairingHash(string(data))
 }
 
@@ -63,7 +66,7 @@ func checkMigrationNode(tx *gorm.DB, row *model.NodeEnrollment) (*model.Node, er
 		}
 		return nil, err
 	}
-	if (node.ControlConnection && !(row.Recovery && node.ControlRecoveryRequired)) || node.Guid != row.ExpectedGUID || migrationSnapshot(&node) != row.MigrationSnapshot {
+	if (node.ControlConnection && (!row.Recovery || !node.ControlRecoveryRequired)) || node.Guid != row.ExpectedGUID || migrationSnapshot(&node) != row.MigrationSnapshot {
 		return nil, pairingError(409, "migration_node_changed")
 	}
 	return &node, nil

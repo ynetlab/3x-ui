@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
@@ -53,10 +54,12 @@ func (p *PairingController) create(c *gin.Context) {
 	value, err := p.pairing.CreateEnrollment(req)
 	pairingResult(c, value, err)
 }
+
 func (p *PairingController) enrollment(c *gin.Context) {
 	value, err := p.pairing.EnrollmentStatus(c.Param("id"))
 	pairingResult(c, value, err)
 }
+
 func (p *PairingController) join(c *gin.Context) {
 	var req service.JoinPairingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -66,10 +69,12 @@ func (p *PairingController) join(c *gin.Context) {
 	value, err := p.pairing.StartJoin(req)
 	pairingResult(c, value, err)
 }
+
 func (p *PairingController) status(c *gin.Context) {
 	value, err := p.pairing.JoinStatus(c.Param("id"))
 	pairingResult(c, value, err)
 }
+
 func (p *PairingController) resume(c *gin.Context) {
 	value, err := p.pairing.ResumeJoin(c.Param("id"))
 	pairingResult(c, value, err)

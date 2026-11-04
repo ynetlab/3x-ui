@@ -4,7 +4,7 @@
     "version": 2,
     "clients": [
       {
-        "auth": "hyst3ria-v1-token-XYZ",
+        "id": "hyst3ria-v1-token-XYZ",
         "email": "hy1-client@example.test",
         "limitIp": 0,
         "totalGB": 0,

@@ -25,11 +25,11 @@ exports[`InboundSettingsSchema fixtures > parses hysteria-basic byte-stably 1`] 
   "settings": {
     "clients": [
       {
-        "auth": "hyst3ria-v1-token-XYZ",
         "comment": "legacy v1",
         "email": "hy1-client@example.test",
         "enable": true,
         "expiryTime": 0,
+        "id": "hyst3ria-v1-token-XYZ",
         "limitIp": 0,
         "reset": 0,
         "subId": "hy1-001",
@@ -151,8 +151,8 @@ exports[`InboundSettingsSchema fixtures > parses trojan-basic byte-stably 1`] = 
         "email": "carol@example.test",
         "enable": true,
         "expiryTime": 0,
+        "id": "tr0jan-passw0rd-XyZ-123!",
         "limitIp": 0,
-        "password": "tr0jan-passw0rd-XyZ-123!",
         "reset": 0,
         "subId": "trj001",
         "tgId": 0,

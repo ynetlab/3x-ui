@@ -2,10 +2,12 @@ package controller
 
 import (
 	"encoding/json"
-	"github.com/gin-gonic/gin"
-	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"io"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
+
+	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
 
 func NewControlPKIController(api *gin.RouterGroup) {

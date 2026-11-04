@@ -6,10 +6,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/cluster"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/netsafe"
-	"gorm.io/gorm"
 )
 
 func normalizeRecoveryMaster(value string) (string, error) {
@@ -65,6 +66,7 @@ func verifyRecoveryEnrollment(row *model.NodeEnrollment, req cluster.EnrollReque
 	}
 	return pairingError(403, "recovery_identity_proof_required")
 }
+
 func removePeerTx(tx *gorm.DB, guid string) error {
 	var row model.Setting
 	if err := tx.Where("key = ?", settingControlPeers).First(&row).Error; err != nil {
@@ -139,8 +141,10 @@ func (s *PairingService) createRecoveryEnrollment(req CreateEnrollmentRequest) (
 	if err != nil {
 		return CreatedEnrollment{}, err
 	}
-	row := model.NodeEnrollment{ID: uuid.NewString(), Name: node.Name, ExistingNodeID: node.Id, ActiveNodeID: &node.Id, ExpectedGUID: node.Guid, MigrationSnapshot: migrationSnapshot(&node), OriginalEnable: node.ControlRecoveryEnable, Recovery: true, RecoveryFingerprint: node.PinnedCertSha256,
-		TokenHash: pairingHash(token), Status: PairingPending, ExpiresAt: time.Now().Add(cluster.EnrollmentTTL).UnixMilli(), AllowPrivateAddress: req.AllowPrivateAddress}
+	row := model.NodeEnrollment{
+		ID: uuid.NewString(), Name: node.Name, ExistingNodeID: node.Id, ActiveNodeID: &node.Id, ExpectedGUID: node.Guid, MigrationSnapshot: migrationSnapshot(&node), OriginalEnable: node.ControlRecoveryEnable, Recovery: true, RecoveryFingerprint: node.PinnedCertSha256,
+		TokenHash: pairingHash(token), Status: PairingPending, ExpiresAt: time.Now().Add(cluster.EnrollmentTTL).UnixMilli(), AllowPrivateAddress: req.AllowPrivateAddress,
+	}
 	err = pairingDB().Transaction(func(tx *gorm.DB) error {
 		now := time.Now().UnixMilli()
 		if e := tx.Model(&model.NodeEnrollment{}).Where("active_node_id = ? AND ((status = ? AND expires_at <= ?) OR (status IN ? AND resume_until <= ?))", node.Id, PairingPending, now, []string{PairingIssued, PairingVerifying, PairingProvisioning}, now).Updates(map[string]any{"status": PairingExpired, "active_node_id": nil, "active_guid": nil, "active_name": nil, "registration": ""}).Error; e != nil {

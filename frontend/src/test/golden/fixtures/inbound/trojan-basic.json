@@ -3,7 +3,7 @@
   "settings": {
     "clients": [
       {
-        "password": "tr0jan-passw0rd-XyZ-123!",
+        "id": "tr0jan-passw0rd-XyZ-123!",
         "email": "carol@example.test",
         "limitIp": 0,
         "totalGB": 0,

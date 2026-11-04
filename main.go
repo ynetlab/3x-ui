@@ -606,7 +606,11 @@ func runPairingCLI(args []string, input io.Reader, output io.Writer) error {
 	if err := database.InitDB(config.GetDBPath()); err != nil {
 		return errors.New("pairing_database_unavailable")
 	}
-	defer database.CloseDB()
+	defer func() {
+		if err := database.CloseDB(); err != nil {
+			logger.Warningf("Failed to close pairing database: %v", err)
+		}
+	}()
 	if !newInstall {
 		var users int64
 		if err := database.GetDB().Model(&model.User{}).Count(&users).Error; err != nil || users == 0 {

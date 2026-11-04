@@ -117,12 +117,15 @@ func NewRouter(auth Authorizer) *Router { return &Router{mux: http.NewServeMux()
 // Handle is for task-bound authentication, whose peer lookup depends on the
 // matched task ID. The supplied handler must enforce its enrollment binding.
 func (r *Router) Handle(pattern string, h http.Handler) { r.mux.Handle(pattern, h) }
+
 func (r *Router) HandleBootstrap(pattern string, verify BootstrapVerifier, h http.Handler) {
 	r.mux.Handle(pattern, r.auth.Bootstrap(verify, h))
 }
+
 func (r *Router) HandleMaster(pattern string, h http.Handler) {
 	r.mux.Handle(pattern, r.auth.RequireMaster(h))
 }
+
 func (r *Router) HandleSlave(pattern string, h http.Handler) {
 	r.mux.Handle(pattern, r.auth.RequireSlave(h))
 }

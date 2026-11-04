@@ -10,24 +10,32 @@ import (
 	"sync"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/config"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/panelcert"
-	"gorm.io/gorm"
 )
 
-const settingPanelCertificateInstall = "panelCertificateInstall"
-const certificateConfirmationWindow = 2 * time.Minute
+const (
+	settingPanelCertificateInstall = "panelCertificateInstall"
+	certificateConfirmationWindow  = 2 * time.Minute
+)
 
-var certificateInstallMu sync.Mutex
-var panelCertificateReloader struct {
-	sync.RWMutex
-	apply    func(string, string) error
-	snapshot func() func() error
-}
-var certificateRollbackID string
-var certificateRollback func() error
+var (
+	certificateInstallMu     sync.Mutex
+	panelCertificateReloader struct {
+		sync.RWMutex
+		apply    func(string, string) error
+		snapshot func() func() error
+	}
+)
+
+var (
+	certificateRollbackID string
+	certificateRollback   func() error
+)
 
 // SetPanelCertificateReloader is owned by the panel listener lifecycle.
 func SetPanelCertificateReloader(apply func(string, string) error, snapshot ...func() func() error) {
@@ -111,7 +119,7 @@ func saveCertificateInstall(tx *gorm.DB, state certificateInstall) error {
 }
 
 func writeCertificateFile(path string, data []byte) error {
-	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 	if os.IsExist(err) {
 		previous, readErr := os.ReadFile(path)
 		if readErr == nil && string(previous) == string(data) {
@@ -193,7 +201,7 @@ func installCertificate(master string, operation string, req CertificateInstallR
 				return CertificateInstallReceipt{}, err
 			}
 			dir := filepath.Join(config.GetDBFolderPath(), "panel-certificates", req.ID)
-			if err := os.MkdirAll(dir, 0700); err != nil {
+			if err := os.MkdirAll(dir, 0o700); err != nil {
 				return CertificateInstallReceipt{}, err
 			}
 			certFile, keyFile := filepath.Join(dir, "fullchain.pem"), filepath.Join(dir, "private-key.pem")

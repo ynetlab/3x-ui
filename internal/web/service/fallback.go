@@ -9,9 +9,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/xtls/xray-core/proxy/anytls"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
-	"github.com/xtls/xray-core/proxy/anytls"
 
 	"gorm.io/gorm"
 )

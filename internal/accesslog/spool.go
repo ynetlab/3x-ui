@@ -67,12 +67,14 @@ type Spool struct {
 	Wake                         chan struct{}
 }
 
-const maxDiskEntry = MaxBatchBytes + 4096
-const maxStateBytes = 8192
-const maxIndexEntries = (MaxMemoryBytes - 8*maxDiskEntry) / 256
+const (
+	maxDiskEntry    = MaxBatchBytes + 4096
+	maxStateBytes   = 8192
+	maxIndexEntries = (MaxMemoryBytes - 8*maxDiskEntry) / 256
+)
 
 func OpenSpool(dir string, now time.Time) (*Spool, error) {
-	if err := os.MkdirAll(dir, 0700); err != nil {
+	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return nil, err
 	}
 	s := &Spool{dir: dir, diskLimit: MaxDiskBytes, Wake: make(chan struct{}, 1)}

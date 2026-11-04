@@ -7,12 +7,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/cluster"
 	"github.com/mhsanaei/3x-ui/v3/internal/crypto/nodetoken"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/netsafe"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/runtime"
-	"gorm.io/gorm"
 )
 
 type CreateEnrollmentRequest struct {
@@ -123,8 +124,10 @@ func (s *PairingService) CreateEnrollment(req CreateEnrollmentRequest) (CreatedE
 	if count != 0 {
 		return CreatedEnrollment{}, pairingError(409, "node_name_already_exists")
 	}
-	row := model.NodeEnrollment{ID: uuid.NewString(), Name: req.Name, ActiveName: &req.Name,
-		TokenHash: pairingHash(token), Status: PairingPending, ExpiresAt: now + cluster.EnrollmentTTL.Milliseconds(), AllowPrivateAddress: req.AllowPrivateAddress, Domains: domainData, PrimaryDomain: req.PrimaryDomain, ZoneID: zoneID}
+	row := model.NodeEnrollment{
+		ID: uuid.NewString(), Name: req.Name, ActiveName: &req.Name,
+		TokenHash: pairingHash(token), Status: PairingPending, ExpiresAt: now + cluster.EnrollmentTTL.Milliseconds(), AllowPrivateAddress: req.AllowPrivateAddress, Domains: domainData, PrimaryDomain: req.PrimaryDomain, ZoneID: zoneID,
+	}
 	if existing != nil {
 		// The old Node already owns its unique name. Reserve its ID instead,
 		// without applying the new-enrollment name limit to existing data.
@@ -139,8 +142,10 @@ func (s *PairingService) CreateEnrollment(req CreateEnrollmentRequest) (CreatedE
 		}
 		return CreatedEnrollment{}, pairingError(409, "enrollment_name_reserved")
 	}
-	return CreatedEnrollment{PairingView: enrollmentView(&row), Profile: cluster.PairingProfile{EnrollmentID: row.ID,
-		MasterAddress: address, MasterPort: config.Port, Master: peer, Token: token, ExpiresAt: row.ExpiresAt}}, nil
+	return CreatedEnrollment{PairingView: enrollmentView(&row), Profile: cluster.PairingProfile{
+		EnrollmentID:  row.ID,
+		MasterAddress: address, MasterPort: config.Port, Master: peer, Token: token, ExpiresAt: row.ExpiresAt,
+	}}, nil
 }
 
 func (s *PairingService) VerifyEnrollmentToken(ctx context.Context, token string) error {
@@ -363,9 +368,11 @@ func (s *PairingService) Register(ctx context.Context, id string, req cluster.Re
 	if domainResponse.GUID != row.SlaveGUID || domainResponse.Challenge != challenge || domainResponse.Role != cluster.RoleSlave {
 		return cluster.PairingReceipt{}, pairingError(502, "pairing_probe_identity_mismatch")
 	}
-	node := &model.Node{Name: row.Name, Scheme: "https", Address: address, Port: req.Port, BasePath: basePath,
+	node := &model.Node{
+		Name: row.Name, Scheme: "https", Address: address, Port: req.Port, BasePath: basePath,
 		ApiToken: req.AdminToken, Guid: row.SlaveGUID, TlsVerifyMode: "mtls", PinnedCertSha256: peer.Fingerprint,
-		ControlConnection: true, AllowPrivateAddress: row.AllowPrivateAddress, InboundSyncMode: "all"}
+		ControlConnection: true, AllowPrivateAddress: row.AllowPrivateAddress, InboundSyncMode: "all",
+	}
 	service := &NodeService{}
 	if err := service.normalize(node); err != nil {
 		return cluster.PairingReceipt{}, err
@@ -408,8 +415,10 @@ func (s *PairingService) Register(ctx context.Context, id string, req cluster.Re
 		if err := attachEnrollmentCertificate(tx, row, node, req); err != nil {
 			return err
 		}
-		return tx.Model(row).Updates(map[string]any{"status": PairingRegistered, "node_id": node.Id, "address": registrationAddress,
-			"port": req.Port, "base_path": basePath, "admin_hash": adminHash, "last_error": "", "registration": ""}).Error
+		return tx.Model(row).Updates(map[string]any{
+			"status": PairingRegistered, "node_id": node.Id, "address": registrationAddress,
+			"port": req.Port, "base_path": basePath, "admin_hash": adminHash, "last_error": "", "registration": "",
+		}).Error
 	})
 	if err != nil {
 		return cluster.PairingReceipt{}, err

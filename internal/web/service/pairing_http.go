@@ -95,13 +95,15 @@ func (s *PairingService) RegisterControlRoutes(router *cluster.Router, isAdmin f
 			pairingJSON(w, nil, err)
 			return
 		}
-		auth := cluster.Authorizer{Self: func() (cluster.Identity, error) { return identity, nil },
+		auth := cluster.Authorizer{
+			Self: func() (cluster.Identity, error) { return identity, nil },
 			LookupPeer: func(_ context.Context, guid string) (cluster.Peer, error) {
 				if guid != row.MasterGUID {
 					return cluster.Peer{}, cluster.ErrPeerNotTrusted
 				}
 				return secrets.Request.Profile.Master, nil
-			}}
+			},
+		}
 		auth.RequireMaster(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			var request cluster.ProbeRequest
 			if err := readPairingJSON(w, r, &request); err != nil {

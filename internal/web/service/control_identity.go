@@ -10,18 +10,21 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/cluster"
 	"github.com/mhsanaei/3x-ui/v3/internal/crypto/nodetoken"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/runtime"
-	"gorm.io/gorm"
 )
 
-const settingControlRotation = "controlIdentityRotation"
-const settingControlCAStage = "controlCAStage"
-const identityCheckInterval = 12 * time.Hour
-const identityRenewBefore = 90 * 24 * time.Hour
+const (
+	settingControlRotation = "controlIdentityRotation"
+	settingControlCAStage  = "controlCAStage"
+	identityCheckInterval  = 12 * time.Hour
+	identityRenewBefore    = 90 * 24 * time.Hour
+)
 
 var controlPKIMu sync.Mutex
 
@@ -56,6 +59,7 @@ func readPKISetting(key string, value any) error {
 	}
 	return json.Unmarshal([]byte(data), value)
 }
+
 func writePKISetting(tx *gorm.DB, key string, value any) error {
 	var guidRow model.Setting
 	if err := tx.Where("key = ?", "panelGuid").First(&guidRow).Error; err != nil {
@@ -71,9 +75,11 @@ func writePKISetting(tx *gorm.DB, key string, value any) error {
 	}
 	return putPairingSetting(tx, key, sealed)
 }
+
 func saveRotation(state identityRotation) error {
 	return writePKISetting(pairingDB(), settingControlRotation, state)
 }
+
 func replacePeerTx(tx *gorm.DB, peer cluster.Peer) error {
 	if err := peer.Validate(); err != nil {
 		return err
@@ -102,6 +108,7 @@ func replacePeerTx(tx *gorm.DB, peer cluster.Peer) error {
 	data, _ := json.Marshal(peers)
 	return putPairingSetting(tx, settingControlPeers, string(data))
 }
+
 func storeCredentialsTx(tx *gorm.DB, c cluster.Credentials) error {
 	data, err := json.Marshal(c)
 	if err != nil {
@@ -526,7 +533,8 @@ func stepControlIdentity(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if self.Role == cluster.RoleMaster {
+	switch self.Role {
+	case cluster.RoleMaster:
 		if err = expireControlPeers(); err != nil {
 			return err
 		}
@@ -536,7 +544,7 @@ func stepControlIdentity(ctx context.Context) error {
 				return nil
 			}
 		}
-	} else if self.Role == cluster.RoleSlave {
+	case cluster.RoleSlave:
 		err = syncSlaveIdentity(ctx, &state)
 	}
 	if state.PreviousUntil <= time.Now().UnixMilli() {
