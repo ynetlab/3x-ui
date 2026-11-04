@@ -1091,6 +1091,8 @@
       "removeFromGroupResult": "已從 {name} 移除 {count} 個客戶端。"
     },
     "nodes": {
+      "trafficLimit": "流量額度（GiB）",
+      "trafficResetDay": "每月重設日",
       "addNode": "新增節點",
       "editNode": "編輯節點",
       "totalNodes": "節點總數",
@@ -3059,6 +3061,8 @@
     "invalidLocalTime": "此時間在所選時區中不存在。"
   },
   "nodeStatus": {
+    "trafficSettings": "流量設定",
+    "trafficUsage": "已用流量",
     "title": "系統狀態",
     "subtitle": "各面板的即時資源與 Xray 狀態。",
     "live": "即時監控",

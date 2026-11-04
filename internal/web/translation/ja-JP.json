@@ -1091,6 +1091,8 @@
       "removeFromGroupResult": "{count} クライアントを {name} から外しました。"
     },
     "nodes": {
+      "trafficLimit": "通信量上限（GiB）",
+      "trafficResetDay": "毎月のリセット日",
       "addNode": "ノードを追加",
       "editNode": "ノード編集",
       "totalNodes": "ノード総数",
@@ -3059,6 +3061,8 @@
     "invalidLocalTime": "選択したタイムゾーンにこの時刻は存在しません。"
   },
   "nodeStatus": {
+    "trafficSettings": "通信量設定",
+    "trafficUsage": "使用済み通信量",
     "title": "システム状態",
     "subtitle": "各パネルのリソースと Xray の現在の状態。",
     "live": "ライブ監視",

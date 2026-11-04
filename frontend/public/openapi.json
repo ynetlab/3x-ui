@@ -3795,6 +3795,13 @@
             ],
             "type": "string"
           },
+          "trafficLimit": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "trafficResetDay": {
+            "type": "integer"
+          },
           "transitive": {
             "type": "boolean"
           },
@@ -3863,6 +3870,8 @@
           "scheme",
           "status",
           "tlsVerifyMode",
+          "trafficLimit",
+          "trafficResetDay",
           "updatedAt",
           "uptimeSecs",
           "xrayError",
@@ -3941,6 +3950,15 @@
               "mtls"
             ],
             "type": "string"
+          },
+          "trafficLimit": {
+            "format": "int64",
+            "nullable": true,
+            "type": "integer"
+          },
+          "trafficResetDay": {
+            "nullable": true,
+            "type": "integer"
           }
         },
         "required": [
@@ -3958,6 +3976,28 @@
           "remark",
           "scheme",
           "tlsVerifyMode"
+        ],
+        "type": "object"
+      },
+      "NodeTrafficUsage": {
+        "properties": {
+          "down": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "periodStart": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "up": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "down",
+          "periodStart",
+          "up"
         ],
         "type": "object"
       },
@@ -4119,6 +4159,21 @@
             "example": "verify",
             "type": "string"
           },
+          "trafficLimit": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "trafficResetDay": {
+            "type": "integer"
+          },
+          "trafficUsage": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NodeTrafficUsage"
+              }
+            ],
+            "nullable": true
+          },
           "transitive": {
             "example": false,
             "type": "boolean"
@@ -4188,6 +4243,8 @@
           "scheme",
           "status",
           "tlsVerifyMode",
+          "trafficLimit",
+          "trafficResetDay",
           "updatedAt",
           "uptimeSecs",
           "xrayError",
@@ -4828,6 +4885,46 @@
           "IsOutbound",
           "Tag",
           "Up"
+        ],
+        "type": "object"
+      },
+      "TrafficQuotaRequest": {
+        "properties": {
+          "trafficLimit": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "trafficResetDay": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "trafficLimit",
+          "trafficResetDay"
+        ],
+        "type": "object"
+      },
+      "TrafficQuotaView": {
+        "properties": {
+          "trafficLimit": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "trafficResetDay": {
+            "type": "integer"
+          },
+          "trafficUsage": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NodeTrafficUsage"
+              }
+            ],
+            "nullable": true
+          }
+        },
+        "required": [
+          "trafficLimit",
+          "trafficResetDay"
         ],
         "type": "object"
       },
@@ -6402,6 +6499,53 @@
                       "load15": 0.2
                     }
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/server/trafficQuota": {
+      "post": {
+        "tags": [
+          "Server"
+        ],
+        "summary": "Set the master traffic quota in bytes and monthly reset day (1–31). Zero disables the quota.",
+        "operationId": "post_panel_api_server_trafficQuota",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrafficQuotaRequest"
+              },
+              "example": {
+                "trafficLimit": 107374182400,
+                "trafficResetDay": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true
                 }
               }
             }
@@ -11642,6 +11786,9 @@
                       "scheme": "https",
                       "status": "online",
                       "tlsVerifyMode": "verify",
+                      "trafficLimit": 0,
+                      "trafficResetDay": 0,
+                      "trafficUsage": null,
                       "transitive": false,
                       "unavailableMetrics": [
                         ""
@@ -11848,6 +11995,9 @@
                     "scheme": "https",
                     "status": "online",
                     "tlsVerifyMode": "verify",
+                    "trafficLimit": 0,
+                    "trafficResetDay": 0,
+                    "trafficUsage": null,
                     "transitive": false,
                     "unavailableMetrics": [
                       ""
@@ -12003,6 +12153,9 @@
                     "scheme": "https",
                     "status": "online",
                     "tlsVerifyMode": "verify",
+                    "trafficLimit": 0,
+                    "trafficResetDay": 0,
+                    "trafficUsage": null,
                     "transitive": false,
                     "unavailableMetrics": [
                       ""
@@ -18047,6 +18200,26 @@
                     }
                   }
                 },
+                "trafficQuota": {
+                  "$ref": "#/components/schemas/TrafficQuotaView"
+                },
+                "protocolTraffic": {
+                  "type": "object",
+                  "required": [
+                    "up",
+                    "down"
+                  ],
+                  "properties": {
+                    "up": {
+                      "type": "integer",
+                      "format": "int64"
+                    },
+                    "down": {
+                      "type": "integer",
+                      "format": "int64"
+                    }
+                  }
+                },
                 "publicIP": {
                   "type": "object",
                   "required": [
@@ -18518,6 +18691,9 @@
                   "scheme": "https",
                   "status": "online",
                   "tlsVerifyMode": "verify",
+                  "trafficLimit": 0,
+                  "trafficResetDay": 0,
+                  "trafficUsage": null,
                   "transitive": false,
                   "unavailableMetrics": [
                     ""

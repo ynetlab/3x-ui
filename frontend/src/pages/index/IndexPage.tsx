@@ -32,6 +32,7 @@ import ConnectionsCard from './ConnectionsCard';
 import SystemStrip from './SystemStrip';
 import { mean, peak, useOverviewHistory } from './useOverviewHistory';
 import type { PanelUpdateInfo } from './PanelUpdateModal';
+const TrafficQuotaModal = lazy(() => import('./TrafficQuotaModal'));
 const JsonEditor = lazy(() => import('@/components/form/JsonEditor'));
 const PanelUpdateModal = lazy(() => import('./PanelUpdateModal'));
 const LogModal = lazy(() => import('./LogModal'));
@@ -66,6 +67,7 @@ export default function IndexPage() {
   const basePath = window.X_UI_BASE_PATH || '';
 
   const [showIp, setShowIp] = useState(false);
+  const [quotaOpen, setQuotaOpen] = useState(false);
   const [logsOpen, setLogsOpen] = useState(false);
   const [backupOpen, setBackupOpen] = useState(false);
   const [panelUpdateOpen, setPanelUpdateOpen] = useState(false);
@@ -294,6 +296,7 @@ export default function IndexPage() {
                   <div className="ov-mid">
                     <ThroughputCard
                       status={status}
+                      onTrafficSettings={() => setQuotaOpen(true)}
                       up={history.series.netUp}
                       down={history.series.netDown}
                       labels={history.labels}
@@ -339,6 +342,15 @@ export default function IndexPage() {
             onClose={() => setBackupOpen(false)}
             onBusy={setBusy}
           />
+        </LazyMount>
+        <LazyMount when={quotaOpen}>
+          {quotaOpen && (
+            <TrafficQuotaModal
+              quota={status.trafficQuota}
+              onClose={() => setQuotaOpen(false)}
+              onSaved={refresh}
+            />
+          )}
         </LazyMount>
         <LazyMount when={sysHistoryOpen}>
           <SystemHistoryModal

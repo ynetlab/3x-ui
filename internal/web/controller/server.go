@@ -67,6 +67,7 @@ func (a *ServerController) initRouter(g *gin.RouterGroup) {
 	g.GET("/clientIps", a.getClientIps)
 	g.GET("/fail2banStatus", a.getFail2banStatus)
 
+	g.POST("/trafficQuota", a.setTrafficQuota)
 	g.POST("/stopXrayService", a.stopXrayService)
 	g.POST("/restartXrayService", a.restartXrayService)
 	g.POST("/installXray/:version", a.installXray)
@@ -109,6 +110,24 @@ func (a *ServerController) startTask() {
 
 // status returns the current server status information.
 func (a *ServerController) status(c *gin.Context) { jsonObj(c, a.serverService.CurrentStatus(), nil) }
+
+func (a *ServerController) setTrafficQuota(c *gin.Context) {
+	role, err := a.settingService.GetPanelRole()
+	if err != nil {
+		jsonMsg(c, "", err)
+		return
+	}
+	if role != service.PanelRoleMaster {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+	var request service.TrafficQuotaRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		jsonMsg(c, "", err)
+		return
+	}
+	jsonMsg(c, "", a.serverService.SetMasterTrafficQuota(request))
+}
 
 func (a *ServerController) getFail2banStatus(c *gin.Context) {
 	jsonObj(c, a.serverService.GetFail2banStatus(), nil)

@@ -154,6 +154,8 @@
     "invalidLocalTime": "该时间在所选时区中不存在。"
   },
   "nodeStatus": {
+    "trafficSettings": "流量设置",
+    "trafficUsage": "已用流量",
     "title": "系统状态",
     "subtitle": "集中查看各面板的资源使用情况与 Xray 运行状态。",
     "live": "实时监控",
@@ -1287,6 +1289,8 @@
       "removeFromGroupResult": "已从 {name} 移除 {count} 个客户端。"
     },
     "nodes": {
+      "trafficLimit": "流量额度（GiB）",
+      "trafficResetDay": "每月重置日",
       "addNode": "添加节点",
       "editNode": "编辑节点",
       "totalNodes": "节点总数",

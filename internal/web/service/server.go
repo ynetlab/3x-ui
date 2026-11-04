@@ -67,8 +67,10 @@ const (
 // Status represents comprehensive system and application status information.
 // It includes CPU, memory, disk, network statistics, and Xray process status.
 type Status struct {
-	ResourceScope      string   `json:"resourceScope,omitempty"`
-	UnavailableMetrics []string `json:"unavailableMetrics,omitempty"`
+	TrafficQuota       *TrafficQuotaView      `json:"trafficQuota,omitempty"`
+	ProtocolTraffic    *ProtocolTrafficTotals `json:"protocolTraffic,omitempty"`
+	ResourceScope      string                 `json:"resourceScope,omitempty"`
+	UnavailableMetrics []string               `json:"unavailableMetrics,omitempty"`
 
 	T           time.Time `json:"-"`
 	Cpu         float64   `json:"cpu"`
@@ -147,7 +149,11 @@ type Release struct {
 // ServerService provides business logic for server monitoring and management.
 // It handles system status collection, IP detection, and application statistics.
 type ServerService struct {
-	lxcMetrics sys.LXCReader
+	trafficMu        sync.Mutex
+	trafficCheckedAt time.Time
+	protocolTraffic  *ProtocolTrafficTotals
+	trafficQuota     *TrafficQuotaView
+	lxcMetrics       sys.LXCReader
 
 	xrayService        XrayService
 	inboundService     InboundService
@@ -563,8 +569,11 @@ func (s *ServerService) publicIPs() (ipv4 string, ipv6 string) {
 
 func (s *ServerService) GetStatus(lastStatus *Status) *Status {
 	now := time.Now()
+	totals, quota := s.getProtocolTraffic(now)
 	status := &Status{
-		T: now,
+		T:               now,
+		ProtocolTraffic: totals,
+		TrafficQuota:    quota,
 	}
 
 	scoped, scopeErr := s.lxcMetrics.Read(now)

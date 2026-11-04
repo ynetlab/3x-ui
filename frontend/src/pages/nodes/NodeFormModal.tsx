@@ -53,6 +53,8 @@ function defaultValues(): NodeFormValues {
     inboundSyncMode: 'all',
     inboundTags: [],
     outboundTag: '',
+    trafficLimitGiB: 0,
+    trafficResetDay: 1,
   };
 }
 
@@ -119,6 +121,8 @@ export default function NodeFormModal({
             scheme: (node.scheme as 'http' | 'https') || base.scheme,
             inboundSyncMode: (node.inboundSyncMode as 'all' | 'selected') || base.inboundSyncMode,
             inboundTags: node.inboundTags ?? [],
+            trafficLimitGiB: (node.trafficLimit ?? 0) / 1024 ** 3,
+            trafficResetDay: node.trafficResetDay || 1,
             apiToken: '',
             hasStoredToken: node.hasApiToken ?? false,
           }
@@ -153,6 +157,8 @@ export default function NodeFormModal({
       inboundSyncMode: values.inboundSyncMode,
       inboundTags: values.inboundSyncMode === 'selected' ? values.inboundTags : [],
       outboundTag: values.outboundTag || '',
+      trafficLimit: Math.round(values.trafficLimitGiB * 1024 ** 3),
+      trafficResetDay: values.trafficResetDay,
     };
     if (token) payload.apiToken = token;
     return payload;
@@ -395,6 +401,27 @@ export default function NodeFormModal({
                 }
               />
             </FormField>
+
+            <Row gutter={16}>
+              <Col span={14}>
+                <FormField
+                  label={t('pages.nodes.trafficLimit')}
+                  name="trafficLimitGiB"
+                  rules={{ validate: rhfZodValidate(NodeFormSchema.shape.trafficLimitGiB) }}
+                >
+                  <InputNumber min={0} max={8388607} style={{ width: '100%' }} />
+                </FormField>
+              </Col>
+              <Col span={10}>
+                <FormField
+                  label={t('pages.nodes.trafficResetDay')}
+                  name="trafficResetDay"
+                  rules={{ validate: rhfZodValidate(NodeFormSchema.shape.trafficResetDay) }}
+                >
+                  <InputNumber min={1} max={31} precision={0} style={{ width: '100%' }} />
+                </FormField>
+              </Col>
+            </Row>
 
             <FormField
               label={t('pages.nodes.outboundTag')}

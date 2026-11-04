@@ -32,6 +32,7 @@ import (
 )
 
 type HeartbeatPatch struct {
+	ProtocolTraffic    *ProtocolTrafficTotals
 	Status             string
 	LastHeartbeat      int64
 	LatencyMs          int
@@ -397,6 +398,12 @@ func normalizeBasePath(p string) string {
 }
 
 func (s *NodeService) normalize(n *model.Node) error {
+	if n.TrafficResetDay == 0 {
+		n.TrafficResetDay = 1
+	}
+	if n.TrafficLimit < 0 || n.TrafficLimit > 9007199254740991 || n.TrafficResetDay < 1 || n.TrafficResetDay > 31 {
+		return common.NewError("invalid traffic quota")
+	}
 	n.Name = strings.TrimSpace(n.Name)
 	n.ApiToken = strings.TrimSpace(n.ApiToken)
 	if n.Name == "" {
@@ -509,6 +516,7 @@ func nodeSelectionGrew(existing, in *model.Node) bool {
 }
 
 func (s *NodeService) Update(id int, in *model.Node) error {
+	quotaProvided := in != nil && (in.TrafficResetDay != 0 || in.TrafficLimit != 0)
 	if err := s.normalize(in); err != nil {
 		return err
 	}
@@ -551,6 +559,9 @@ func (s *NodeService) Update(id int, in *model.Node) error {
 		"inbound_sync_mode":     in.InboundSyncMode,
 		"inbound_tags":          string(inboundTagsJSON),
 		"outbound_tag":          in.OutboundTag,
+	}
+	if quotaProvided {
+		updateTrafficConfig(updates, existing, &in.TrafficLimit, &in.TrafficResetDay)
 	}
 	if nodeSelectionGrew(existing, in) {
 		updates["inbounds_adopted_at"] = 0
@@ -621,6 +632,7 @@ func (s *NodeService) UpdateFromRequest(id int, req *NodeMutationRequest) error 
 		"inbound_tags":          string(inboundTagsJSON),
 		"outbound_tag":          in.OutboundTag,
 	}
+	updateTrafficConfig(updates, existing, req.TrafficLimit, req.TrafficResetDay)
 	if nodeSelectionGrew(existing, in) {
 		updates["inbounds_adopted_at"] = 0
 	}
@@ -1043,7 +1055,26 @@ func (s *NodeService) UpdateHeartbeat(id int, p HeartbeatPatch) error {
 		updates["guid"] = p.Guid
 		s.warnOnDuplicateGuid(id, p.Guid)
 	}
-	if err := db.Model(model.Node{}).Where("id = ?", id).Updates(updates).Error; err != nil {
+	location := time.UTC
+	if p.ProtocolTraffic != nil && p.Status == "online" {
+		var err error
+		location, err = (&SettingService{}).GetTimeLocation()
+		if err != nil {
+			return err
+		}
+	}
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		if p.ProtocolTraffic != nil && p.Status == "online" {
+			var n model.Node
+			if err := tx.First(&n, id).Error; err != nil {
+				return err
+			}
+			for key, value := range updateNodeTraffic(&n, p.ProtocolTraffic, time.Unix(p.LastHeartbeat, 0).In(location)) {
+				updates[key] = value
+			}
+		}
+		return tx.Model(model.Node{}).Where("id = ?", id).Updates(updates).Error
+	}); err != nil {
 		return err
 	}
 	if p.Status == "online" {
@@ -1392,10 +1423,11 @@ func (s *NodeService) probe(ctx context.Context, n *model.Node, proxyURL string)
 				State    string `json:"state"`
 				ErrorMsg string `json:"errorMsg"`
 			} `json:"xray"`
-			PanelVersion string `json:"panelVersion"`
-			PanelGuid    string `json:"panelGuid"`
-			Uptime       uint64 `json:"uptime"`
-			NetIO        struct {
+			ProtocolTraffic *ProtocolTrafficTotals `json:"protocolTraffic"`
+			PanelVersion    string                 `json:"panelVersion"`
+			PanelGuid       string                 `json:"panelGuid"`
+			Uptime          uint64                 `json:"uptime"`
+			NetIO           struct {
 				Up   uint64 `json:"up"`
 				Down uint64 `json:"down"`
 			} `json:"netIO"`
@@ -1431,6 +1463,7 @@ func (s *NodeService) probe(ctx context.Context, n *model.Node, proxyURL string)
 	patch.PanelVersion = o.PanelVersion
 	patch.Guid = o.PanelGuid
 	patch.UptimeSecs = o.Uptime
+	patch.ProtocolTraffic = o.ProtocolTraffic
 	patch.NetUp = o.NetIO.Up
 	patch.NetDown = o.NetIO.Down
 	return patch, nil

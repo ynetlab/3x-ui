@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, theme } from 'antd';
-import { ArrowDownOutlined, ArrowUpOutlined } from '@ant-design/icons';
+import { Button, Card, Progress, theme } from 'antd';
+import { ArrowDownOutlined, ArrowUpOutlined, SettingOutlined } from '@ant-design/icons';
 
 import { SizeFormatter } from '@/utils';
 import { Sparkline } from '@/components/viz';
@@ -10,6 +10,7 @@ import { mean, peak } from './useOverviewHistory';
 
 interface ThroughputCardProps {
   status: Status;
+  onTrafficSettings?: () => void;
   up: number[];
   down: number[];
   labels: string[];
@@ -18,6 +19,7 @@ interface ThroughputCardProps {
 
 export default function ThroughputCard({
   status,
+  onTrafficSettings,
   up,
   down,
   labels,
@@ -27,6 +29,9 @@ export default function ThroughputCard({
   const { token } = theme.useToken();
   const accent = token.colorPrimary;
   const downColor = token.colorTextTertiary;
+  const quota = status.trafficQuota;
+  const usage = quota?.trafficLimit ? quota.trafficUsage : status.protocolTraffic;
+  const used = quota?.trafficUsage ? quota.trafficUsage.up + quota.trafficUsage.down : undefined;
 
   const referenceLines = useMemo(
     () => [
@@ -40,7 +45,18 @@ export default function ThroughputCard({
     <Card hoverable styles={{ body: { padding: 0 } }}>
       <div className="ov-wide-head">
         <div>
-          <div className="ov-kicker">{t('pages.index.overallSpeed')}</div>
+          <div className="ov-kicker">
+            {t('pages.index.overallSpeed')}
+            {onTrafficSettings && (
+              <Button
+                type="text"
+                size="small"
+                icon={<SettingOutlined aria-hidden />}
+                aria-label={t('nodeStatus.trafficSettings')}
+                onClick={onTrafficSettings}
+              />
+            )}
+          </div>
           <div className="ov-sub">
             {`${t('pages.index.throughputSub')} · ${t('pages.index.peak')} ${SizeFormatter.speedFormat(peak(down))}`}
           </div>
@@ -82,12 +98,12 @@ export default function ThroughputCard({
       <div className="ov-wide-foot">
         <div>
           <div className="ov-kicker">{t('pages.index.sent')}</div>
-          <div className="ov-foot-value">{SizeFormatter.sizeFormat(status.netTraffic.sent)}</div>
+          <div className="ov-foot-value">{usage ? SizeFormatter.sizeFormat(usage.up) : '—'}</div>
         </div>
         <span className="ov-foot-sep" />
         <div>
           <div className="ov-kicker">{t('pages.index.received')}</div>
-          <div className="ov-foot-value">{SizeFormatter.sizeFormat(status.netTraffic.recv)}</div>
+          <div className="ov-foot-value">{usage ? SizeFormatter.sizeFormat(usage.down) : '—'}</div>
         </div>
         <span className="ov-foot-sep" />
         <div>
@@ -98,6 +114,22 @@ export default function ThroughputCard({
           </div>
         </div>
       </div>
+      {!!quota?.trafficLimit && (
+        <div style={{ padding: '0 20px 16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+            <span>{t('nodeStatus.trafficUsage')}</span>
+            <span>
+              {used === undefined ? '—' : SizeFormatter.sizeFormat(used)} /{' '}
+              {SizeFormatter.sizeFormat(quota.trafficLimit)}
+            </span>
+          </div>
+          <Progress
+            percent={Math.min(100, ((used ?? 0) / quota.trafficLimit) * 100)}
+            showInfo={false}
+            size="small"
+          />
+        </div>
+      )}
     </Card>
   );
 }

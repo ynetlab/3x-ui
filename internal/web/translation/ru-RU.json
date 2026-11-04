@@ -1091,6 +1091,8 @@
       "removeFromGroupResult": "Удалено {count} клиент(ов) из {name}."
     },
     "nodes": {
+      "trafficLimit": "Лимит трафика (GiB)",
+      "trafficResetDay": "День сброса месяца",
       "addNode": "Добавить узел",
       "editNode": "Изменить узел",
       "totalNodes": "Всего узлов",
@@ -3059,6 +3061,8 @@
     "invalidLocalTime": "В выбранном часовом поясе такого времени не существует."
   },
   "nodeStatus": {
+    "trafficSettings": "Настройки трафика",
+    "trafficUsage": "Использовано",
     "title": "Состояние системы",
     "subtitle": "Ресурсы и состояние Xray на панелях в реальном времени.",
     "live": "МОНИТОРИНГ",

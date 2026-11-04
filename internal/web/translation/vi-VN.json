@@ -1091,6 +1091,8 @@
       "removeFromGroupResult": "Đã xóa {count} client khỏi {name}."
     },
     "nodes": {
+      "trafficLimit": "Hạn mức lưu lượng (GiB)",
+      "trafficResetDay": "Ngày đặt lại hàng tháng",
       "addNode": "Thêm nút",
       "editNode": "Sửa node",
       "totalNodes": "Tổng số nút",
@@ -3059,6 +3061,8 @@
     "invalidLocalTime": "Thời gian này không tồn tại trong múi giờ đã chọn."
   },
   "nodeStatus": {
+    "trafficSettings": "Cài đặt lưu lượng",
+    "trafficUsage": "Lưu lượng đã dùng",
     "title": "Trạng thái hệ thống",
     "subtitle": "Tài nguyên và trạng thái Xray trực tiếp trên các bảng điều khiển.",
     "live": "GIÁM SÁT TRỰC TIẾP",

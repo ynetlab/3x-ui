@@ -1091,6 +1091,8 @@
       "removeFromGroupResult": "{count} klien dihapus dari {name}."
     },
     "nodes": {
+      "trafficLimit": "Kuota trafik (GiB)",
+      "trafficResetDay": "Tanggal reset bulanan",
       "addNode": "Tambah Node",
       "editNode": "Edit node",
       "totalNodes": "Total Node",
@@ -3059,6 +3061,8 @@
     "invalidLocalTime": "Waktu ini tidak ada dalam zona waktu yang dipilih."
   },
   "nodeStatus": {
+    "trafficSettings": "Pengaturan trafik",
+    "trafficUsage": "Trafik terpakai",
     "title": "Status sistem",
     "subtitle": "Sumber daya dan status Xray terkini di semua panel.",
     "live": "PEMANTAUAN LANGSUNG",

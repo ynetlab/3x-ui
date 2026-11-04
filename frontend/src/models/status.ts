@@ -77,6 +77,8 @@ interface StatusInput extends Pick<ParsedStatusInput, 'resourceScope' | 'unavail
   mem?: { current?: number; total?: number };
   netIO?: NetIO;
   netTraffic?: NetTraffic;
+  protocolTraffic?: NetIO;
+  trafficQuota?: ParsedStatusInput['trafficQuota'];
   publicIP?: PublicIP;
   swap?: { current?: number; total?: number };
   tcpCount?: number;
@@ -105,6 +107,8 @@ export class Status {
   mem: CurTotal = new CurTotal(0, 0);
   netIO: NetIO = { up: 0, down: 0 };
   netTraffic: NetTraffic = { sent: 0, recv: 0 };
+  protocolTraffic?: NetIO;
+  trafficQuota?: ParsedStatusInput['trafficQuota'];
   publicIP: PublicIP = { ipv4: 0, ipv6: 0 };
   swap: CurTotal = new CurTotal(0, 0);
   tcpCount = 0;
@@ -129,6 +133,8 @@ export class Status {
     this.mem = new CurTotal(data.mem?.current ?? 0, data.mem?.total ?? 0);
     this.netIO = data.netIO ?? this.netIO;
     this.netTraffic = data.netTraffic ?? this.netTraffic;
+    this.protocolTraffic = data.protocolTraffic;
+    this.trafficQuota = data.trafficQuota;
     this.publicIP = data.publicIP ?? this.publicIP;
     this.swap = new CurTotal(data.swap?.current ?? 0, data.swap?.total ?? 0);
     this.tcpCount = data.tcpCount ?? 0;

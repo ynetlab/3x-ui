@@ -491,6 +491,15 @@ export const sections: readonly Section[] = [
           '{\n  "success": true,\n  "obj": {\n    "cpu": 12.5,\n    "mem": { "current": 2147483648, "total": 8589934592 },\n    "swap": { "current": 0, "total": 4294967296 },\n    "disk": { "current": 53687091200, "total": 268435456000 },\n    "netIO": { "up": 1073741824, "down": 2147483648 },\n    "xray": { "state": "running", "version": "v25.10.31" },\n    "tcpCount": 42,\n    "load": { "load1": 0.5, "load5": 0.3, "load15": 0.2 }\n  }\n}',
       },
       {
+        method: 'POST',
+        path: '/panel/api/server/trafficQuota',
+        summary:
+          'Set the master traffic quota in bytes and monthly reset day (1–31). Zero disables the quota.',
+        requestSchema: { $ref: '#/components/schemas/TrafficQuotaRequest' },
+        body: '{"trafficLimit": 107374182400, "trafficResetDay": 1}',
+        response: '{"success": true}',
+      },
+      {
         method: 'GET',
         path: '/panel/api/server/fail2banStatus',
         summary:

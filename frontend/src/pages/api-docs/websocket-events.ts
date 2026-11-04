@@ -105,6 +105,12 @@ const statusPayloadSchema = {
       required: ['sent', 'recv', 'pktSent', 'pktRecv'],
       properties: { sent: int64, recv: int64, pktSent: int64, pktRecv: int64 },
     },
+    trafficQuota: { $ref: '#/components/schemas/TrafficQuotaView' },
+    protocolTraffic: {
+      type: 'object',
+      required: ['up', 'down'],
+      properties: { up: int64, down: int64 },
+    },
     publicIP: {
       type: 'object',
       required: ['ipv4', 'ipv6'],

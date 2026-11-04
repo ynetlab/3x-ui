@@ -1091,6 +1091,8 @@
       "removeFromGroupResult": "تمت إزالة {count} عميل من {name}."
     },
     "nodes": {
+      "trafficLimit": "حد البيانات (GiB)",
+      "trafficResetDay": "يوم التجديد الشهري",
       "addNode": "إضافة نود",
       "editNode": "تحرير العقدة",
       "totalNodes": "إجمالي النودز",
@@ -3059,6 +3061,8 @@
     "invalidLocalTime": "هذا الوقت غير موجود في المنطقة الزمنية المحددة."
   },
   "nodeStatus": {
+    "trafficSettings": "إعدادات البيانات",
+    "trafficUsage": "البيانات المستخدمة",
     "title": "حالة النظام",
     "subtitle": "الموارد وحالة Xray المباشرة عبر اللوحات.",
     "live": "مراقبة مباشرة",

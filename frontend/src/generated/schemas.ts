@@ -3769,6 +3769,13 @@ export const SCHEMAS: Record<string, unknown> = {
         ],
         "type": "string"
       },
+      "trafficLimit": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "trafficResetDay": {
+        "type": "integer"
+      },
       "transitive": {
         "type": "boolean"
       },
@@ -3837,6 +3844,8 @@ export const SCHEMAS: Record<string, unknown> = {
       "scheme",
       "status",
       "tlsVerifyMode",
+      "trafficLimit",
+      "trafficResetDay",
       "updatedAt",
       "uptimeSecs",
       "xrayError",
@@ -3915,6 +3924,15 @@ export const SCHEMAS: Record<string, unknown> = {
           "mtls"
         ],
         "type": "string"
+      },
+      "trafficLimit": {
+        "format": "int64",
+        "nullable": true,
+        "type": "integer"
+      },
+      "trafficResetDay": {
+        "nullable": true,
+        "type": "integer"
       }
     },
     "required": [
@@ -3932,6 +3950,28 @@ export const SCHEMAS: Record<string, unknown> = {
       "remark",
       "scheme",
       "tlsVerifyMode"
+    ],
+    "type": "object"
+  },
+  "NodeTrafficUsage": {
+    "properties": {
+      "down": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "periodStart": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "up": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "down",
+      "periodStart",
+      "up"
     ],
     "type": "object"
   },
@@ -4093,6 +4133,21 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "verify",
         "type": "string"
       },
+      "trafficLimit": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "trafficResetDay": {
+        "type": "integer"
+      },
+      "trafficUsage": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NodeTrafficUsage"
+          }
+        ],
+        "nullable": true
+      },
       "transitive": {
         "example": false,
         "type": "boolean"
@@ -4162,6 +4217,8 @@ export const SCHEMAS: Record<string, unknown> = {
       "scheme",
       "status",
       "tlsVerifyMode",
+      "trafficLimit",
+      "trafficResetDay",
       "updatedAt",
       "uptimeSecs",
       "xrayError",
@@ -4802,6 +4859,46 @@ export const SCHEMAS: Record<string, unknown> = {
       "IsOutbound",
       "Tag",
       "Up"
+    ],
+    "type": "object"
+  },
+  "TrafficQuotaRequest": {
+    "properties": {
+      "trafficLimit": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "trafficResetDay": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "trafficLimit",
+      "trafficResetDay"
+    ],
+    "type": "object"
+  },
+  "TrafficQuotaView": {
+    "properties": {
+      "trafficLimit": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "trafficResetDay": {
+        "type": "integer"
+      },
+      "trafficUsage": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NodeTrafficUsage"
+          }
+        ],
+        "nullable": true
+      }
+    },
+    "required": [
+      "trafficLimit",
+      "trafficResetDay"
     ],
     "type": "object"
   },

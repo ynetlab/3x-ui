@@ -855,6 +855,15 @@ type Node struct {
 	InboundTags             []string `json:"inboundTags" form:"inboundTags" gorm:"serializer:json;column:inbound_tags"`
 	OutboundTag             string   `json:"outboundTag" form:"outboundTag" gorm:"column:outbound_tag"`
 
+	TrafficLimit       int64 `json:"trafficLimit" gorm:"default:0"`
+	TrafficResetDay    int   `json:"trafficResetDay" gorm:"default:1"`
+	TrafficUp          int64 `json:"-" gorm:"default:0"`
+	TrafficDown        int64 `json:"-" gorm:"default:0"`
+	TrafficBaseUp      int64 `json:"-" gorm:"default:0"`
+	TrafficBaseDown    int64 `json:"-" gorm:"default:0"`
+	TrafficPeriodStart int64 `json:"-" gorm:"default:0"`
+	TrafficUpdatedAt   int64 `json:"-" gorm:"default:0"`
+
 	// Guid is the remote panel's stable self-identifier (its panelGuid),
 	// learned from each heartbeat. It is the globally stable node identity used
 	// to attribute online clients/inbounds to the physical node across a chain

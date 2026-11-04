@@ -1091,6 +1091,8 @@
       "removeFromGroupResult": "{count} کاربر از {name} حذف شد."
     },
     "nodes": {
+      "trafficLimit": "سهمیه ترافیک (GiB)",
+      "trafficResetDay": "روز بازنشانی ماهانه",
       "addNode": "افزودن نود",
       "editNode": "ویرایش نود",
       "totalNodes": "کل نودها",
@@ -3059,6 +3061,8 @@
     "invalidLocalTime": "این زمان در منطقه زمانی انتخاب‌شده وجود ندارد."
   },
   "nodeStatus": {
+    "trafficSettings": "تنظیمات ترافیک",
+    "trafficUsage": "ترافیک مصرفی",
     "title": "وضعیت سیستم",
     "subtitle": "منابع و وضعیت زنده Xray در پنل‌ها.",
     "live": "پایش زنده",

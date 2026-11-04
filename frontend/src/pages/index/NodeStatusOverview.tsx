@@ -11,6 +11,8 @@ import {
   DashboardOutlined,
   DatabaseOutlined,
   DownloadOutlined,
+  EyeInvisibleOutlined,
+  EyeOutlined,
   HddOutlined,
   MoreOutlined,
   PoweroffOutlined,
@@ -33,6 +35,7 @@ import {
 import { LazyMount } from '@/components/utility';
 import './NodeStatusOverview.css';
 
+const TrafficQuotaModal = lazy(() => import('./TrafficQuotaModal'));
 const LogModal = lazy(() => import('./LogModal'));
 const XrayLogModal = lazy(() => import('./XrayLogModal'));
 const SystemHistoryModal = lazy(() => import('./SystemHistoryModal'));
@@ -102,11 +105,13 @@ function ResourceMeter({
 
 function NodeStatusCard({
   node,
+  showAddress,
   masterVersion,
   onDetails,
   ...masterActions
 }: Omit<OverviewProps, 'nodes'> & {
   node?: NodeRecord;
+  showAddress: boolean;
   onDetails: (detail: DetailTarget) => void;
 }) {
   const { t } = useTranslation();
@@ -116,6 +121,7 @@ function NodeStatusCard({
   const { status, fetched, fetchError, refresh } = useStatusQuery({
     enabled: !indirect && !disabled,
   });
+  const [quotaOpen, setQuotaOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [updateKind, setUpdateKind] = useState<'panel' | 'version' | null>(null);
   const [updateOpen, setUpdateOpen] = useState(false);
@@ -150,6 +156,15 @@ function NodeStatusCard({
   const metric = (key: string) => ready && status.metricAvailable(key);
   const openDetail = (kind: DetailKind) => onDetails({ nodeId: target.nodeId, name, kind, status });
   const details: MenuProps['items'] = [
+    ...(!node
+      ? [
+          {
+            key: 'trafficQuota',
+            label: t('nodeStatus.trafficSettings'),
+            onClick: () => setQuotaOpen(true),
+          },
+        ]
+      : []),
     { key: 'logs', label: t('pages.index.logs'), onClick: () => openDetail('logs') },
     { key: 'access', label: t('pages.index.accessLogs'), onClick: () => openDetail('access') },
     { key: 'config', label: t('pages.index.config'), onClick: () => openDetail('config') },
@@ -204,6 +219,14 @@ function NodeStatusCard({
     }
   }
 
+  const quota = node ?? status.trafficQuota;
+  const trafficLimit = quota?.trafficLimit ?? 0;
+  const trafficUsage = quota?.trafficUsage;
+  const displayedTraffic =
+    trafficLimit > 0 ? trafficUsage : ready ? status.protocolTraffic : undefined;
+  const trafficUsed = trafficUsage ? trafficUsage.up + trafficUsage.down : undefined;
+  const trafficPercent =
+    trafficUsed === undefined || trafficLimit <= 0 ? undefined : (trafficUsed / trafficLimit) * 100;
   const coreError = ready ? status.xray.errorMsg : fetchError || node?.lastError;
   return (
     <article className="node-status-card" data-connection={connection} aria-label={name}>
@@ -254,7 +277,7 @@ function NodeStatusCard({
         </div>
         <div className="node-card-identity">
           <h2 title={name}>{name}</h2>
-          <span>
+          <span className={showAddress ? 'address-visible' : 'address-hidden'}>
             {node
               ? `${node.address || '—'}${node.port ? `:${node.port}` : ''}`
               : window.location.host}
@@ -319,17 +342,47 @@ function NodeStatusCard({
         <div>
           <span>
             <ArrowUpOutlined aria-hidden /> {t('pages.index.upload')}
+            <small>{displayedTraffic ? SizeFormatter.sizeFormat(displayedTraffic.up) : '—'}</small>
           </span>
           <strong>{ready ? SizeFormatter.speedFormat(status.netIO.up) : '—'}</strong>
-          <small>{ready ? SizeFormatter.sizeFormat(status.netTraffic.sent) : '—'}</small>
         </div>
         <div>
           <span>
             <ArrowDownOutlined aria-hidden /> {t('pages.index.download')}
+            <small>
+              {displayedTraffic ? SizeFormatter.sizeFormat(displayedTraffic.down) : '—'}
+            </small>
           </span>
           <strong>{ready ? SizeFormatter.speedFormat(status.netIO.down) : '—'}</strong>
-          <small>{ready ? SizeFormatter.sizeFormat(status.netTraffic.recv) : '—'}</small>
         </div>
+        {trafficLimit > 0 && (
+          <div className="node-traffic-quota">
+            <span>
+              {t('nodeStatus.trafficUsage')}
+              <small>
+                {trafficUsed === undefined ? '—' : SizeFormatter.sizeFormat(trafficUsed)} /{' '}
+                {SizeFormatter.sizeFormat(trafficLimit)}
+              </small>
+            </span>
+            <div
+              className="node-resource-track"
+              role="progressbar"
+              aria-label={t('nodeStatus.trafficUsage')}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={
+                trafficPercent === undefined ? undefined : Math.min(100, Math.round(trafficPercent))
+              }
+            >
+              <span
+                style={{
+                  width: `${Math.min(100, trafficPercent ?? 0)}%`,
+                  background: (trafficPercent ?? 0) >= 90 ? 'var(--ant-color-error)' : undefined,
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
       <dl className="node-card-facts">
         <div>
@@ -372,6 +425,15 @@ function NodeStatusCard({
         <span>{node?.panelVersion || (!node ? masterVersion : '—')}</span>
         <span>Xray {ready ? TimeFormatter.formatSecond(status.appStats.uptime) : '—'}</span>
       </footer>
+      {!node && quotaOpen && (
+        <LazyMount when={true}>
+          <TrafficQuotaModal
+            quota={status.trafficQuota}
+            onClose={() => setQuotaOpen(false)}
+            onSaved={refresh}
+          />
+        </LazyMount>
+      )}
       {node && updateKind && (
         <LazyMount when={true}>
           <NodeUpdateModal
@@ -448,27 +510,47 @@ function ConfigModal({ name, onClose }: { name: string; onClose: () => void }) {
 export default function NodeStatusOverview({ nodes, ...masterProps }: OverviewProps) {
   const { t } = useTranslation();
   const [detail, setDetail] = useState<DetailTarget | null>(null);
+  const [showAddress, setShowAddress] = useState(false);
   const close = () => setDetail(null);
   return (
     <section className="node-status-overview">
       <header className="node-status-header">
         <div>
           <span className="node-status-eyebrow">{t('nodeStatus.live')}</span>
-          <h1>{t('nodeStatus.title')}</h1>
+          <div className="node-status-title">
+            <h1>{t('nodeStatus.title')}</h1>
+            <Tooltip title={t('pages.index.toggleIpVisibility')}>
+              <Button
+                type="text"
+                size="small"
+                aria-label={t('pages.index.toggleIpVisibility')}
+                aria-pressed={showAddress}
+                icon={
+                  showAddress ? <EyeOutlined aria-hidden /> : <EyeInvisibleOutlined aria-hidden />
+                }
+                onClick={() => setShowAddress((value) => !value)}
+              />
+            </Tooltip>
+          </div>
           <p>{t('nodeStatus.subtitle')}</p>
         </div>
         <Tag>{t('nodeStatus.panelCount', { count: nodes.length + 1 })}</Tag>
       </header>
       <div className="node-status-grid">
         <NodeTargetContext.Provider value={undefined}>
-          <NodeStatusCard {...masterProps} onDetails={setDetail} />
+          <NodeStatusCard {...masterProps} showAddress={showAddress} onDetails={setDetail} />
         </NodeTargetContext.Provider>
         {nodes.map((node) => (
           <NodeTargetContext.Provider
             key={node.transitive ? node.guid || `${node.parentGuid}-${node.name}` : node.id}
             value={node.transitive || node.id <= 0 ? undefined : node.id}
           >
-            <NodeStatusCard node={node} {...masterProps} onDetails={setDetail} />
+            <NodeStatusCard
+              node={node}
+              {...masterProps}
+              showAddress={showAddress}
+              onDetails={setDetail}
+            />
           </NodeTargetContext.Provider>
         ))}
       </div>

@@ -925,6 +925,8 @@ export const NodeSchema = z.object({
   scheme: z.enum(['http', 'https']),
   status: z.string(),
   tlsVerifyMode: z.enum(['verify', 'skip', 'pin', 'mtls']),
+  trafficLimit: z.number().int(),
+  trafficResetDay: z.number().int(),
   transitive: z.boolean().optional(),
   unavailableMetrics: z.array(z.string()).optional(),
   updatedAt: z.number().int(),
@@ -952,8 +954,17 @@ export const NodeMutationRequestSchema = z.object({
   remark: z.string(),
   scheme: z.enum(['http', 'https']),
   tlsVerifyMode: z.enum(['verify', 'skip', 'pin', 'mtls']),
+  trafficLimit: z.number().int().nullable().optional(),
+  trafficResetDay: z.number().int().nullable().optional(),
 });
 export type NodeMutationRequest = z.infer<typeof NodeMutationRequestSchema>;
+
+export const NodeTrafficUsageSchema = z.object({
+  down: z.number().int(),
+  periodStart: z.number().int(),
+  up: z.number().int(),
+});
+export type NodeTrafficUsage = z.infer<typeof NodeTrafficUsageSchema>;
 
 export const NodeViewSchema = z.object({
   activeCount: z.number().int(),
@@ -993,6 +1004,9 @@ export const NodeViewSchema = z.object({
   scheme: z.string(),
   status: z.string(),
   tlsVerifyMode: z.string(),
+  trafficLimit: z.number().int(),
+  trafficResetDay: z.number().int(),
+  trafficUsage: z.lazy(() => NodeTrafficUsageSchema).nullable().optional(),
   transitive: z.boolean().optional(),
   unavailableMetrics: z.array(z.string()).optional(),
   updatedAt: z.number().int(),
@@ -1159,6 +1173,19 @@ export const TrafficSchema = z.object({
   Up: z.number().int(),
 });
 export type Traffic = z.infer<typeof TrafficSchema>;
+
+export const TrafficQuotaRequestSchema = z.object({
+  trafficLimit: z.number().int(),
+  trafficResetDay: z.number().int(),
+});
+export type TrafficQuotaRequest = z.infer<typeof TrafficQuotaRequestSchema>;
+
+export const TrafficQuotaViewSchema = z.object({
+  trafficLimit: z.number().int(),
+  trafficResetDay: z.number().int(),
+  trafficUsage: z.lazy(() => NodeTrafficUsageSchema).nullable().optional(),
+});
+export type TrafficQuotaView = z.infer<typeof TrafficQuotaViewSchema>;
 
 export const TuicClientSettingsSchema = z.object({
   email: z.string(),

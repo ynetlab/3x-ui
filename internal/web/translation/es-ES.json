@@ -1091,6 +1091,8 @@
       "removeFromGroupResult": "Quitados {count} cliente(s) de {name}."
     },
     "nodes": {
+      "trafficLimit": "Cuota de tráfico (GiB)",
+      "trafficResetDay": "Día de reinicio mensual",
       "addNode": "Agregar nodo",
       "editNode": "Editar nodo",
       "totalNodes": "Total de nodos",
@@ -3059,6 +3061,8 @@
     "invalidLocalTime": "Esta hora no existe en la zona horaria seleccionada."
   },
   "nodeStatus": {
+    "trafficSettings": "Ajustes de tráfico",
+    "trafficUsage": "Tráfico usado",
     "title": "Estado del sistema",
     "subtitle": "Recursos y estado de Xray en tiempo real en sus paneles.",
     "live": "MONITORIZACIÓN EN VIVO",

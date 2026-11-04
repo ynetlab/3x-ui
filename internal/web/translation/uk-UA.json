@@ -1091,6 +1091,8 @@
       "removeFromGroupResult": "Видалено {count} клієнт(ів) з {name}."
     },
     "nodes": {
+      "trafficLimit": "Ліміт трафіку (GiB)",
+      "trafficResetDay": "День щомісячного скидання",
       "addNode": "Додати вузол",
       "editNode": "Змінити вузол",
       "totalNodes": "Усього вузлів",
@@ -3059,6 +3061,8 @@
     "invalidLocalTime": "У вибраному часовому поясі такого часу не існує."
   },
   "nodeStatus": {
+    "trafficSettings": "Налаштування трафіку",
+    "trafficUsage": "Використано",
     "title": "Стан системи",
     "subtitle": "Поточні ресурси та стан Xray на ваших панелях.",
     "live": "МОНІТОРИНГ НАЖИВО",

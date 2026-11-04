@@ -869,6 +869,8 @@ export interface Node {
   scheme: string;
   status: string;
   tlsVerifyMode: string;
+  trafficLimit: number;
+  trafficResetDay: number;
   transitive?: boolean;
   unavailableMetrics?: string[];
   updatedAt: number;
@@ -895,6 +897,14 @@ export interface NodeMutationRequest {
   remark: string;
   scheme: string;
   tlsVerifyMode: string;
+  trafficLimit?: number | null;
+  trafficResetDay?: number | null;
+}
+
+export interface NodeTrafficUsage {
+  down: number;
+  periodStart: number;
+  up: number;
 }
 
 export interface NodeView {
@@ -935,6 +945,9 @@ export interface NodeView {
   scheme: string;
   status: string;
   tlsVerifyMode: string;
+  trafficLimit: number;
+  trafficResetDay: number;
+  trafficUsage?: NodeTrafficUsage | null;
   transitive?: boolean;
   unavailableMetrics?: string[];
   updatedAt: number;
@@ -1088,6 +1101,17 @@ export interface Traffic {
   IsOutbound: boolean;
   Tag: string;
   Up: number;
+}
+
+export interface TrafficQuotaRequest {
+  trafficLimit: number;
+  trafficResetDay: number;
+}
+
+export interface TrafficQuotaView {
+  trafficLimit: number;
+  trafficResetDay: number;
+  trafficUsage?: NodeTrafficUsage | null;
 }
 
 export interface TuicClientSettings {

@@ -154,6 +154,8 @@
     "invalidLocalTime": "This time does not exist in the selected time zone."
   },
   "nodeStatus": {
+    "trafficSettings": "Traffic settings",
+    "trafficUsage": "Traffic used",
     "title": "System status",
     "subtitle": "Live resources and Xray status across your panels.",
     "live": "LIVE MONITORING",
@@ -1408,6 +1410,8 @@
       "dragToReorder": "Drag to reorder {name}"
     },
     "nodes": {
+      "trafficLimit": "Traffic quota (GiB)",
+      "trafficResetDay": "Monthly reset day",
       "addNode": "Add Node",
       "editNode": "Edit Node",
       "totalNodes": "Total Nodes",

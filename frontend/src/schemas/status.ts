@@ -47,6 +47,16 @@ export const StatusSchema = z.object({
   mem: CurTotalInputSchema.optional(),
   netIO: NetIOSchema.optional(),
   netTraffic: NetTrafficSchema.optional(),
+  protocolTraffic: NetIOSchema.optional(),
+  trafficQuota: z
+    .object({
+      trafficLimit: z.number(),
+      trafficResetDay: z.number(),
+      trafficUsage: z
+        .object({ up: z.number(), down: z.number(), periodStart: z.number() })
+        .optional(),
+    })
+    .optional(),
   publicIP: PublicIPSchema.optional(),
   swap: CurTotalInputSchema.optional(),
   tcpCount: z.number().optional(),

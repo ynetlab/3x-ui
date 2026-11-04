@@ -960,6 +960,8 @@ export const EXAMPLES: Record<string, unknown> = {
     "scheme": "https",
     "status": "online",
     "tlsVerifyMode": "verify",
+    "trafficLimit": 0,
+    "trafficResetDay": 0,
     "transitive": false,
     "unavailableMetrics": [
       ""
@@ -988,7 +990,14 @@ export const EXAMPLES: Record<string, unknown> = {
     "port": 1,
     "remark": "",
     "scheme": "http",
-    "tlsVerifyMode": "verify"
+    "tlsVerifyMode": "verify",
+    "trafficLimit": null,
+    "trafficResetDay": null
+  },
+  "NodeTrafficUsage": {
+    "down": 0,
+    "periodStart": 0,
+    "up": 0
   },
   "NodeView": {
     "activeCount": 20,
@@ -1030,6 +1039,9 @@ export const EXAMPLES: Record<string, unknown> = {
     "scheme": "https",
     "status": "online",
     "tlsVerifyMode": "verify",
+    "trafficLimit": 0,
+    "trafficResetDay": 0,
+    "trafficUsage": null,
     "transitive": false,
     "unavailableMetrics": [
       ""
@@ -1186,6 +1198,15 @@ export const EXAMPLES: Record<string, unknown> = {
     "IsOutbound": false,
     "Tag": "inbound-443",
     "Up": 1048576
+  },
+  "TrafficQuotaRequest": {
+    "trafficLimit": 0,
+    "trafficResetDay": 0
+  },
+  "TrafficQuotaView": {
+    "trafficLimit": 0,
+    "trafficResetDay": 0,
+    "trafficUsage": null
   },
   "TuicClientSettings": {
     "email": "",

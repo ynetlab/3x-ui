@@ -1212,6 +1212,8 @@
       "dragToReorder": "Presunutím zmeníte poradie {name}"
     },
     "nodes": {
+      "trafficLimit": "Dátový limit (GiB)",
+      "trafficResetDay": "Deň mesačného obnovenia",
       "addNode": "Pridať server",
       "editNode": "Upraviť server",
       "totalNodes": "Počet serverov",
@@ -3059,6 +3061,8 @@
     "invalidLocalTime": "Tento čas vo vybranom časovom pásme neexistuje."
   },
   "nodeStatus": {
+    "trafficSettings": "Nastavenia dát",
+    "trafficUsage": "Použité dáta",
     "title": "Stav systému",
     "subtitle": "Aktuálne zdroje a stav Xray naprieč panelmi.",
     "live": "ŽIVÉ MONITOROVANIE",

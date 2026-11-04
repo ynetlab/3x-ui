@@ -1091,6 +1091,8 @@
       "removeFromGroupResult": "{name} grubundan {count} kullanıcı çıkarıldı."
     },
     "nodes": {
+      "trafficLimit": "Trafik kotası (GiB)",
+      "trafficResetDay": "Aylık sıfırlama günü",
       "addNode": "Düğüm Ekle",
       "editNode": "Düğümü Düzenle",
       "totalNodes": "Toplam Düğüm",
@@ -3059,6 +3061,8 @@
     "invalidLocalTime": "Bu saat, seçilen saat diliminde mevcut değil."
   },
   "nodeStatus": {
+    "trafficSettings": "Trafik ayarları",
+    "trafficUsage": "Kullanılan trafik",
     "title": "Sistem durumu",
     "subtitle": "Panellerdeki canlı kaynaklar ve Xray durumu.",
     "live": "CANLI İZLEME",
